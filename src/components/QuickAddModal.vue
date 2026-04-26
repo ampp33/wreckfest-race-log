@@ -6,7 +6,7 @@
     @keydown.esc.stop="onClose"
   >
     <div
-      class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[95vh] overflow-y-auto"
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl p-4 sm:p-6 max-h-[95vh] overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-add-title"

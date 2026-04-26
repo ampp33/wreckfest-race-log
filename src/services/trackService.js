@@ -1,22 +1,21 @@
 import { supabase } from './supabase.js'
 
+let _tracks = null
+
 export async function getTracks() {
+  if (_tracks) return _tracks
   const { data, error } = await supabase
     .from('tracks')
     .select('id, name, slug, track_variations(id, name, slug)')
     .order('name', { ascending: true })
   if (error) throw error
-  return data || []
+  _tracks = data || []
+  return _tracks
 }
 
 export async function getTrackBySlug(slug) {
-  const { data, error } = await supabase
-    .from('tracks')
-    .select('id, name, slug, track_variations(id, name, slug)')
-    .eq('slug', slug)
-    .single()
-  if (error) throw error
-  return data
+  const tracks = await getTracks()
+  return tracks.find(t => t.slug === slug) ?? null
 }
 
 export function findVariation(track, variationSlug) {

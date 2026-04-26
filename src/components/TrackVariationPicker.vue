@@ -7,7 +7,7 @@
       ref="searchInput"
       v-model="query"
       type="text"
-      class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+      class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
       placeholder="Type to search tracks..."
       autocomplete="off"
       @keydown.down.prevent="moveSelection(1)"

@@ -9,7 +9,7 @@
 
     <div v-else class="space-y-6">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
           <div class="text-xs uppercase text-slate-500">Most used vehicle</div>
           <div class="mt-1 text-lg font-semibold">
             {{ stats.mostUsedVehicle ? stats.mostUsedVehicle.name : '—' }}
@@ -19,7 +19,7 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
           <div class="text-xs uppercase text-slate-500">Most raced variation</div>
           <router-link
             v-if="stats.mostRacedVariation"
@@ -37,13 +37,13 @@
           </div>
         </div>
 
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
           <div class="text-xs uppercase text-slate-500">Total races</div>
           <div class="mt-1 text-lg font-semibold">{{ stats.totalRaces }}</div>
         </div>
       </div>
 
-      <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
         <h2 class="font-semibold mb-3">Biggest improvements (oldest → newest lap)</h2>
         <p v-if="!stats.biggestImprovements.length" class="text-sm text-slate-500">
           No improvement data yet — log more laps on the same variation.

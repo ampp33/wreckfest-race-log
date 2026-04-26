@@ -1,7 +1,7 @@
 <template>
   <tr class="border-b border-slate-200 dark:border-slate-700">
     <template v-if="!editing">
-      <td class="py-2 pr-3 whitespace-nowrap text-xs text-slate-500">
+      <td class="py-2 pl-3 pr-3 whitespace-nowrap text-xs text-slate-500">
         {{ formattedDate }}
       </td>
       <td class="py-2 pr-3">{{ vehicleName }}</td>
@@ -13,7 +13,7 @@
       <td class="py-2 pr-3 text-xs text-slate-500 truncate max-w-[18ch]" :title="race.notes || ''">
         {{ race.notes || '' }}
       </td>
-      <td class="py-2 text-right text-xs space-x-2 whitespace-nowrap">
+      <td class="py-2 pr-3 text-right text-xs space-x-2 whitespace-nowrap">
         <button class="text-brand hover:underline" @click="editing = true">Edit</button>
         <button class="text-slate-500 hover:text-red-600" @click="onDelete">Delete</button>
       </td>

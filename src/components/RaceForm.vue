@@ -1,93 +1,130 @@
 <template>
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
-    <div class="grid grid-cols-2 gap-3">
-      <div class="col-span-2">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Date / time
-        </label>
-        <input
-          ref="datetimeInput"
-          v-model="form.datetime"
-          type="datetime-local"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-        />
+    <div class="flex gap-3">
+
+      <div class="flex-1 grid grid-cols-2 gap-3 content-start">
+        <div class="col-span-2">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Date / time
+          </label>
+          <input
+            ref="datetimeInput"
+            v-model="form.datetime"
+            type="datetime-local"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Vehicle
+          </label>
+          <select
+            v-model="form.vehicleId"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          >
+            <option :value="null">— none —</option>
+            <option v-for="v in vehicles" :key="v.id" :value="v.id">
+              {{ v.name }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Tuning
+          </label>
+          <input
+            v-model.number="form.tuning"
+            type="number"
+            min="0"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Place
+          </label>
+          <input
+            v-model="form.place"
+            type="text"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+            placeholder="1st"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Lap time
+          </label>
+          <input
+            v-model="form.lapTime"
+            type="text"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+            placeholder="1:23.456"
+          />
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Total time (optional)
+          </label>
+          <input
+            v-model="form.totalTime"
+            type="text"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+            placeholder="6:12.000"
+          />
+        </div>
+
+        <div class="col-span-2">
+          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+            Notes (Ctrl+Enter to save)
+          </label>
+          <textarea
+            ref="notesInput"
+            v-model="form.notes"
+            rows="2"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 resize-none"
+            @input="autoExpand"
+          />
+        </div>
       </div>
 
-      <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Vehicle
-        </label>
-        <select
-          v-model="form.vehicleId"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-        >
-          <option :value="null">— none —</option>
-          <option v-for="v in vehicles" :key="v.id" :value="v.id">
-            {{ v.name }}
-          </option>
-        </select>
+      <div class="rounded bg-slate-100 dark:bg-slate-900 px-3 py-1 space-y-1 shrink-0 w-[27rem]">
+        <div v-for="(cfg, i) in tuningSliderConfig" :key="i">
+          <div class="text-xs font-bold uppercase text-slate-800 dark:text-white tracking-widest mb-0 mt-3">{{ cfg.label }}</div>
+          <div class="relative flex items-center">
+            <div class="absolute inset-x-0 h-px bg-slate-400 dark:bg-slate-500" />
+            <div class="relative flex justify-between w-full">
+              <div
+                v-for="pos in 5"
+                :key="pos"
+                role="button"
+                tabindex="0"
+                class="group flex items-center justify-center w-14 h-14 cursor-pointer"
+                @click="setSlider(i, pos)"
+                @keydown.enter.prevent="setSlider(i, pos)"
+                @keydown.space.prevent="setSlider(i, pos)"
+              >
+                <span
+                  class="w-5 h-5 rounded-full border-2 transition-colors pointer-events-none"
+                  :class="sliders[i] === pos
+                    ? 'bg-slate-800 border-slate-800 dark:bg-white dark:border-white'
+                    : 'bg-slate-300 border-slate-400 dark:bg-slate-700 dark:border-slate-500 group-hover:border-slate-500 group-hover:bg-slate-400 dark:group-hover:border-slate-300 dark:group-hover:bg-slate-500'"
+                />
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-0 px-7">
+            <span class="block -translate-x-1/2">{{ cfg.left }}</span>
+            <span>{{ cfg.center }}</span>
+            <span class="block translate-x-1/2">{{ cfg.right }}</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Tuning
-        </label>
-        <input
-          v-model.number="form.tuning"
-          type="number"
-          min="0"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-        />
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Place
-        </label>
-        <input
-          v-model="form.place"
-          type="text"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-          placeholder="1st"
-        />
-      </div>
-
-      <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Lap time
-        </label>
-        <input
-          v-model="form.lapTime"
-          type="text"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-          placeholder="1:23.456"
-        />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Total time (optional)
-        </label>
-        <input
-          v-model="form.totalTime"
-          type="text"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2"
-          placeholder="6:12.000"
-        />
-      </div>
-
-      <div class="col-span-2">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-          Notes (Ctrl+Enter to save)
-        </label>
-        <textarea
-          ref="notesInput"
-          v-model="form.notes"
-          rows="2"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 resize-none"
-          @input="autoExpand"
-        />
-      </div>
     </div>
 
     <p v-if="errorMessage" class="mt-3 text-sm text-red-600">{{ errorMessage }}</p>
@@ -124,6 +161,26 @@
 <script>
 import { parseTimeToMs, formatMsToTime } from '../utils/timeFormat.js'
 
+const TUNING_SLIDER_CONFIG = [
+  { label: 'Suspension',    left: 'SOFT',  center: 'STANDARD', right: 'STIFF'  },
+  { label: 'Gear Ratio',    left: 'SHORT', center: 'STANDARD', right: 'LONG'   },
+  { label: 'Differential',  left: 'OPEN',  center: 'LIMITED',  right: 'LOCKED' },
+  { label: 'Brake Balance', left: 'REAR',  center: 'MIDDLE',   right: 'FRONT'  },
+]
+
+function parseSliders(tuning) {
+  if (tuning == null) return [1, 1, 1, 1]
+  const s = String(Math.round(tuning))
+  if (s.length !== 4) return [1, 1, 1, 1]
+  const digits = s.split('').map(d => parseInt(d))
+  if (digits.some(n => n < 1 || n > 5)) return [1, 1, 1, 1]
+  return digits
+}
+
+function slidersToTuning(sliders) {
+  return sliders[0] * 1000 + sliders[1] * 100 + sliders[2] * 10 + sliders[3]
+}
+
 function nowLocalIsoMinute() {
   const d = new Date()
   d.setSeconds(0, 0)
@@ -156,7 +213,17 @@ export default {
   data() {
     return {
       form: { ...emptyForm(), ...this.defaults },
-      errorMessage: ''
+      errorMessage: '',
+      sliders: parseSliders(this.defaults.tuning),
+      tuningSliderConfig: TUNING_SLIDER_CONFIG
+    }
+  },
+  watch: {
+    'form.tuning'(val) {
+      if (val !== slidersToTuning(this.sliders)) {
+        const parsed = parseSliders(val)
+        parsed.forEach((v, i) => this.sliders.splice(i, 1, v))
+      }
     }
   },
   computed: {
@@ -171,6 +238,10 @@ export default {
     this.autoExpand()
   },
   methods: {
+    setSlider(i, pos) {
+      this.sliders.splice(i, 1, pos)
+      this.form.tuning = slidersToTuning(this.sliders)
+    },
     onFormKeydown(event) {
       if (event.key === 'Escape') {
         event.preventDefault()

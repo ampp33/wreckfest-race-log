@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center px-4">
-    <div class="bg-white dark:bg-slate-800 rounded-lg shadow p-6 sm:p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 sm:p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
       <h1 class="text-2xl font-bold text-brand mb-1">🏁 Wreckfest Tracker</h1>
       <p class="text-sm text-slate-500 mb-6">
         {{ mode === 'signin' ? 'Sign in to log your races.' : 'Create an account to start logging races.' }}
@@ -16,7 +16,7 @@
             type="email"
             required
             autocomplete="email"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
             placeholder="you@example.com"
           />
         </div>
@@ -31,7 +31,7 @@
             required
             minlength="6"
             :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
             placeholder="••••••••"
           />
         </div>

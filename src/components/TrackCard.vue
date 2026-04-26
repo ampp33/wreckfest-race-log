@@ -1,9 +1,9 @@
 <template>
   <router-link
     :to="firstVariationLink"
-    class="block rounded-lg overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-brand transition"
+    class="block rounded-lg overflow-hidden bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md hover:border-brand transition"
   >
-    <div class="aspect-video bg-slate-200 dark:bg-slate-700 overflow-hidden">
+    <div class="aspect-video bg-slate-200 dark:bg-gray-700 overflow-hidden">
       <img
         :src="resolvedImage"
         :alt="track.name"
@@ -20,7 +20,7 @@
         <span
           v-for="v in track.track_variations.slice(0, 4)"
           :key="v.id"
-          class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+          class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300"
         >
           {{ v.name }}
         </span>

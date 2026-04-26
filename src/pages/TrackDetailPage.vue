@@ -14,7 +14,7 @@
             v-if="track"
             :src="trackImage"
             :alt="track.name"
-            class="w-32 h-24 sm:w-40 sm:h-32 object-contain bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 shrink-0"
+            class="w-32 h-24 sm:w-40 sm:h-32 object-contain bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 shrink-0"
           />
           <div class="min-w-0">
             <router-link to="/" class="text-xs text-slate-500 hover:text-brand">← All tracks</router-link>
@@ -53,32 +53,32 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-3">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Goal lap time</div>
           <div class="flex items-center gap-2 mt-1">
             <input
               v-model="goalInput"
               type="text"
               placeholder="1:23.456"
-              class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1 text-sm font-mono"
+              class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm font-mono"
               @blur="onSaveGoal"
               @keydown.enter.prevent="onSaveGoal"
             />
           </div>
         </div>
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-3">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Personal best</div>
           <div class="font-mono text-lg mt-1">{{ pbDisplay }}</div>
         </div>
-        <div class="bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 p-3">
+        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Total races</div>
           <div class="font-mono text-lg mt-1">{{ races.length }}</div>
         </div>
       </div>
 
-      <div class="overflow-x-auto bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700">
+      <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700">
         <table class="min-w-full text-sm">
-          <thead class="bg-slate-50 dark:bg-slate-900 text-left text-xs uppercase text-slate-500">
+          <thead class="bg-slate-50 dark:bg-gray-900 text-left text-xs uppercase text-slate-500">
             <tr>
               <th class="py-2 pl-3 pr-3">When</th>
               <th class="py-2 pr-3">Vehicle</th>
