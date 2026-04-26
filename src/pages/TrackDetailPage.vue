@@ -56,14 +56,7 @@
         <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Goal lap time</div>
           <div class="flex items-center gap-2 mt-1">
-            <input
-              v-model="goalInput"
-              type="text"
-              placeholder="1:23.456"
-              class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm font-mono"
-              @blur="onSaveGoal"
-              @keydown.enter.prevent="onSaveGoal"
-            />
+            <LapTimeInput v-model="goalInputMs" @blur="onSaveGoal" />
           </div>
         </div>
         <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
@@ -140,12 +133,13 @@ import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { pushToast } from '../stores/toastStore.js'
-import { parseTimeToMs, formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime } from '../utils/timeFormat.js'
+import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, InlineAddRaceRow, LapTimeChart },
+  components: { RaceRow, InlineAddRaceRow, LapTimeChart, LapTimeInput },
   data() {
     return {
       loading: true,
@@ -155,7 +149,7 @@ export default {
       vehicles: [],
       races: [],
       goal: null,
-      goalInput: '',
+      goalInputMs: null,
       addingRow: false
     }
   },
@@ -224,7 +218,7 @@ export default {
     },
     async loadGoal() {
       this.goal = await getGoalForVariation(this.currentVariation.id)
-      this.goalInput = this.goal ? formatMsToTime(this.goal.goal_lap_time_ms) : ''
+      this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
     },
     onAddRow() {
       this.addingRow = true
@@ -269,11 +263,7 @@ export default {
       }
     },
     async onSaveGoal() {
-      const ms = this.goalInput ? parseTimeToMs(this.goalInput) : null
-      if (this.goalInput && ms == null) {
-        pushToast('Goal time format unrecognised', 'error')
-        return
-      }
+      const ms = this.goalInputMs
       if (!ms) return
       if (this.goal && this.goal.goal_lap_time_ms === ms) return
       try {

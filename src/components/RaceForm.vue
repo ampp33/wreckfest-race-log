@@ -93,26 +93,14 @@
         <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
           Lap time
         </label>
-        <input
-          :value="form.lapTime"
-          type="text"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          placeholder="1:23.456"
-          @input="form.lapTime = $event.target.value.replace(/[^0-9:.]/g, '')"
-        />
+        <LapTimeInput v-model="form.lapTimeMs" />
       </div>
 
       <div class="col-span-2">
         <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
           Total time (optional)
         </label>
-        <input
-          :value="form.totalTime"
-          type="text"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          placeholder="6:12.000"
-          @input="form.totalTime = $event.target.value.replace(/[^0-9:.]/g, '')"
-        />
+        <LapTimeInput v-model="form.totalTimeMs" />
       </div>
 
       <div class="col-span-2">
@@ -162,7 +150,7 @@
 </template>
 
 <script>
-import { parseTimeToMs, formatMsToTime } from '../utils/timeFormat.js'
+import LapTimeInput from './LapTimeInput.vue'
 
 const TUNING_SLIDER_CONFIG = [
   { label: 'Suspension',    left: 'SOFT',  center: 'STANDARD', right: 'STIFF'  },
@@ -197,14 +185,15 @@ function emptyForm() {
     vehicleId: null,
     tuning: null,
     place: '',
-    lapTime: '',
-    totalTime: '',
+    lapTimeMs: null,
+    totalTimeMs: null,
     notes: ''
   }
 }
 
 export default {
   name: 'RaceForm',
+  components: { LapTimeInput },
   props: {
     vehicles: { type: Array, required: true },
     defaults: { type: Object, default: () => ({}) },
@@ -271,33 +260,19 @@ export default {
       this.form.vehicleId = this.lastRace.vehicle_id || null
       this.form.tuning = this.lastRace.tuning ?? null
       this.form.place = this.lastRace.place || ''
-      this.form.lapTime = formatMsToTime(this.lastRace.lap_time_ms)
-      this.form.totalTime = this.lastRace.total_time_ms
-        ? formatMsToTime(this.lastRace.total_time_ms)
-        : ''
+      this.form.lapTimeMs = this.lastRace.lap_time_ms || null
+      this.form.totalTimeMs = this.lastRace.total_time_ms || null
       this.form.notes = this.lastRace.notes || ''
     },
     onSubmit() {
-      const lapMs = this.form.lapTime ? parseTimeToMs(this.form.lapTime) : null
-      const totalMs = this.form.totalTime ? parseTimeToMs(this.form.totalTime) : null
-
-      if (this.form.lapTime && lapMs == null) {
-        this.errorMessage = 'Lap time format unrecognised (try 1:23.456)'
-        return
-      }
-      if (this.form.totalTime && totalMs == null) {
-        this.errorMessage = 'Total time format unrecognised'
-        return
-      }
-
       this.errorMessage = ''
       const payload = {
         datetime: new Date(this.form.datetime).toISOString(),
         vehicle_id: this.form.vehicleId || null,
         tuning: this.form.tuning ?? null,
         place: this.form.place || null,
-        lap_time_ms: lapMs,
-        total_time_ms: totalMs,
+        lap_time_ms: this.form.lapTimeMs,
+        total_time_ms: this.form.totalTimeMs,
         notes: this.form.notes || null
       }
       this.$emit('submit', payload)
