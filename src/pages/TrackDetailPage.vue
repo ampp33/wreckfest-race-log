@@ -76,6 +76,8 @@
         </div>
       </div>
 
+      <LapTimeChart :races="races" :vehicles="vehicles" />
+
       <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700">
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 dark:bg-gray-900 text-left text-xs uppercase text-slate-500">
@@ -125,6 +127,7 @@
 <script>
 import RaceRow from '../components/RaceRow.vue'
 import InlineAddRaceRow from '../components/InlineAddRaceRow.vue'
+import LapTimeChart from '../components/LapTimeChart.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import {
@@ -142,7 +145,7 @@ import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, InlineAddRaceRow },
+  components: { RaceRow, InlineAddRaceRow, LapTimeChart },
   data() {
     return {
       loading: true,
