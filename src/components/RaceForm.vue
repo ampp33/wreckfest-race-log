@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
-      <div class="col-span-2">
+      <div class="col-span-2 min-w-0">
         <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
           Date / time
         </label>
@@ -9,7 +9,7 @@
           ref="datetimeInput"
           v-model="form.datetime"
           type="datetime-local"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
         />
       </div>
 
@@ -20,7 +20,7 @@
         <select
           ref="vehicleInput"
           v-model="form.vehicleId"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full h-10 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
         >
           <option :value="null">— none —</option>
           <option v-for="v in vehicles" :key="v.id" :value="v.id">
@@ -37,7 +37,8 @@
           v-model.number="form.tuning"
           type="number"
           min="0"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          inputmode="numeric"
+          class="w-full h-10 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
         />
       </div>
 
@@ -79,10 +80,12 @@
           Place
         </label>
         <input
-          v-model="form.place"
+          :value="form.place"
           type="text"
+          inputmode="numeric"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          placeholder="1st"
+          placeholder="1"
+          @input="form.place = $event.target.value.replace(/[^0-9]/g, '')"
         />
       </div>
 
@@ -91,10 +94,12 @@
           Lap time
         </label>
         <input
-          v-model="form.lapTime"
+          :value="form.lapTime"
           type="text"
+          inputmode="decimal"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
           placeholder="1:23.456"
+          @input="form.lapTime = $event.target.value.replace(/[^0-9:.]/g, '')"
         />
       </div>
 
@@ -103,10 +108,12 @@
           Total time (optional)
         </label>
         <input
-          v-model="form.totalTime"
+          :value="form.totalTime"
           type="text"
+          inputmode="decimal"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
           placeholder="6:12.000"
+          @input="form.totalTime = $event.target.value.replace(/[^0-9:.]/g, '')"
         />
       </div>
 
