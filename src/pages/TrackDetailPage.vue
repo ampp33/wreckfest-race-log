@@ -14,7 +14,7 @@
             v-if="track"
             :src="trackImage"
             :alt="track.name"
-            class="w-32 h-24 sm:w-40 sm:h-32 object-contain bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 shrink-0"
+            class="w-auto h-24 sm:h-32 object-cover rounded border border-slate-200 dark:border-slate-700 shrink-0"
           />
           <div class="min-w-0">
             <router-link to="/" class="text-xs text-slate-500 hover:text-brand">← All tracks</router-link>
@@ -87,14 +87,6 @@
             </tr>
           </thead>
           <tbody>
-            <InlineAddRaceRow
-              v-if="addingRow"
-              :vehicles="vehicles"
-              :defaults="addRowDefaults"
-              :saving="saving"
-              @submit="onCreateRace"
-              @cancel="addingRow = false"
-            />
             <RaceRow
               v-for="race in races"
               :key="race.id"
@@ -105,7 +97,7 @@
               @update="onUpdateRace"
               @delete="onDeleteRace"
             />
-            <tr v-if="!races.length && !addingRow">
+            <tr v-if="!races.length">
               <td colspan="9" class="py-6 text-center text-sm text-slate-500">
                 No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
               </td>
@@ -119,38 +111,31 @@
 
 <script>
 import RaceRow from '../components/RaceRow.vue'
-import InlineAddRaceRow from '../components/InlineAddRaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
-import {
-  getRacesByVariation,
-  createRace,
-  updateRace,
-  deleteRace
-} from '../services/raceService.js'
+import { getRacesByVariation, updateRace, deleteRace } from '../services/raceService.js'
 import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
 import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
+import { openQuickAdd, quickAddStore } from '../stores/quickAddStore.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, InlineAddRaceRow, LapTimeChart, LapTimeInput },
+  components: { RaceRow, LapTimeChart, LapTimeInput },
   data() {
     return {
       loading: true,
-      saving: false,
       track: null,
       currentVariation: null,
       vehicles: [],
       races: [],
       goal: null,
       goalInputMs: null,
-      addingRow: false
+      quickAddStore
     }
   },
   computed: {
@@ -169,12 +154,6 @@ export default {
     },
     pbDisplay() {
       return this.personalBestMs != null ? formatMsToTime(this.personalBestMs) : '—'
-    },
-    addRowDefaults() {
-      return {
-        vehicleId: prefsStore.lastVehicleId,
-        tuning: prefsStore.lastTuning
-      }
     }
   },
   watch: {
@@ -183,6 +162,12 @@ export default {
         this.loadAll()
       },
       immediate: false
+    },
+    'quickAddStore.open'(isOpen) {
+      if (!isOpen && this._quickAddOpenedHere) {
+        this._quickAddOpenedHere = false
+        this.loadRaces()
+      }
     }
   },
   async mounted() {
@@ -221,27 +206,8 @@ export default {
       this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
     },
     onAddRow() {
-      this.addingRow = true
-    },
-    async onCreateRace(payload) {
-      const userId = authStore.user && authStore.user.id
-      this.saving = true
-      try {
-        const created = await createRace(
-          { ...payload, track_variation_id: this.currentVariation.id },
-          userId
-        )
-        this.races.unshift(created)
-        prefsStore.lastVehicleId = created.vehicle_id
-        prefsStore.lastTuning = created.tuning
-        prefsStore.lastTrackVariationId = created.track_variation_id
-        this.addingRow = false
-        pushToast('Race added', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to add race', 'error')
-      } finally {
-        this.saving = false
-      }
+      this._quickAddOpenedHere = true
+      openQuickAdd(this.currentVariation.id)
     },
     async onUpdateRace({ id, patch }) {
       try {

@@ -5,7 +5,8 @@
         <h1 class="text-2xl font-bold">Tracks</h1>
         <p class="text-sm text-slate-500">
           Pick a track to view its variations and race history.
-          Press <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">Q</kbd> for quick add.
+          Press <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">Q</kbd> for quick add,
+          and <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">T</kbd> for a quick track search.
         </p>
       </div>
       <div class="flex items-center gap-2">
