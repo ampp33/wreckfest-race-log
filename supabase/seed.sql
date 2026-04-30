@@ -1,5 +1,5 @@
 -- =====================================================================
--- Wreckfest Race Tracker — full catalogue seed
+-- Wreckfest Race Log — full catalogue seed
 -- Generated from https://wreckfest.fandom.com/wiki/Tracks
 --                  https://wreckfest.fandom.com/wiki/Vehicles
 -- Idempotent: safe to re-run. Existing rows are kept.

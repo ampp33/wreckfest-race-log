@@ -1,5 +1,5 @@
 -- =====================================================================
--- Wreckfest Race Tracker — Supabase schema
+-- Wreckfest Race Log — Supabase schema
 -- Run this in the Supabase SQL editor on a fresh project.
 -- =====================================================================
 

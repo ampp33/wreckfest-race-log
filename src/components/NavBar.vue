@@ -6,7 +6,7 @@
         class="flex items-center gap-2 font-bold text-lg text-brand"
       >
         <span aria-hidden="true">🏁</span>
-        <span>Wreckfest Tracker</span>
+        <span>Wreckfest Race Log</span>
       </router-link>
 
       <div class="flex items-center gap-2 sm:gap-4 text-sm">
