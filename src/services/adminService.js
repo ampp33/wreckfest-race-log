@@ -12,6 +12,12 @@ export async function getAllUsers() {
   return data ?? []
 }
 
+export async function getUserGrowth() {
+  const { data, error } = await supabase.rpc('get_user_growth')
+  if (error) throw error
+  return data ?? []
+}
+
 export async function setUserRole(userId, role) {
   const { error } = await supabase.rpc('set_user_role', {
     target_user_id: userId,

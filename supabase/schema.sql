@@ -362,6 +362,30 @@ begin
 end;
 $$;
 
+-- Returns cumulative user count per day for the last 30 days — admin only.
+create or replace function public.get_user_growth()
+returns table(day date, user_count bigint)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        gs::date as day,
+        (select count(*) from auth.users u where u.created_at::date <= gs::date) as user_count
+    from generate_series(
+        current_date - interval '29 days',
+        current_date,
+        interval '1 day'
+    ) as gs
+    order by gs asc;
+end;
+$$;
+
 -- Sets the role of a target user — admin only.
 -- Replaces all current role assignments with the single new role.
 create or replace function public.set_user_role(target_user_id uuid, new_role text)
