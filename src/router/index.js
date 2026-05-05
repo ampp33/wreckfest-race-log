@@ -5,6 +5,8 @@ import TrackListPage from '../pages/TrackListPage.vue'
 import TrackDetailPage from '../pages/TrackDetailPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
 import LoginPage from '../pages/LoginPage.vue'
+import DiagnosticsPage from '../pages/DiagnosticsPage.vue'
+import UserRolesPage from '../pages/UserRolesPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
@@ -15,6 +17,8 @@ const routes = [
     component: TrackDetailPage
   },
   { path: '/stats', name: 'stats', component: StatsPage },
+  { path: '/admin/diagnostics', name: 'admin-diagnostics', component: DiagnosticsPage, meta: { requiresAdmin: true } },
+  { path: '/admin/users', name: 'admin-users', component: UserRolesPage, meta: { requiresAdmin: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -29,6 +33,9 @@ router.beforeEach(async to => {
   if (to.meta.public) return true
   if (!authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    return { name: 'tracks' }
   }
   return true
 })

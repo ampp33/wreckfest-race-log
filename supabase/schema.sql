@@ -195,3 +195,210 @@ create policy "variation_annotations delete own"
 -- Catalogue seed (tracks, variations, vehicles) lives in supabase/seed.sql.
 -- Run that file separately after this one. It is idempotent.
 -- =====================================================================
+
+-- =====================================================================
+-- Admin: roles catalogue and user_roles joining table
+-- (No user_profiles table — email is read directly from auth.users
+--  inside security definer RPCs.)
+-- =====================================================================
+
+-- Clean up previous schema versions that had user_profiles.
+drop table if exists public.user_roles cascade;
+drop table if exists public.user_profiles cascade;
+
+-- Roles catalogue: the set of valid roles.
+create table if not exists public.roles (
+    id          uuid primary key default gen_random_uuid(),
+    name        text not null unique,
+    description text,
+    created_at  timestamptz not null default now()
+);
+
+-- Seed the two built-in roles (idempotent).
+insert into public.roles (name, description) values
+    ('user',  'Standard user'),
+    ('admin', 'Administrator with access to admin pages')
+on conflict (name) do nothing;
+
+alter table public.roles enable row level security;
+
+drop policy if exists "roles readable by authenticated" on public.roles;
+create policy "roles readable by authenticated"
+    on public.roles for select
+    to authenticated
+    using (true);
+
+-- User roles: links auth.users directly to roles.
+create table if not exists public.user_roles (
+    user_id    uuid not null references auth.users(id) on delete cascade,
+    role_id    uuid not null references public.roles(id) on delete cascade,
+    created_at timestamptz not null default now(),
+    primary key (user_id, role_id)
+);
+
+alter table public.user_roles enable row level security;
+
+-- Each user can read their own role assignments.
+drop policy if exists "user_roles select own" on public.user_roles;
+create policy "user_roles select own"
+    on public.user_roles for select
+    to authenticated
+    using (auth.uid() = user_id);
+
+-- Assign the 'user' role to new sign-ups automatically.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    insert into public.user_roles (user_id, role_id)
+    select new.id, r.id from public.roles r where r.name = 'user'
+    on conflict (user_id, role_id) do nothing;
+    return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+    after insert on auth.users
+    for each row execute procedure public.handle_new_user();
+
+-- Backfill: assign 'user' role to any existing users without a role assignment.
+insert into public.user_roles (user_id, role_id)
+select u.id, r.id
+from auth.users u
+cross join public.roles r
+where r.name = 'user'
+  and not exists (
+      select 1 from public.user_roles ur where ur.user_id = u.id
+  )
+on conflict (user_id, role_id) do nothing;
+
+-- =====================================================================
+-- Admin RPC functions (security definer — bypass RLS with role check)
+-- =====================================================================
+
+-- Internal helper: true if the given user holds the admin role.
+create or replace function public.is_admin(uid uuid)
+returns boolean
+language sql
+security definer stable set search_path = public
+as $$
+    select exists (
+        select 1
+        from public.user_roles ur
+        join public.roles r on r.id = ur.role_id
+        where ur.user_id = uid and r.name = 'admin'
+    )
+$$;
+
+-- Returns aggregate diagnostics — admin only.
+create or replace function public.get_diagnostics()
+returns json
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    v_total_users int;
+    v_top_users   json;
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    select count(*) into v_total_users from auth.users;
+
+    select json_agg(t) into v_top_users
+    from (
+        select
+            u.email,
+            count(distinct rc.id)  as race_count,
+            count(distinct g.id)   as goal_count,
+            count(distinct a.id)   as annotation_count,
+            count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity
+        from auth.users u
+        left join public.races                 rc on rc.user_id = u.id
+        left join public.goals                 g  on g.user_id  = u.id
+        left join public.variation_annotations a  on a.user_id  = u.id
+        group by u.id, u.email
+        order by total_activity desc
+        limit 5
+    ) t;
+
+    return json_build_object(
+        'total_users', v_total_users,
+        'top_users',   coalesce(v_top_users, '[]'::json)
+    );
+end;
+$$;
+
+-- Returns all users with their current role name — admin only.
+create or replace function public.get_all_users_with_roles()
+returns table(id uuid, email text, role text, created_at timestamptz)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        u.id::uuid,
+        u.email::text,
+        coalesce(
+            (select r.name
+             from public.user_roles ur
+             join public.roles r on r.id = ur.role_id
+             where ur.user_id = u.id
+             limit 1),
+            'user'
+        )::text as role,
+        u.created_at::timestamptz
+    from auth.users u
+    order by u.created_at asc;
+end;
+$$;
+
+-- Sets the role of a target user — admin only.
+-- Replaces all current role assignments with the single new role.
+create or replace function public.set_user_role(target_user_id uuid, new_role text)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    v_role_id uuid;
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    select id into v_role_id from public.roles where name = new_role;
+    if v_role_id is null then
+        raise exception 'Unknown role: %', new_role;
+    end if;
+
+    -- Prevent demoting the last admin.
+    if new_role <> 'admin' then
+        if (
+            select count(*)
+            from public.user_roles ur
+            join public.roles r on r.id = ur.role_id
+            where r.name = 'admin' and ur.user_id = target_user_id
+        ) > 0 and (
+            select count(*)
+            from public.user_roles ur
+            join public.roles r on r.id = ur.role_id
+            where r.name = 'admin'
+        ) = 1 then
+            raise exception 'Cannot remove the last admin';
+        end if;
+    end if;
+
+    delete from public.user_roles where user_id = target_user_id;
+    insert into public.user_roles (user_id, role_id) values (target_user_id, v_role_id);
+end;
+$$;
