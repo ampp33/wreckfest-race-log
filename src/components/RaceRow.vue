@@ -13,13 +13,31 @@
       <td class="py-2 pr-3 text-slate-500 truncate max-w-[18ch]" :title="race.notes || ''">
         {{ race.notes || '' }}
       </td>
-      <td class="py-2 pr-3 text-right space-x-2 whitespace-nowrap">
-        <button class="text-brand hover:underline" @click="editing = true">Edit</button>
-        <button class="text-slate-500 hover:text-red-600" @click="onDelete">Delete</button>
+      <td class="py-2 pr-3 text-right whitespace-nowrap">
+        <div class="inline-flex items-center gap-1">
+          <button
+            class="p-1 rounded text-slate-400 hover:text-brand hover:bg-slate-100 dark:hover:bg-slate-700"
+            title="Edit"
+            @click="editing = true"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+            </svg>
+          </button>
+          <button
+            class="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+            title="Delete"
+            @click="onDelete"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </td>
     </template>
 
-    <td v-else colspan="9" class="py-3">
+    <td v-else colspan="9" class="p-5 bg-slate-200 dark:bg-slate-800">
       <RaceForm
         :vehicles="vehicles"
         :defaults="editDefaults"

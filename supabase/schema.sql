@@ -313,6 +313,7 @@ begin
     from (
         select
             u.email,
+            u.created_at,
             count(distinct rc.id)  as race_count,
             count(distinct g.id)   as goal_count,
             count(distinct a.id)   as annotation_count,
@@ -321,7 +322,7 @@ begin
         left join public.races                 rc on rc.user_id = u.id
         left join public.goals                 g  on g.user_id  = u.id
         left join public.variation_annotations a  on a.user_id  = u.id
-        group by u.id, u.email
+        group by u.id, u.email, u.created_at
         order by total_activity desc
         limit 5
     ) t;

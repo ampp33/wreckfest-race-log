@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="qa.open"
-    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/50 p-2 sm:p-4 overflow-hidden"
+    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-hidden"
     @mousedown.self="onClose"
     @keydown.esc.stop="onClose"
   >

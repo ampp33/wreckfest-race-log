@@ -61,7 +61,7 @@
     <teleport to="body">
       <div
         v-if="dialog.open"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         @click.self="closeDialog"
       >
         <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 shadow-xl w-72 p-5">

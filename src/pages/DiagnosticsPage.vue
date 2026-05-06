@@ -35,6 +35,7 @@
           <thead>
             <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200 dark:border-slate-700">
               <th class="pb-2 font-medium">User</th>
+              <th class="pb-2 font-medium">Signed up</th>
               <th class="pb-2 font-medium text-right">Races</th>
               <th class="pb-2 font-medium text-right">Goals</th>
               <th class="pb-2 font-medium text-right">Annotations</th>
@@ -47,6 +48,7 @@
                 <span class="text-slate-400 mr-2">{{ i + 1 }}.</span>
                 {{ user.email }}
               </td>
+              <td class="py-2 pr-4 text-slate-500 text-xs whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.race_count }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.goal_count }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.annotation_count }}</td>
@@ -116,6 +118,10 @@ export default {
     this.chart?.destroy()
   },
   methods: {
+    formatDate(iso) {
+      if (!iso) return '—'
+      return new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+    },
     renderChart() {
       if (!this.$refs.growthCanvas || !this.growthData.length) return
       this.chart?.destroy()

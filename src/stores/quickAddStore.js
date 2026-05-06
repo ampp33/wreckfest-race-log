@@ -13,7 +13,9 @@ export const quickAddStore = reactive({
 let _onRaceSaved = null
 
 export function openQuickAdd(prefillVariationId = null) {
-  quickAddStore.prefillVariationId = prefillVariationId ?? quickAddStore.currentPageVariationId
+  // uncomment the end of this line if you want quick add on a race
+  // page to autofill the track
+  quickAddStore.prefillVariationId = prefillVariationId// ?? quickAddStore.currentPageVariationId
   quickAddStore.open = true
 }
 

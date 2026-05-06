@@ -7,6 +7,7 @@ import StatsPage from '../pages/StatsPage.vue'
 import LoginPage from '../pages/LoginPage.vue'
 import DiagnosticsPage from '../pages/DiagnosticsPage.vue'
 import UserRolesPage from '../pages/UserRolesPage.vue'
+import RacesPage from '../pages/RacesPage.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
@@ -16,6 +17,7 @@ const routes = [
     name: 'track-detail',
     component: TrackDetailPage
   },
+  { path: '/races', name: 'races', component: RacesPage },
   { path: '/stats', name: 'stats', component: StatsPage },
   { path: '/admin/diagnostics', name: 'admin-diagnostics', component: DiagnosticsPage, meta: { requiresAdmin: true } },
   { path: '/admin/users', name: 'admin-users', component: UserRolesPage, meta: { requiresAdmin: true } },

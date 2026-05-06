@@ -19,6 +19,13 @@
           Tracks
         </router-link>
         <router-link
+          to="/races"
+          class="hover:text-brand"
+          active-class="text-brand font-semibold"
+        >
+          Races
+        </router-link>
+        <router-link
           to="/stats"
           class="hover:text-brand"
           active-class="text-brand font-semibold"

@@ -43,7 +43,7 @@
         </div>
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+      <!-- <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
         <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Recent Races - last 24 hours ({{ stats.recentRaces.length }})</h2>
         <p v-if="!stats.recentRaces.length" class="text-sm text-slate-500 mt-1">
           No races in the past 24 hours.
@@ -82,7 +82,7 @@
             </div>
           </li>
         </ul>
-      </div>
+      </div> -->
 
       <RaceActivityChart
         :hourly-counts="stats.raceCounts.hourlyCounts"
