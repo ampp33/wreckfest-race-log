@@ -31,7 +31,8 @@
         <p v-if="!data.top_users || !data.top_users.length" class="text-sm text-slate-500">
           No activity yet.
         </p>
-        <table v-else class="w-full text-sm">
+        <div v-else class="overflow-x-auto">
+        <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200 dark:border-slate-700">
               <th class="pb-2 font-medium">User</th>
@@ -56,6 +57,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   </div>
