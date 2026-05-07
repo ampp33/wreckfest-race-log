@@ -1,14 +1,16 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 sm:p-8 w-full max-w-md border border-slate-200 dark:border-slate-700">
-      <h1 class="text-2xl font-bold text-brand mb-1">🏁 Wreckfest Race Log</h1>
-      <p class="text-sm text-slate-500 mb-6">
+  <div class="min-h-screen flex items-center justify-center px-6">
+    <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-6 sm:p-8 w-full max-w-md">
+      <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-3">
+        🏁 Wreckfest Race <em class="signal">Log</em>
+      </h1>
+      <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
         {{ mode === 'signin' ? 'Sign in to log your races.' : 'Create an account to start logging races.' }}
       </p>
 
       <form @submit.prevent="onSubmit" class="space-y-3">
         <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
             Email
           </label>
           <input
@@ -16,13 +18,13 @@
             type="email"
             required
             autocomplete="email"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
             Password
           </label>
           <input
@@ -31,7 +33,7 @@
             required
             minlength="6"
             :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
             placeholder="••••••••"
           />
         </div>
@@ -39,17 +41,17 @@
         <button
           type="submit"
           :disabled="submitting"
-          class="w-full px-4 py-2 bg-brand hover:bg-brand-dark text-white rounded font-semibold disabled:opacity-60"
+          class="w-full font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-60"
         >
           {{ submitButtonLabel }}
         </button>
       </form>
 
-      <p class="mt-4 text-sm text-slate-500 text-center">
+      <p class="mt-4 font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark text-center">
         {{ mode === 'signin' ? "Don't have an account?" : 'Already have an account?' }}
         <button
           type="button"
-          class="text-brand hover:underline ml-1"
+          class="text-brand-accent hover:underline ml-1"
           @click="toggleMode"
         >
           {{ mode === 'signin' ? 'Create one' : 'Sign in' }}

@@ -6,18 +6,18 @@
     @keydown.esc.stop="onClose"
   >
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain"
+      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-add-title"
     >
       <div class="flex items-center justify-between mb-4">
-        <h2 id="quick-add-title" class="text-lg font-semibold">
-          Quick add race
+        <h2 id="quick-add-title" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+          Quick add <em class="signal">race</em>
         </h2>
         <button
           type="button"
-          class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          class="text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
           aria-label="Close"
           @click="onClose"
         >
@@ -25,7 +25,7 @@
         </button>
       </div>
 
-      <p v-if="loadingTracks" class="text-sm text-slate-500">Loading tracks…</p>
+      <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
 
       <div v-else-if="!chosen">
         <TrackVariationPicker :tracks="tracks" @select="onTrackSelected" />
@@ -41,13 +41,13 @@
               loading="lazy"
             />
             <div class="min-w-0">
-              <div class="font-semibold truncate">{{ chosen.track.name }}</div>
-              <div class="text-slate-500 text-xs truncate">{{ chosen.variation.name }}</div>
+              <div class="font-semibold truncate text-brand-text dark:text-brand-text-dark">{{ chosen.track.name }}</div>
+              <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark truncate">{{ chosen.variation.name }}</div>
             </div>
           </div>
           <button
             type="button"
-            class="text-xs text-brand hover:underline shrink-0"
+            class="text-xs text-brand-accent hover:underline shrink-0"
             @click="resetChoice"
           >
             Change track

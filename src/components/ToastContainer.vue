@@ -3,7 +3,7 @@
     <div
       v-for="t in toasts.items"
       :key="t.id"
-      class="pointer-events-auto px-4 py-2 rounded shadow text-sm text-white"
+      class="pointer-events-auto px-4 py-2 rounded shadow font-body text-sm text-white"
       :class="toastClass(t.type)"
       role="status"
     >
@@ -22,9 +22,9 @@ export default {
   },
   methods: {
     toastClass(type) {
-      if (type === 'error') return 'bg-red-600'
+      if (type === 'error') return 'bg-brand-accent'
       if (type === 'success') return 'bg-green-600'
-      return 'bg-slate-700'
+      return 'bg-brand-secondary dark:bg-brand-secondary-dark'
     }
   }
 }

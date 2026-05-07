@@ -1,9 +1,9 @@
 <template>
   <div
     v-if="hasData"
-    class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4 mb-6"
+    class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 mb-6"
   >
-    <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+    <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark mb-2">
       Lap Times Over Time
     </div>
     <div class="relative h-64">
@@ -30,7 +30,7 @@ import { prefsStore } from '../stores/prefsStore.js'
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, Filler)
 
 const PALETTE = [
-  '#ef4444', // brand red
+  '#C41E1E', // brand accent
   '#3b82f6', // blue
   '#22c55e', // green
   '#f59e0b', // amber
@@ -144,8 +144,8 @@ export default {
 
       const dark = this.isDark
       const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#94a3b8' : '#64748b'
-      const legendColor = dark ? '#cbd5e1' : '#475569'
+      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
+      const legendColor = dark ? '#F5F4F0' : '#444441'
 
       this.chart = markRaw(new Chart(this.$refs.canvas, {
         type: 'line',
@@ -169,11 +169,11 @@ export default {
               }
             },
             tooltip: {
-              backgroundColor: dark ? '#1e293b' : '#fff',
-              borderColor: dark ? '#334155' : '#e2e8f0',
+              backgroundColor: dark ? '#222220' : '#fff',
+              borderColor: dark ? '#383836' : '#C8C6BF',
               borderWidth: 1,
-              titleColor: dark ? '#e2e8f0' : '#1e293b',
-              bodyColor: dark ? '#94a3b8' : '#475569',
+              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
+              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
               padding: 10,
               cornerRadius: 8,
               callbacks: {

@@ -1,42 +1,44 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-6">
-    <h1 class="text-2xl font-bold mb-1">User Roles</h1>
-    <p class="text-sm text-slate-500 mb-6">Manage admin access for registered users.</p>
+  <div class="max-w-4xl mx-auto px-6 py-6">
+    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+      User <em class="signal">Roles</em>
+    </h1>
+    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage admin access for registered users.</p>
 
-    <p v-if="loading" class="text-sm text-slate-500">Loading…</p>
+    <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-    <div v-else class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
-      <p v-if="!users.length" class="text-sm text-slate-500">No users found.</p>
+    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+      <p v-if="!users.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No users found.</p>
       <table v-else class="w-full text-sm">
         <thead>
-          <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200 dark:border-slate-700">
+          <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
             <th class="pb-2 font-medium">Email</th>
             <th class="pb-2 font-medium">Joined</th>
             <th class="pb-2 font-medium">Role</th>
             <th class="pb-2 font-medium text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+        <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
           <tr
             v-for="user in users"
             :key="user.id"
-            class="hover:bg-slate-50 dark:hover:bg-slate-700/40"
+            class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
           >
             <td class="py-2 pr-4">
               {{ user.email }}
-              <span v-if="user.id === currentUserId" class="ml-1 text-xs text-slate-400">(you)</span>
+              <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
             </td>
-            <td class="py-2 pr-4 text-slate-500 whitespace-nowrap">
+            <td class="py-2 pr-4 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
               {{ formatDate(user.created_at) }}
             </td>
             <td class="py-2 pr-4">
               <span
                 class="px-2 py-0.5 rounded text-xs font-medium"
                 :class="user.role === 'admin'
-                  ? 'bg-brand/10 text-brand'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'"
+                  ? 'bg-brand-accent/10 text-brand-accent'
+                  : 'bg-brand-bg dark:bg-brand-bg-dark text-brand-secondary dark:text-brand-secondary-dark'"
               >
                 {{ user.role }}
               </span>
@@ -45,12 +47,12 @@
               <button
                 v-if="user.id !== currentUserId"
                 type="button"
-                class="text-xs text-brand hover:underline"
+                class="text-xs text-brand-accent hover:underline"
                 @click="openDialog(user)"
               >
                 Change role
               </button>
-              <span v-else class="text-xs text-slate-400">—</span>
+              <span v-else class="text-xs text-brand-muted dark:text-brand-muted-dark">—</span>
             </td>
           </tr>
         </tbody>
@@ -64,9 +66,11 @@
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
         @click.self="closeDialog"
       >
-        <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 shadow-xl w-72 p-5">
-          <h2 class="font-semibold mb-1">Change role</h2>
-          <p class="text-xs text-slate-500 mb-4 break-all">{{ dialog.user?.email }}</p>
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark shadow-xl w-72 p-5">
+          <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-1">
+            Change <em class="signal">role</em>
+          </h2>
+          <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4 break-all">{{ dialog.user?.email }}</p>
 
           <div class="space-y-2 mb-5">
             <label
@@ -78,11 +82,11 @@
                 type="radio"
                 :value="role.value"
                 v-model="dialog.selectedRole"
-                class="mt-0.5 accent-brand"
+                class="mt-0.5 accent-brand-accent"
               />
               <span>
-                <span class="block text-sm font-medium">{{ role.label }}</span>
-                <span class="block text-xs text-slate-500">{{ role.description }}</span>
+                <span class="block text-sm font-medium text-brand-text dark:text-brand-text-dark">{{ role.label }}</span>
+                <span class="block font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">{{ role.description }}</span>
               </span>
             </label>
           </div>
@@ -90,14 +94,14 @@
           <div class="flex justify-end gap-2">
             <button
               type="button"
-              class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+              class="px-3 py-1.5 text-sm rounded border border-brand-border dark:border-brand-border-dark hover:bg-brand-bg dark:hover:bg-brand-bg-dark"
               @click="closeDialog"
             >
               Cancel
             </button>
             <button
               type="button"
-              class="px-3 py-1.5 text-sm rounded bg-brand text-white hover:opacity-90 disabled:opacity-50"
+              class="font-display font-black uppercase tracking-widest bg-brand-accent text-white px-4 py-1.5 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-50 text-sm"
               :disabled="saving || dialog.selectedRole === dialog.user?.role"
               @click="confirmChange"
             >

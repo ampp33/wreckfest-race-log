@@ -26,7 +26,7 @@
       <template v-if="!editMode">
         <button
           type="button"
-          class="p-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded shadow text-slate-600 dark:text-slate-300 hover:text-brand transition-colors"
+          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent transition-colors"
           title="Edit annotations"
           @click.stop="$emit('toggle-edit')"
         >
@@ -38,7 +38,7 @@
       <template v-else>
         <button
           type="button"
-          class="p-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded shadow text-slate-500 hover:text-red-500 transition-colors"
+          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-muted dark:text-brand-muted-dark hover:text-red-500 transition-colors"
           title="Discard changes"
           @click.stop="$emit('discard')"
         >
@@ -48,7 +48,7 @@
         </button>
         <button
           type="button"
-          class="p-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded shadow text-slate-500 hover:text-green-600 transition-colors"
+          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-muted dark:text-brand-muted-dark hover:text-green-600 transition-colors"
           title="Save annotations"
           @click.stop="$emit('save')"
         >
@@ -66,7 +66,7 @@
       class="absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all cursor-pointer ring-2"
       :class="ann.id === selectedId
         ? 'bg-blue-500/85 ring-blue-300 scale-110'
-        : 'bg-red-500/75 ring-red-300/50 hover:bg-red-500 hover:scale-105'"
+        : 'bg-brand-accent/75 ring-brand-accent/50 hover:bg-brand-accent hover:scale-105'"
       :style="{ left: ann.x + '%', top: ann.y + '%' }"
       @click.stop="$emit('select', ann.id)"
     >

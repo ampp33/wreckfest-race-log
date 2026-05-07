@@ -1,12 +1,14 @@
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-6">
+  <div class="max-w-6xl mx-auto px-6 py-6">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
       <div>
-        <h1 class="text-2xl font-bold">Tracks</h1>
-        <p class="text-sm text-slate-500">
+        <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+          <em class="signal">Tracks</em>
+        </h1>
+        <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-1">
           Pick a track to view its variations and race history.
-          Press <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">Q</kbd> for quick add,
-          and <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-gray-700 rounded">T</kbd> for a quick track search.
+          Press <kbd class="px-1 py-0.5 text-xs bg-brand-surface dark:bg-brand-surface-dark rounded">Q</kbd> for quick add,
+          and <kbd class="px-1 py-0.5 text-xs bg-brand-surface dark:bg-brand-surface-dark rounded">T</kbd> for a quick track search.
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -14,24 +16,24 @@
           v-model="search"
           type="text"
           placeholder="Search tracks..."
-          class="w-full sm:w-64 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+          class="w-full sm:w-64 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
         />
         <button
           type="button"
-          class="px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+          class="px-3 py-2 text-xs border border-brand-border dark:border-brand-border-dark rounded hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
           @click="onExport"
         >
           Export
         </button>
-        <label class="px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
+        <label class="px-3 py-2 text-xs border border-brand-border dark:border-brand-border-dark rounded hover:bg-brand-surface dark:hover:bg-brand-surface-dark cursor-pointer">
           Import
           <input type="file" accept="application/json" class="hidden" @change="onImport" />
         </label>
       </div>
     </div>
 
-    <p v-if="loading" class="text-sm text-slate-500">Loading…</p>
-    <p v-else-if="!filteredTracks.length" class="text-sm text-slate-500">
+    <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
+    <p v-else-if="!filteredTracks.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
       No tracks found.
     </p>
     <div

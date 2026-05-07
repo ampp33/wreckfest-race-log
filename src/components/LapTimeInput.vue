@@ -1,9 +1,9 @@
 <template>
   <div
-    class="flex items-center rounded border px-2 py-1.5 gap-px cursor-text w-full bg-white dark:bg-gray-700"
+    class="flex items-center rounded border px-2 py-1.5 gap-px cursor-text w-full bg-brand-bg dark:bg-brand-surface-dark"
     :class="focused
-      ? 'border-brand ring-1 ring-brand'
-      : 'border-slate-300 dark:border-slate-600'"
+      ? 'border-brand-accent ring-1 ring-brand-accent'
+      : 'border-brand-border dark:border-brand-border-dark'"
     @click.self="focusActive"
   >
     <input
@@ -17,7 +17,7 @@
       @focus="onFocus"
       @blur="onBlur"
     />
-    <span class="text-slate-400 select-none">:</span>
+    <span class="text-brand-muted dark:text-brand-muted-dark select-none">:</span>
     <input
       ref="ssRef"
       v-model="ss"
@@ -29,7 +29,7 @@
       @focus="onFocus"
       @blur="onBlur"
     />
-    <span class="text-slate-400 select-none">.</span>
+    <span class="text-brand-muted dark:text-brand-muted-dark select-none">.</span>
     <input
       ref="msecRef"
       v-model="msec"

@@ -1,13 +1,13 @@
 <template>
   <div>
-    <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+    <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
       Track / variation
     </label>
     <input
       ref="searchInput"
       v-model="query"
       type="text"
-      class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
+      class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
       placeholder="Type to search tracks..."
       autocomplete="off"
       @keydown.down.prevent="moveSelection(1)"
@@ -18,15 +18,15 @@
     <ul
       ref="listEl"
       v-if="filtered.length"
-      class="mt-2 max-h-56 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded divide-y divide-slate-100 dark:divide-slate-700"
+      class="mt-2 max-h-56 overflow-y-auto border border-brand-border dark:border-brand-border-dark rounded divide-y divide-brand-border dark:divide-brand-border-dark"
     >
       <li
         v-for="(item, idx) in filtered"
         :key="item.variation.id"
         class="px-3 py-2 cursor-pointer text-sm flex items-center gap-3"
         :class="idx === highlightedIndex
-          ? 'bg-brand text-white'
-          : 'hover:bg-slate-100 dark:hover:bg-slate-700'"
+          ? 'bg-brand-accent text-white'
+          : 'hover:bg-brand-surface dark:hover:bg-brand-surface-dark'"
         @mousedown.prevent="selectItem(item)"
       >
         <img
@@ -42,7 +42,7 @@
       </li>
     </ul>
 
-    <p v-else-if="query" class="mt-2 text-xs text-slate-500">
+    <p v-else-if="query" class="mt-2 font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
       No matches.
     </p>
   </div>

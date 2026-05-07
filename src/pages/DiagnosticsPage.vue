@@ -1,22 +1,24 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 py-6">
-    <h1 class="text-2xl font-bold mb-1">Diagnostics</h1>
-    <p class="text-sm text-slate-500 mb-6">Site-wide activity overview.</p>
+  <div class="max-w-4xl mx-auto px-6 py-6">
+    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+      <em class="signal">Diagnostics</em>
+    </h1>
+    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Site-wide activity overview.</p>
 
-    <p v-if="loading" class="text-sm text-slate-500">Loading…</p>
+    <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
     <div v-else class="space-y-6">
-      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4 inline-block">
-        <div class="text-xs uppercase text-slate-500">Registered users</div>
-        <div class="mt-1 text-3xl font-bold">{{ data.total_users }}</div>
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
+        <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Registered users</div>
+        <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ data.total_users }}</div>
       </div>
 
       <!-- User growth chart -->
-      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-3">
-          User growth — last 30 days
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+          User <em class="signal">growth</em> — last 30 days
         </h2>
         <div class="relative h-56">
           <canvas ref="growthCanvas"></canvas>
@@ -24,17 +26,17 @@
       </div>
 
       <!-- Top users table -->
-      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-3">
-          Top 5 users by activity
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+          Top 5 users by <em class="signal">activity</em>
         </h2>
-        <p v-if="!data.top_users || !data.top_users.length" class="text-sm text-slate-500">
+        <p v-if="!data.top_users || !data.top_users.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
           No activity yet.
         </p>
         <div v-else class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
-            <tr class="text-left text-xs uppercase text-slate-500 border-b border-slate-200 dark:border-slate-700">
+            <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
               <th class="pb-2 font-medium">User</th>
               <th class="pb-2 font-medium">Signed up</th>
               <th class="pb-2 font-medium text-right">Races</th>
@@ -43,13 +45,13 @@
               <th class="pb-2 font-medium text-right">Total</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-            <tr v-for="(user, i) in data.top_users" :key="user.email" class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+          <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+            <tr v-for="(user, i) in data.top_users" :key="user.email" class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30">
               <td class="py-2 pr-4">
-                <span class="text-slate-400 mr-2">{{ i + 1 }}.</span>
+                <span class="text-brand-muted dark:text-brand-muted-dark mr-2">{{ i + 1 }}.</span>
                 {{ user.email }}
               </td>
-              <td class="py-2 pr-4 text-slate-500 text-xs whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
+              <td class="py-2 pr-4 text-brand-muted dark:text-brand-muted-dark text-xs whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.race_count }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.goal_count }}</td>
               <td class="py-2 text-right tabular-nums">{{ user.annotation_count }}</td>
@@ -131,7 +133,7 @@ export default {
       const dark = this.isDark
       const color = '#0ea5e9'
       const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#94a3b8' : '#64748b'
+      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
 
       const labels = this.growthData.map(row =>
         new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -164,11 +166,11 @@ export default {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: dark ? '#1e293b' : '#fff',
-              borderColor: dark ? '#334155' : '#e2e8f0',
+              backgroundColor: dark ? '#222220' : '#fff',
+              borderColor: dark ? '#383836' : '#C8C6BF',
               borderWidth: 1,
-              titleColor: dark ? '#e2e8f0' : '#1e293b',
-              bodyColor: dark ? '#94a3b8' : '#475569',
+              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
+              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
               padding: 10,
               cornerRadius: 8,
               callbacks: {

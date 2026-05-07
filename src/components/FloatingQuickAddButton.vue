@@ -2,7 +2,7 @@
   <button
     v-if="visible"
     type="button"
-    class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-brand hover:bg-brand-dark text-white text-2xl font-bold shadow-lg flex items-center justify-center"
+    class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-brand-accent hover:opacity-85 active:opacity-70 text-white text-2xl font-black shadow-lg flex items-center justify-center transition-opacity"
     aria-label="Quick add race (Q)"
     title="Quick add race (Q)"
     @click="onClick"

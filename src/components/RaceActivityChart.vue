@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+  <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
     <div class="flex items-center justify-between mb-4">
-      <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Race Activity</div>
+      <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark">Race Activity</div>
       <div class="flex gap-1">
         <button
           v-for="tab in tabs"
@@ -9,8 +9,8 @@
           type="button"
           class="px-2.5 py-1 text-xs rounded font-medium transition-colors"
           :class="activeTab === tab.key
-            ? 'bg-brand text-white'
-            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'"
+            ? 'bg-brand-accent text-white'
+            : 'text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark'"
           @click="activeTab = tab.key"
         >{{ tab.label }}</button>
       </div>
@@ -152,8 +152,8 @@ export default {
 
       const dark = this.isDark
       const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#94a3b8' : '#64748b'
-      const barColor = '#ef4444'
+      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
+      const barColor = '#C41E1E'
 
       const { labels, data } = this.chartData
 
@@ -176,11 +176,11 @@ export default {
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: dark ? '#1e293b' : '#fff',
-              borderColor: dark ? '#334155' : '#e2e8f0',
+              backgroundColor: dark ? '#222220' : '#fff',
+              borderColor: dark ? '#383836' : '#C8C6BF',
               borderWidth: 1,
-              titleColor: dark ? '#e2e8f0' : '#1e293b',
-              bodyColor: dark ? '#94a3b8' : '#475569',
+              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
+              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
               padding: 10,
               cornerRadius: 8,
               callbacks: {

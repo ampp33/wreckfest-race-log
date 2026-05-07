@@ -6,18 +6,18 @@
     @keydown.esc.stop="onClose"
   >
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain"
+      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
       role="dialog"
       aria-modal="true"
       aria-labelledby="track-search-title"
     >
       <div class="flex items-center justify-between mb-4">
-        <h2 id="track-search-title" class="text-lg font-semibold">
-          Go to track
+        <h2 id="track-search-title" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+          Go to <em class="signal">track</em>
         </h2>
         <button
           type="button"
-          class="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+          class="text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
           aria-label="Close"
           @click="onClose"
         >
@@ -25,7 +25,7 @@
         </button>
       </div>
 
-      <p v-if="loadingTracks" class="text-sm text-slate-500">Loading tracks…</p>
+      <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
       <TrackVariationPicker v-else :tracks="tracks" @select="onTrackSelected" />
     </div>
   </div>

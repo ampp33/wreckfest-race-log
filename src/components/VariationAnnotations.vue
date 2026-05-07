@@ -1,15 +1,15 @@
 <template>
-  <div class="mb-4 bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700">
+  <div class="mb-4 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
     <!-- Collapsible header -->
     <button
       type="button"
-      class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-gray-700 rounded transition-colors"
+      class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-brand-bg dark:hover:bg-brand-surface-dark/70 rounded transition-colors"
       @click="collapsed = !collapsed"
     >
-      <span class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Turn Annotations</span>
+      <span class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark">Turn Annotations</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="w-4 h-4 text-slate-400 transition-transform"
+        class="w-4 h-4 text-brand-muted dark:text-brand-muted-dark transition-transform"
         :class="collapsed ? '' : 'rotate-180'"
         fill="none"
         viewBox="0 0 24 24"
@@ -21,7 +21,7 @@
     </button>
 
     <!-- Content -->
-    <div v-if="!collapsed" class="p-3 border-t border-slate-200 dark:border-slate-700">
+    <div v-if="!collapsed" class="p-3 border-t border-brand-border dark:border-brand-border-dark">
       <div class="flex flex-col md:flex-row gap-4">
         <!-- Map (left) -->
         <div class="md:w-1/2">

@@ -2,25 +2,25 @@
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2 min-w-0 overflow-hidden">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Date / time
         </label>
         <input
           ref="datetimeInput"
           v-model="form.datetime"
           type="datetime-local"
-          class="w-full min-w-0 max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full min-w-0 max-w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
         />
       </div>
 
       <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Vehicle
         </label>
         <select
           ref="vehicleInput"
           v-model="form.vehicleId"
-          class="w-full h-10 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
         >
           <option :value="null">— none —</option>
           <option v-for="v in vehicles" :key="v.id" :value="v.id">
@@ -30,7 +30,7 @@
       </div>
 
       <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Tuning
         </label>
         <input
@@ -38,15 +38,15 @@
           type="number"
           min="0"
           inputmode="numeric"
-          class="w-full h-10 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
         />
       </div>
 
-      <div class="col-span-2 rounded bg-slate-100 dark:bg-slate-900 px-3 py-1 space-y-1">
+      <div class="col-span-2 rounded bg-brand-surface dark:bg-brand-bg-dark px-3 py-1 space-y-1">
         <div v-for="(cfg, i) in tuningSliderConfig" :key="i">
-          <div class="text-xs font-bold uppercase text-slate-800 dark:text-white tracking-widest mb-0 mt-3">{{ cfg.label }}</div>
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark mb-0 mt-3">{{ cfg.label }}</div>
           <div class="relative flex items-center">
-            <div class="absolute inset-x-0 h-px bg-slate-400 dark:bg-slate-500" />
+            <div class="absolute inset-x-0 h-px bg-brand-border dark:bg-brand-border-dark" />
             <div class="relative flex justify-between w-full">
               <div
                 v-for="pos in 5"
@@ -61,13 +61,13 @@
                 <span
                   class="w-5 h-5 rounded-full border-2 transition-colors pointer-events-none"
                   :class="sliders[i] === pos
-                    ? 'bg-slate-800 border-slate-800 dark:bg-white dark:border-white'
-                    : 'bg-slate-300 border-slate-400 dark:bg-slate-700 dark:border-slate-500 group-hover:border-slate-500 group-hover:bg-slate-400 dark:group-hover:border-slate-300 dark:group-hover:bg-slate-500'"
+                    ? 'bg-brand-text border-brand-text dark:bg-brand-text-dark dark:border-brand-text-dark'
+                    : 'bg-brand-border border-brand-border dark:bg-brand-surface-dark dark:border-brand-border-dark group-hover:border-brand-secondary group-hover:bg-brand-muted dark:group-hover:border-brand-muted-dark dark:group-hover:bg-brand-secondary-dark'"
                 />
               </div>
             </div>
           </div>
-          <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-0 px-7">
+          <div class="flex justify-between font-body text-[11px] text-brand-muted dark:text-brand-muted-dark mt-0 px-7">
             <span class="block -translate-x-1/2">{{ cfg.left }}</span>
             <span>{{ cfg.center }}</span>
             <span class="block translate-x-1/2">{{ cfg.right }}</span>
@@ -76,42 +76,42 @@
       </div>
 
       <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Place
         </label>
         <input
           :value="form.place"
           type="text"
           inputmode="numeric"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
           placeholder="1"
           @input="form.place = $event.target.value.replace(/[^0-9]/g, '')"
         />
       </div>
 
       <div>
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Lap time
         </label>
         <LapTimeInput v-model="form.lapTimeMs" />
       </div>
 
       <div class="col-span-2">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Total time (optional)
         </label>
         <LapTimeInput v-model="form.totalTimeMs" />
       </div>
 
       <div class="col-span-2">
-        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Notes (Ctrl+Enter to save)
         </label>
         <textarea
           ref="notesInput"
           v-model="form.notes"
           rows="2"
-          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 resize-none"
+          class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 resize-none"
           @input="autoExpand"
         />
       </div>
@@ -123,24 +123,16 @@
     <div class="mt-4 flex items-center justify-between gap-3">
       <button
         type="button"
-        class="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
         @click="$emit('cancel')"
       >
         Cancel (Esc)
       </button>
       <div class="flex items-center gap-2">
-        <!-- <button
-          v-if="canDuplicateLast"
-          type="button"
-          class="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
-          @click="onDuplicateLast"
-        >
-          Duplicate last
-        </button> -->
         <button
           type="submit"
           :disabled="saving"
-          class="px-4 py-2 text-sm bg-brand hover:bg-brand-dark text-white rounded font-semibold disabled:opacity-60"
+          class="font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-60"
         >
           {{ saving ? 'Saving...' : 'Save (Enter)' }}
         </button>

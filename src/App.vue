@@ -1,11 +1,11 @@
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
     <NavBar v-if="auth.isAuthenticated && !isLoginRoute" />
 
     <main class="flex-1">
       <p
         v-if="!auth.ready"
-        class="text-sm text-slate-500 px-4 py-6"
+        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark px-6 py-6"
       >
         Loading session…
       </p>

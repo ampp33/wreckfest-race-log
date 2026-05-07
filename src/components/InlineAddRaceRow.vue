@@ -1,5 +1,5 @@
 <template>
-  <tr class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-gray-900">
+  <tr class="border-b border-brand-border dark:border-brand-border-dark bg-brand-surface dark:bg-brand-bg-dark">
     <td colspan="9" class="py-3">
       <RaceForm
         :vehicles="vehicles"

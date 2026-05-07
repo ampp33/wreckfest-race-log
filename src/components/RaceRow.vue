@@ -1,22 +1,22 @@
 <template>
-  <tr class="border-b border-slate-200 dark:border-slate-700">
+  <tr class="border-b border-brand-border dark:border-brand-border-dark">
     <template v-if="!editing">
-      <td class="py-2 pl-3 pr-3 whitespace-nowrap text-slate-500">
+      <td class="py-2 pl-3 pr-3 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">
         {{ formattedDate }}
       </td>
-      <td class="py-2 pr-3">{{ vehicleName }}</td>
-      <td class="py-2 pr-3 text-center">{{ race.tuning ?? '—' }}</td>
-      <td class="py-2 pr-3 text-center">{{ race.place || '—' }}</td>
-      <td class="py-2 pr-3 font-mono">{{ formatLap }}</td>
+      <td class="py-2 pr-3 text-brand-secondary dark:text-brand-secondary-dark">{{ vehicleName }}</td>
+      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
+      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</td>
+      <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
       <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
-      <td class="py-2 pr-3 font-mono">{{ formatTotal }}</td>
-      <td class="py-2 pr-3 text-slate-500 truncate max-w-[18ch]" :title="race.notes || ''">
+      <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
+      <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark truncate max-w-[18ch]" :title="race.notes || ''">
         {{ race.notes || '' }}
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <div class="inline-flex items-center gap-1">
           <button
-            class="p-1 rounded text-slate-400 hover:text-brand hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Edit"
             @click="editing = true"
           >
@@ -25,7 +25,7 @@
             </svg>
           </button>
           <button
-            class="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Delete"
             @click="onDelete"
           >
@@ -37,7 +37,7 @@
       </td>
     </template>
 
-    <td v-else colspan="9" class="p-5 bg-slate-200 dark:bg-slate-800">
+    <td v-else colspan="9" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceForm
         :vehicles="vehicles"
         :defaults="editDefaults"
@@ -109,7 +109,7 @@ export default {
       const diff = this.race.lap_time_ms - this.goalLapTimeMs
       if (diff < 0) return 'text-green-600'
       if (diff > 0) return 'text-red-500'
-      return 'text-slate-500'
+      return 'text-brand-muted dark:text-brand-muted-dark'
     },
     editDefaults() {
       return {

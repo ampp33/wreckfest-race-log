@@ -1,34 +1,34 @@
 <template>
-  <nav class="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-slate-700">
+  <nav class="bg-brand-bg dark:bg-brand-surface-dark border-b border-brand-border dark:border-brand-border-dark">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <router-link
         to="/"
-        class="flex items-center gap-2 font-bold text-lg text-brand"
+        class="flex items-center gap-2 font-display font-black text-lg text-brand-accent"
       >
         <span aria-hidden="true">🏁</span>
         <span>Wreckfest Race Log</span>
       </router-link>
 
-      <div class="flex items-center gap-2 sm:gap-4 text-sm">
+      <div class="flex items-center gap-2 sm:gap-4 text-sm font-body">
         <router-link
           to="/"
-          class="hover:text-brand"
-          active-class="text-brand font-semibold"
-          :class="{ 'text-brand font-semibold': isTrackListRoute }"
+          class="hover:text-brand-accent"
+          active-class="text-brand-accent font-semibold"
+          :class="{ 'text-brand-accent font-semibold': isTrackListRoute }"
         >
           Tracks
         </router-link>
         <router-link
           to="/races"
-          class="hover:text-brand"
-          active-class="text-brand font-semibold"
+          class="hover:text-brand-accent"
+          active-class="text-brand-accent font-semibold"
         >
           Races
         </router-link>
         <router-link
           to="/stats"
-          class="hover:text-brand"
-          active-class="text-brand font-semibold"
+          class="hover:text-brand-accent"
+          active-class="text-brand-accent font-semibold"
         >
           Stats
         </router-link>
@@ -36,8 +36,8 @@
         <div v-if="auth.isAdmin" class="relative group">
           <button
             type="button"
-            class="flex items-center gap-1 hover:text-brand"
-            :class="{ 'text-brand font-semibold': isAdminRoute }"
+            class="flex items-center gap-1 hover:text-brand-accent"
+            :class="{ 'text-brand-accent font-semibold': isAdminRoute }"
           >
             Admin
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-px" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -45,18 +45,18 @@
             </svg>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
-            <div class="w-40 bg-white dark:bg-gray-800 border border-slate-200 dark:border-slate-700 rounded shadow-lg py-1">
+            <div class="w-40 bg-brand-bg dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark rounded shadow-lg py-1">
               <router-link
                 to="/admin/diagnostics"
-                class="block px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-                active-class="text-brand font-semibold"
+                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
+                active-class="text-brand-accent font-semibold"
               >
                 Diagnostics
               </router-link>
               <router-link
                 to="/admin/users"
-                class="block px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700"
-                active-class="text-brand font-semibold"
+                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
+                active-class="text-brand-accent font-semibold"
               >
                 Users
               </router-link>
@@ -66,7 +66,7 @@
 
         <button
           type="button"
-          class="ml-2 px-2 py-1 rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700"
+          class="ml-2 px-2 py-1 rounded border border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
           @click="onToggleDark"
           :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
         >
@@ -76,7 +76,7 @@
         <button
           v-if="auth.isAuthenticated"
           type="button"
-          class="ml-2 text-slate-500 hover:text-brand text-xs"
+          class="ml-2 text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent text-xs"
           @click="onSignOut"
         >
           Sign out
