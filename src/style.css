@@ -11,6 +11,10 @@ body,
   min-height: 100vh;
 }
 
+body {
+  overflow-x: hidden;
+}
+
 /* Disable layout-shifting transitions while still letting Tailwind's
  * `transition` utilities work where intentionally applied. The spec asks
  * for "minimal animations" in service of fast input. */
