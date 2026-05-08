@@ -8,47 +8,48 @@
     </div>
 
     <div v-else>
+      <!-- Hero banner -->
+      <img
+        v-if="track"
+        :src="trackImage"
+        :alt="track.name"
+        class="w-full h-40 sm:h-56 object-cover rounded border border-brand-border dark:border-brand-border-dark mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+        @click="openImageModal"
+      />
+
+      <!-- Track header row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-        <div class="flex gap-4 min-w-0 flex-1">
-          <img
-            v-if="track"
-            :src="trackImage"
-            :alt="track.name"
-            class="w-auto h-24 sm:h-32 object-cover rounded border border-brand-border dark:border-brand-border-dark shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
-            @click="openImageModal"
-          />
-          <div class="min-w-0">
-            <router-link to="/" class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent">← All tracks</router-link>
-            <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mt-1 truncate">
-              <em class="signal">{{ track.name }}</em>
-            </h1>
-            <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark">{{ currentVariation && currentVariation.name }}</p>
-            <div class="flex flex-wrap gap-2 mt-2">
-              <router-link
-                v-for="v in track.track_variations"
-                :key="v.id"
-                :to="`/track/${track.slug}/${v.slug}`"
-                class="flex items-center gap-2 pl-1 pr-3 py-1 text-xs rounded border"
-                :class="v.id === currentVariation.id
-                  ? 'bg-brand-accent text-white border-brand-accent'
-                  : 'border-brand-border dark:border-brand-border-dark hover:border-brand-accent'"
-              >
-                <img
-                  :src="variationImageUrl(track.slug, v.slug)"
-                  alt=""
-                  aria-hidden="true"
-                  class="w-8 h-6 object-contain bg-black rounded"
-                  loading="lazy"
-                />
-                <span>{{ v.name }}</span>
-              </router-link>
-            </div>
+        <div class="min-w-0 flex-1">
+          <router-link to="/" class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent">← All tracks</router-link>
+          <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mt-1">
+            <em class="signal">{{ track.name }}</em>
+          </h1>
+          <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p>
+          <div class="flex flex-wrap gap-2 mt-3">
+            <router-link
+              v-for="v in track.track_variations"
+              :key="v.id"
+              :to="`/track/${track.slug}/${v.slug}`"
+              class="flex items-center gap-2 pl-1 pr-3 py-1 text-xs rounded border"
+              :class="v.id === currentVariation.id
+                ? 'bg-brand-accent text-white border-brand-accent'
+                : 'border-brand-border dark:border-brand-border-dark hover:border-brand-accent'"
+            >
+              <img
+                :src="variationImageUrl(track.slug, v.slug)"
+                alt=""
+                aria-hidden="true"
+                class="w-8 h-6 object-contain bg-black rounded"
+                loading="lazy"
+              />
+              <span>{{ v.name }}</span>
+            </router-link>
           </div>
         </div>
 
         <button
           type="button"
-          class="self-start font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity shrink-0"
+          class="w-full sm:w-auto sm:self-start font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity shrink-0"
           @click="onAddRow"
         >
           + Add Race
@@ -110,8 +111,8 @@
         @save="onSaveAnnotations"
       />
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+        <div class="col-span-2 sm:col-span-1 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
           <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
           <div class="flex items-center gap-2 mt-1">
             <LapTimeInput v-model="goalInputMs" @blur="onSaveGoal" />
