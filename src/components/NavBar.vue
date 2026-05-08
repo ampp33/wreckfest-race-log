@@ -1,6 +1,6 @@
 <template>
   <nav class="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-slate-700">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
       <router-link
         to="/"
         class="flex items-center gap-2 font-bold text-lg text-brand"
@@ -9,7 +9,7 @@
         <span>Wreckfest Race Log</span>
       </router-link>
 
-      <div class="flex items-center gap-2 sm:gap-4 text-sm">
+      <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-sm">
         <router-link
           to="/"
           class="hover:text-brand"
