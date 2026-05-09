@@ -3,10 +3,9 @@
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
       <router-link
         to="/"
-        class="flex items-center gap-2 font-display font-black text-lg text-brand-accent"
+        class="font-display font-black tracking-tighter leading-none text-brand-text dark:text-brand-text-dark text-xl"
       >
-        <span aria-hidden="true">🏁</span>
-        <span>Wreckfest Race Log</span>
+        Wreckfest Race <em class="signal">Log</em>
       </router-link>
 
       <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-sm font-body">

@@ -13,18 +13,17 @@
         v-if="track"
         :src="trackImage"
         :alt="track.name"
-        class="w-full h-40 sm:h-56 object-cover rounded border border-brand-border dark:border-brand-border-dark mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+        class="w-full h-40 sm:h-56 object-cover rounded border border-brand-border dark:border-brand-border-dark mb-2 cursor-pointer hover:opacity-90 transition-opacity"
         @click="openImageModal"
       />
 
       <!-- Track header row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div class="min-w-0 flex-1">
-          <router-link to="/" class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent">← All tracks</router-link>
-          <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mt-1">
+          <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
             <em class="signal">{{ track.name }}</em>
           </h1>
-          <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p>
+          <!-- <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p> -->
           <div class="flex flex-wrap gap-2 mt-3">
             <router-link
               v-for="v in track.track_variations"

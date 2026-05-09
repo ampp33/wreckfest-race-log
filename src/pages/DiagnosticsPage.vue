@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6">
+  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
     <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       <em class="signal">Diagnostics</em>
     </h1>

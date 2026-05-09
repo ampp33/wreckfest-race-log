@@ -1,7 +1,7 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-6">
+  <div class="max-w-6xl mx-auto px-6 py-6 pb-24">
     <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
-      <em class="signal">Races</em>
+      Your <em class="signal">races</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">All of your logged races, newest first.</p>
 

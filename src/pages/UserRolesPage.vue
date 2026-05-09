@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6">
+  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
     <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       User <em class="signal">Roles</em>
     </h1>
@@ -9,15 +9,15 @@
 
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-      <p v-if="!users.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No users found.</p>
-      <table v-else class="w-full text-sm">
+    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark overflow-x-auto">
+      <p v-if="!users.length" class="p-4 font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No users found.</p>
+      <table v-else class="min-w-full text-sm">
         <thead>
           <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-            <th class="pb-2 font-medium">Email</th>
-            <th class="pb-2 font-medium">Joined</th>
-            <th class="pb-2 font-medium">Role</th>
-            <th class="pb-2 font-medium text-right">Actions</th>
+            <th class="px-4 py-2 font-medium">Email</th>
+            <th class="px-4 py-2 font-medium">Joined</th>
+            <th class="px-4 py-2 font-medium">Role</th>
+            <th class="px-4 py-2 font-medium text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
@@ -26,14 +26,14 @@
             :key="user.id"
             class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
           >
-            <td class="py-2 pr-4">
+            <td class="px-4 py-2">
               {{ user.email }}
               <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
             </td>
-            <td class="py-2 pr-4 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
+            <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
               {{ formatDate(user.created_at) }}
             </td>
-            <td class="py-2 pr-4">
+            <td class="px-4 py-2">
               <span
                 class="px-2 py-0.5 rounded text-xs font-medium"
                 :class="user.role === 'admin'
@@ -43,7 +43,7 @@
                 {{ user.role }}
               </span>
             </td>
-            <td class="py-2 text-right">
+            <td class="px-4 py-2 text-right">
               <button
                 v-if="user.id !== currentUserId"
                 type="button"
