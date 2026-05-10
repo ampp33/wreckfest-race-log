@@ -101,7 +101,7 @@ export default {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
         months.push(d)
       }
-      const labels = months.map(d => d.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }))
+      const labels = months.map(d => d.toLocaleDateString(undefined, { month: 'short' }))
       const data = months.map(d => {
         const y = d.getFullYear()
         const m = d.getMonth()
