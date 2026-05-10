@@ -427,3 +427,32 @@ begin
     insert into public.user_roles (user_id, role_id) values (target_user_id, v_role_id);
 end;
 $$;
+
+-- =====================================================================
+-- Feedback: user-submitted feedback, bugs, and suggestions.
+-- Defined after is_admin so the admin select policy can reference it.
+-- =====================================================================
+
+create table if not exists public.feedback (
+    id            uuid primary key default gen_random_uuid(),
+    user_id       uuid not null references auth.users(id) on delete cascade,
+    url           text not null,
+    feedback_text text not null,
+    created_at    timestamptz not null default now()
+);
+
+alter table public.feedback enable row level security;
+
+-- Users can insert their own feedback.
+drop policy if exists "feedback insert own" on public.feedback;
+create policy "feedback insert own"
+    on public.feedback for insert
+    to authenticated
+    with check (auth.uid() = user_id);
+
+-- Admins can read all feedback.
+drop policy if exists "feedback select admin" on public.feedback;
+create policy "feedback select admin"
+    on public.feedback for select
+    to authenticated
+    using (public.is_admin(auth.uid()));

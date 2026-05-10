@@ -14,6 +14,7 @@
 
     <QuickAddModal v-if="auth.isAuthenticated" />
     <TrackSearchModal v-if="auth.isAuthenticated" />
+    <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
   </div>
@@ -23,6 +24,7 @@
 import NavBar from './components/NavBar.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
+import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import { authStore } from './stores/authStore.js'
@@ -32,7 +34,7 @@ import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, QuickAddModal, TrackSearchModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
   data() {
     return {
       auth: authStore,
