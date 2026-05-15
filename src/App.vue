@@ -1,6 +1,7 @@
 <template>
   <div class="min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
     <NavBar v-if="auth.isAuthenticated && !isLoginRoute" />
+    <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
 
     <main class="flex-1">
       <p
@@ -22,6 +23,7 @@
 
 <script>
 import NavBar from './components/NavBar.vue'
+import WF2Banner from './components/WF2Banner.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
 import FeedbackModal from './components/FeedbackModal.vue'
@@ -34,7 +36,7 @@ import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
   data() {
     return {
       auth: authStore,
