@@ -138,6 +138,7 @@
             <tr>
               <th class="py-2 pl-3 pr-3">When</th>
               <th class="py-2 pr-3">Vehicle</th>
+              <th class="py-2 pr-3">PI</th>
               <th class="py-2 pr-3 text-center">Tune</th>
               <th class="py-2 pr-3 text-center">Place</th>
               <th class="py-2 pr-3">Lap</th>

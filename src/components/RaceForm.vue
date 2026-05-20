@@ -31,15 +31,22 @@
 
       <div>
         <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
-          Tuning
+          Performance Index (PI)
         </label>
-        <input
-          v-model.number="form.tuning"
-          type="number"
-          min="0"
-          inputmode="numeric"
-          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
-        />
+        <div class="flex gap-2">
+          <div
+            class="w-10 h-10 shrink-0 flex items-center justify-center rounded font-display font-black text-white text-base"
+            :style="{ backgroundColor: piColor }"
+          >{{ piClass }}</div>
+          <input
+            :value="form.performanceIndex"
+            type="text"
+            inputmode="numeric"
+            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+            placeholder="0"
+            @input="form.performanceIndex = $event.target.value.replace(/[^0-9]/g, '')"
+          />
+        </div>
       </div>
 
       <div class="col-span-2 rounded bg-brand-surface dark:bg-brand-bg-dark px-3 py-1 space-y-1">
@@ -77,6 +84,19 @@
 
       <div>
         <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+          Tuning
+        </label>
+        <input
+          v-model.number="form.tuning"
+          type="number"
+          min="0"
+          inputmode="numeric"
+          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+        />
+      </div>
+      
+      <div>
+        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Place
         </label>
         <input
@@ -91,12 +111,12 @@
 
       <div>
         <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
-          Lap time
+          Lap time<template v-if="goalLapTimeMs"> (🎯 {{ formatMsToTime(goalLapTimeMs) }})</template>
         </label>
         <LapTimeInput v-model="form.lapTimeMs" />
       </div>
 
-      <div class="col-span-2">
+      <div>
         <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
           Total time (optional)
         </label>
@@ -143,6 +163,8 @@
 
 <script>
 import LapTimeInput from './LapTimeInput.vue'
+import { formatMsToTime } from '../utils/timeFormat.js'
+import { piInfo } from '../utils/piInfo.js'
 
 const TUNING_SLIDER_CONFIG = [
   { label: 'Suspension',    left: 'SOFT',  center: 'STANDARD', right: 'STIFF'  },
@@ -179,6 +201,7 @@ function emptyForm() {
     place: '',
     lapTimeMs: null,
     totalTimeMs: null,
+    performanceIndex: '0',
     notes: ''
   }
 }
@@ -188,8 +211,10 @@ export default {
   components: { LapTimeInput },
   props: {
     vehicles: { type: Array, required: true },
+    vehiclePiMap: { type: Object, default: () => ({}) },
     defaults: { type: Object, default: () => ({}) },
     lastRace: { type: Object, default: null },
+    goalLapTimeMs: { type: Number, default: null },
     saving: { type: Boolean, default: false },
     autofocus: { type: Boolean, default: true }
   },
@@ -208,11 +233,25 @@ export default {
         const parsed = parseSliders(val)
         parsed.forEach((v, i) => this.sliders.splice(i, 1, v))
       }
+    },
+    'form.vehicleId': {
+      handler(vehicleId) {
+        if (!vehicleId) return
+        const pi = this.vehiclePiMap[vehicleId]
+        if (pi != null) this.form.performanceIndex = String(pi)
+      },
+      immediate: true
     }
   },
   computed: {
     canDuplicateLast() {
       return Boolean(this.lastRace)
+    },
+    piClass() {
+      return piInfo(this.form.performanceIndex).cls
+    },
+    piColor() {
+      return piInfo(this.form.performanceIndex).color
     }
   },
   mounted() {
@@ -222,6 +261,8 @@ export default {
     this.autoExpand()
   },
   methods: {
+    formatMsToTime,
+    piInfo,
     setSlider(i, pos) {
       this.sliders.splice(i, 1, pos)
       this.form.tuning = slidersToTuning(this.sliders)
@@ -254,10 +295,12 @@ export default {
       this.form.place = this.lastRace.place || ''
       this.form.lapTimeMs = this.lastRace.lap_time_ms || null
       this.form.totalTimeMs = this.lastRace.total_time_ms || null
+      this.form.performanceIndex = this.lastRace.performance_index != null ? String(this.lastRace.performance_index) : '0'
       this.form.notes = this.lastRace.notes || ''
     },
     onSubmit() {
       this.errorMessage = ''
+      const pi = parseInt(this.form.performanceIndex, 10)
       const payload = {
         datetime: new Date(this.form.datetime).toISOString(),
         vehicle_id: this.form.vehicleId || null,
@@ -265,6 +308,7 @@ export default {
         place: this.form.place || null,
         lap_time_ms: this.form.lapTimeMs,
         total_time_ms: this.form.totalTimeMs,
+        performance_index: isNaN(pi) ? null : pi,
         notes: this.form.notes || null
       }
       this.$emit('submit', payload)

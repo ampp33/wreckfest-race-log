@@ -66,6 +66,8 @@ create table if not exists public.races (
     created_at timestamptz not null default now()
 );
 
+alter table public.races add column if not exists performance_index integer;
+
 create index if not exists races_user_track_idx
     on public.races (user_id, track_variation_id, datetime desc);
 
