@@ -43,7 +43,17 @@
             Works with Custom Event or Multiplayer results screens
           </p>
         </div>
+
+        <button
+          type="button"
+          class="mt-3 w-full font-body text-[15px] text-brand-accent hover:underline"
+          @click.stop="cameraInput.click()"
+        >
+          📷 Or take a photo with your phone's camera
+        </button>
+
         <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileInputChange" />
+        <input ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onFileInputChange" />
         <p v-if="errorMessage" class="mt-3 text-sm text-red-600">{{ errorMessage }}</p>
       </div>
 
@@ -161,7 +171,8 @@ export default {
       parsedRows: [],
       selectedIndex: null,
       playerName: prefsStore.ocrPlayerName || '',
-      fileInput: null
+      fileInput: null,
+      cameraInput: null
     }
   },
   watch: {
@@ -176,6 +187,7 @@ export default {
   },
   mounted() {
     this.fileInput = this.$refs.fileInput
+    this.cameraInput = this.$refs.cameraInput
   },
   beforeUnmount() {
     document.body.style.overflow = ''
