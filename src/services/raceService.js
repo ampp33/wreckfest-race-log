@@ -8,7 +8,7 @@ export async function getRacesByVariation(variationId) {
     .from('races')
     .select(RACE_COLUMNS)
     .eq('track_variation_id', variationId)
-    .order('datetime', { ascending: false })
+    .order('datetime', { ascending: false }).order('created_at', { ascending: false })
   if (error) throw error
   return data || []
 }
@@ -17,7 +17,7 @@ export async function getAllRaces() {
   const { data, error } = await supabase
     .from('races')
     .select(RACE_COLUMNS + ', track_variation_id')
-    .order('datetime', { ascending: false })
+    .order('datetime', { ascending: false }).order('created_at', { ascending: false })
   if (error) throw error
   return data || []
 }
