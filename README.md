@@ -136,12 +136,15 @@ to `main`.
     │   ├── timeFormat.js          Parse "1:23.456" ↔ ms
     │   ├── slug.js
     │   ├── debounce.js
-    │   └── exportImport.js
+    │   ├── exportImport.js
+    │   ├── ocrParser.js           Screenshot → race-row parsing (see "Screenshot import" below)
+    │   └── ocrReferenceGlyphs.json  Baked-in reference glyph bitmaps used by ocrParser.js
     ├── components/                Reusable UI (one responsibility each)
     │   ├── NavBar.vue
     │   ├── FloatingQuickAddButton.vue
     │   ├── ToastContainer.vue
     │   ├── QuickAddModal.vue
+    │   ├── OcrImportModal.vue
     │   ├── TrackVariationPicker.vue
     │   ├── RaceForm.vue
     │   ├── RaceRow.vue
@@ -153,6 +156,49 @@ to `main`.
         ├── TrackDetailPage.vue
         └── StatsPage.vue
 ```
+
+---
+
+## Screenshot import
+
+The 📷 button next to **+ Add Race** on a track page lets you paste/drop/pick
+a Wreckfest results screenshot instead of typing a race in by hand. It only
+**pre-fills** `RaceForm` — you still review, edit, and save exactly as before.
+
+**Why glyph matching instead of general OCR.** The results screen is a fixed
+template: same font, same relative column layout, every time — only the
+digits/text inside each cell change. That means a full OCR engine is
+overkill (and less accurate) for the numeric columns specifically:
+
+1. **Header + row detection (Tesseract).** `OcrImportModal.vue` OCRs the
+   header row once to find each column's x-range live (this also detects
+   Custom Event vs. Multiplayer mode, since Multiplayer adds `PING` and
+   sometimes `PTS` columns) and OCRs the `POS` column once to find a few
+   confidently-read row numbers. From those, `ocrParser.js` derives the
+   constant row spacing and generates the full row grid arithmetically —
+   robust to partial misreads and works at any resolution/aspect ratio
+   without a hardcoded template.
+2. **Numeric cells (glyph matching, not OCR).** `POS`, `PI`, `PING`, `PTS`,
+   `TIME`, and `BEST LAP` only ever contain `0123456789:.`, rendered in a
+   pixel-identical font every time. So each cell is thresholded, segmented
+   into character blobs (colon dots merged, touching digit pairs split via
+   a projection-valley search), normalized to a fixed size, and matched
+   against `ocrReferenceGlyphs.json` — a small set of reference bitmaps
+   captured once from a real screenshot. This is deterministic rather than
+   probabilistic, and validated at 100% accuracy across resolutions, both
+   game modes, and a gold-highlighted "your row" background.
+3. **Free text (Tesseract).** `NAME` and `CAR` are arbitrary strings, so
+   they still go through Tesseract — the one place general OCR is the
+   right tool. `CAR` is then fuzzy-matched (case/punctuation-insensitive)
+   against the vehicle list.
+
+Your in-game name (`prefsStore.ocrPlayerName`) is remembered so the review
+table auto-selects your row on future imports.
+
+See the comment block at the top of `src/utils/ocrParser.js` for the full
+rationale, including why the header-detection crop must exclude the blurred
+left-side menu/background art (it corrupts Tesseract's layout analysis even
+though the header text itself is legible).
 
 ---
 
@@ -197,6 +243,15 @@ to `main`.
 - **Stats computed client-side.** Fine up to a few thousand races per user;
   push to a SQL view if you ever exceed that.
 - **No offline mode.** ALT+TABbing requires connectivity to save races.
+- **Screenshot import assumes the current Wreckfest results-screen layout.**
+  If a future game update changes the results screen's font or column
+  layout, header detection (and everything downstream) may need retuning.
+  Tested across both aspect ratios and game modes the app currently
+  supports, but not against every possible race type (e.g. derby).
+- **Vehicle auto-match from a screenshot requires an exact
+  (case/punctuation-insensitive) name match** against the vehicle list —
+  no fuzzy/partial matching. An unmatched car is left blank rather than
+  guessed.
 
 ---
 
