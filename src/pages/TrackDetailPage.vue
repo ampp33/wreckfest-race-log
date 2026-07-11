@@ -286,9 +286,12 @@ export default {
     await this.loadAll()
     this._escHandler = (e) => { if (e.key === 'Escape') this.closeImageModal() }
     document.addEventListener('keydown', this._escHandler)
+    this._addRaceHandler = this.onAddRaceKeydown.bind(this)
+    document.addEventListener('keydown', this._addRaceHandler)
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this._escHandler)
+    document.removeEventListener('keydown', this._addRaceHandler)
   },
   unmounted() {
     quickAddStore.currentPageVariationId = null
@@ -329,6 +332,22 @@ export default {
     },
     async loadAnnotations() {
       this.annotations = await getAnnotationsForVariation(this.currentVariation.id)
+    },
+    onAddRaceKeydown(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return
+      if (this.isTypingTarget(event.target)) return
+      if (event.key !== 'a' && event.key !== 'A') return
+      if (this.quickAddStore.open || this.showImageModal) return
+      if (!this.currentVariation) return
+      event.preventDefault()
+      this.onAddRow()
+    },
+    isTypingTarget(el) {
+      if (!el) return false
+      const tag = (el.tagName || '').toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+      if (el.isContentEditable) return true
+      return false
     },
     openImageModal() {
       this.showImageModal = true
