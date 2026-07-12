@@ -30,8 +30,8 @@
         <div
           class="rounded border-2 border-dashed border-brand-border dark:border-brand-border-dark p-8 text-center cursor-pointer hover:border-brand-accent transition-colors"
           tabindex="0"
-          @click="fileInput.click()"
-          @keydown.enter="fileInput.click()"
+          @click="$refs.fileInput.click()"
+          @keydown.enter="$refs.fileInput.click()"
           @dragover.prevent
           @drop.prevent="onDrop"
           @paste="onPaste"
@@ -47,7 +47,7 @@
         <button
           type="button"
           class="mt-3 w-full font-body text-[15px] text-brand-accent hover:underline"
-          @click.stop="cameraInput.click()"
+          @click.stop="$refs.cameraInput.click()"
         >
           📷 Or take a photo with your phone's camera
         </button>
@@ -170,9 +170,7 @@ export default {
       errorMessage: '',
       parsedRows: [],
       selectedIndex: null,
-      playerName: prefsStore.ocrPlayerName || '',
-      fileInput: null,
-      cameraInput: null
+      playerName: prefsStore.ocrPlayerName || ''
     }
   },
   watch: {
@@ -184,10 +182,6 @@ export default {
         document.body.style.overflow = ''
       }
     }
-  },
-  mounted() {
-    this.fileInput = this.$refs.fileInput
-    this.cameraInput = this.$refs.cameraInput
   },
   beforeUnmount() {
     document.body.style.overflow = ''
