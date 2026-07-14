@@ -63,6 +63,7 @@ export default {
     },
     chartData() {
       const byVehicle = {}
+      const byDate = {}
       for (const race of this.races) {
         if (!race.lap_time_ms || !race.vehicle_id) continue
         const day = race.datetime.substring(0, 10)
@@ -70,6 +71,9 @@ export default {
         const cur = byVehicle[race.vehicle_id][day]
         if (cur == null || race.lap_time_ms < cur) {
           byVehicle[race.vehicle_id][day] = race.lap_time_ms
+        }
+        if (byDate[day] == null || race.lap_time_ms < byDate[day]) {
+          byDate[day] = race.lap_time_ms
         }
       }
 
@@ -109,6 +113,22 @@ export default {
         }
       })
 
+      datasets.push({
+        label: 'Fastest Lap',
+        data: sortedDates.map(d => byDate[d] ?? null),
+        borderColor: '#000000',
+        backgroundColor: '#00000018',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        pointBackgroundColor: '#000000',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: false,
+        spanGaps: true
+      })
+
       return { labels, datasets }
     },
     hasData() {
@@ -145,15 +165,21 @@ export default {
       const dark = this.isDark
       const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
       const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
+      const surfaceColor = dark ? '#222220' : '#EFEFED'
 
       const inlineLabels = {
         id: 'inlineLabels',
         afterDatasetsDraw(chart) {
-          const { ctx } = chart
+          const { ctx, chartArea } = chart
           ctx.save()
           ctx.font = '500 11px system-ui, sans-serif'
           ctx.textAlign = 'left'
           ctx.textBaseline = 'middle'
+          ctx.lineJoin = 'round'
+          ctx.strokeStyle = surfaceColor
+          ctx.lineWidth = 3
+
+          const entries = []
           chart.data.datasets.forEach((dataset, i) => {
             const meta = chart.getDatasetMeta(i)
             if (meta.hidden) return
@@ -162,9 +188,28 @@ export default {
               if (meta.data[j] && !meta.data[j].skip) { lastPoint = meta.data[j]; break }
             }
             if (!lastPoint) return
-            ctx.fillStyle = dataset.borderColor
-            ctx.fillText(dataset.label, lastPoint.x + 8, lastPoint.y)
+            entries.push({ label: dataset.label, color: dataset.borderColor, x: lastPoint.x, y: lastPoint.y })
           })
+
+          // Push overlapping labels apart vertically so they stay readable.
+          entries.sort((a, b) => a.y - b.y)
+          const minGap = 14
+          for (let i = 1; i < entries.length; i++) {
+            if (entries[i].y - entries[i - 1].y < minGap) {
+              entries[i].y = entries[i - 1].y + minGap
+            }
+          }
+          const overflow = entries.length ? entries[entries.length - 1].y - chartArea.bottom : 0
+          if (overflow > 0) {
+            for (const entry of entries) entry.y -= overflow
+          }
+
+          entries.forEach(entry => {
+            ctx.strokeText(entry.label, entry.x + 8, entry.y)
+            ctx.fillStyle = entry.color
+            ctx.fillText(entry.label, entry.x + 8, entry.y)
+          })
+
           ctx.restore()
         }
       }
