@@ -125,8 +125,8 @@ export default {
         vehicleId: this.race.vehicle_id,
         tuning: this.race.tuning,
         place: this.race.place || '',
-        lapTime: this.race.lap_time_ms != null ? formatMsToTime(this.race.lap_time_ms) : '',
-        totalTime: this.race.total_time_ms != null ? formatMsToTime(this.race.total_time_ms) : '',
+        lapTimeMs: this.race.lap_time_ms,
+        totalTimeMs: this.race.total_time_ms,
         performanceIndex: this.race.performance_index != null ? String(this.race.performance_index) : '0',
         notes: this.race.notes || ''
       }
