@@ -9,54 +9,91 @@
 
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
-    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark overflow-x-auto">
+    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
       <p v-if="!users.length" class="p-4 font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No users found.</p>
-      <table v-else class="min-w-full text-sm">
-        <thead>
-          <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-            <th class="px-4 py-2 font-medium">Email</th>
-            <th class="px-4 py-2 font-medium">Joined</th>
-            <th class="px-4 py-2 font-medium">Role</th>
-            <th class="px-4 py-2 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
-          >
-            <td class="px-4 py-2">
-              {{ user.email }}
-              <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
-            </td>
-            <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
-              {{ formatDate(user.created_at) }}
-            </td>
-            <td class="px-4 py-2">
+
+      <template v-else>
+        <!-- Card layout (mobile) -->
+        <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
+          <div v-for="user in users" :key="user.id" class="p-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="truncate">
+                  {{ user.email }}
+                  <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                </div>
+                <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDate(user.created_at) }}</div>
+              </div>
               <span
-                class="px-2 py-0.5 rounded text-xs font-medium"
+                class="px-2 py-0.5 rounded text-xs font-medium shrink-0"
                 :class="user.role === 'admin'
                   ? 'bg-brand-accent/10 text-brand-accent'
                   : 'bg-brand-bg dark:bg-brand-bg-dark text-brand-secondary dark:text-brand-secondary-dark'"
               >
                 {{ user.role }}
               </span>
-            </td>
-            <td class="px-4 py-2 text-right">
-              <button
-                v-if="user.id !== currentUserId"
-                type="button"
-                class="text-xs text-brand-accent hover:underline"
-                @click="openDialog(user)"
+            </div>
+            <button
+              v-if="user.id !== currentUserId"
+              type="button"
+              class="mt-2 text-xs text-brand-accent hover:underline"
+              @click="openDialog(user)"
+            >
+              Change role
+            </button>
+          </div>
+        </div>
+
+        <!-- Table layout (desktop) -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead>
+              <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+                <th class="px-4 py-2 font-medium">Email</th>
+                <th class="px-4 py-2 font-medium">Joined</th>
+                <th class="px-4 py-2 font-medium">Role</th>
+                <th class="px-4 py-2 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+              <tr
+                v-for="user in users"
+                :key="user.id"
+                class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
               >
-                Change role
-              </button>
-              <span v-else class="text-xs text-brand-muted dark:text-brand-muted-dark">—</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <td class="px-4 py-2">
+                  {{ user.email }}
+                  <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                </td>
+                <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
+                  {{ formatDate(user.created_at) }}
+                </td>
+                <td class="px-4 py-2">
+                  <span
+                    class="px-2 py-0.5 rounded text-xs font-medium"
+                    :class="user.role === 'admin'
+                      ? 'bg-brand-accent/10 text-brand-accent'
+                      : 'bg-brand-bg dark:bg-brand-bg-dark text-brand-secondary dark:text-brand-secondary-dark'"
+                  >
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td class="px-4 py-2 text-right">
+                  <button
+                    v-if="user.id !== currentUserId"
+                    type="button"
+                    class="text-xs text-brand-accent hover:underline"
+                    @click="openDialog(user)"
+                  >
+                    Change role
+                  </button>
+                  <span v-else class="text-xs text-brand-muted dark:text-brand-muted-dark">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
     </div>
 
     <!-- Role picker dialog -->

@@ -30,61 +30,113 @@
 
       <p v-if="total === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
 
-      <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-              <th class="px-4 py-2 font-medium">Date</th>
-              <th class="px-4 py-2 font-medium">Track / Variation</th>
-              <th class="px-4 py-2 font-medium">Vehicle</th>
-              <th class="px-4 py-2 font-medium">PI</th>
-              <th class="px-4 py-2 font-medium text-right">Place</th>
-              <th class="px-4 py-2 font-medium text-right">Lap time</th>
-              <th class="px-4 py-2 font-medium text-right">Total time</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
-            <tr
-              v-for="race in pageRows"
-              :key="race.id"
-              class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
-            >
-              <td class="px-4 py-2 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark text-xs">
-                {{ formatDate(race.datetime) }}
-              </td>
-              <td class="px-4 py-2">
+      <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
+        <!-- Card layout (mobile) -->
+        <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
+          <div v-for="race in pageRows" :key="race.id" class="p-3">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
                 <router-link
                   v-if="race.trackSlug && race.variationSlug"
                   :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                  class="text-brand-accent hover:underline"
+                  class="font-bold text-brand-accent hover:underline truncate block"
                 >
                   {{ race.trackName }}
                   <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
                 </router-link>
-                <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
-              </td>
-              <td class="px-4 py-2 text-brand-secondary dark:text-brand-secondary-dark">
-                {{ race.vehicleName }}
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap">
-                <template v-if="race.performance_index != null">
-                  <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-                  {{ race.performance_index }}
-                </template>
-                <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
-              </td>
-              <td class="px-4 py-2 text-right tabular-nums">
-                {{ race.place != null ? race.place : '—' }}
-              </td>
-              <td class="px-4 py-2 text-right font-mono tabular-nums">
-                {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
-              </td>
-              <td class="px-4 py-2 text-right font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">
-                {{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
+                <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formatDate(race.datetime) }}</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
+              <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Vehicle</div>
+                <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
+                <div>
+                  <template v-if="race.performance_index != null">
+                    <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
+                    {{ race.performance_index }}
+                  </template>
+                  <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
+                </div>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Place</div>
+                <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap time</div>
+                <div class="font-mono tabular-nums">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Total time</div>
+                <div class="font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table layout (desktop) -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+                <th class="px-4 py-2 font-medium">Date</th>
+                <th class="px-4 py-2 font-medium">Track / Variation</th>
+                <th class="px-4 py-2 font-medium">Vehicle</th>
+                <th class="px-4 py-2 font-medium">Class (PI)</th>
+                <th class="px-4 py-2 font-medium text-right">Place</th>
+                <th class="px-4 py-2 font-medium text-right">Lap time</th>
+                <th class="px-4 py-2 font-medium text-right">Total time</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+              <tr
+                v-for="race in pageRows"
+                :key="race.id"
+                class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
+              >
+                <td class="px-4 py-2 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark text-xs">
+                  {{ formatDate(race.datetime) }}
+                </td>
+                <td class="px-4 py-2">
+                  <router-link
+                    v-if="race.trackSlug && race.variationSlug"
+                    :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                    class="text-brand-accent hover:underline"
+                  >
+                    {{ race.trackName }}
+                    <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
+                  </router-link>
+                  <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
+                </td>
+                <td class="px-4 py-2 text-brand-secondary dark:text-brand-secondary-dark">
+                  {{ race.vehicleName }}
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap">
+                  <template v-if="race.performance_index != null">
+                    <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
+                    {{ race.performance_index }}
+                  </template>
+                  <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
+                </td>
+                <td class="px-4 py-2 text-right tabular-nums">
+                  {{ race.place != null ? race.place : '—' }}
+                </td>
+                <td class="px-4 py-2 text-right font-mono tabular-nums">
+                  {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
+                </td>
+                <td class="px-4 py-2 text-right font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">
+                  {{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Pagination -->

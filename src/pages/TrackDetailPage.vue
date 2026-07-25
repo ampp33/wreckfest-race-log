@@ -140,43 +140,65 @@
 
       <LapTimeChart :races="races" :vehicles="vehicles" />
 
-      <div class="overflow-x-auto bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
         <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark px-3 pt-3 pb-2">
           Logged <em class="signal">races</em>
         </h2>
-        <table class="min-w-full text-sm">
-          <thead class="bg-brand-bg dark:bg-brand-bg-dark text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">
-            <tr>
-              <th class="py-2 pl-3 pr-3">When</th>
-              <th class="py-2 pr-3">Vehicle</th>
-              <th class="py-2 pr-3">PI</th>
-              <th class="py-2 pr-3 text-center">Tune</th>
-              <th class="py-2 pr-3 text-center">Place</th>
-              <th class="py-2 pr-3">Lap</th>
-              <th class="py-2 pr-3">Δ goal</th>
-              <th class="py-2 pr-3">Total</th>
-              <th class="py-2 pr-3">Notes</th>
-              <th class="py-2 pr-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <RaceRow
-              v-for="race in races"
-              :key="race.id"
-              :race="race"
-              :vehicles="vehicles"
-              :goal-lap-time-ms="goalLapTimeMs"
-              :personal-best-ms="personalBestMs"
-              @update="onUpdateRace"
-              @delete="onDeleteRace"
-            />
-            <tr v-if="!races.length">
-              <td colspan="9" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-                No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+
+        <!-- Card layout (mobile) -->
+        <div class="sm:hidden">
+          <RaceRow
+            v-for="race in races"
+            :key="race.id"
+            layout="card"
+            :race="race"
+            :vehicles="vehicles"
+            :goal-lap-time-ms="goalLapTimeMs"
+            :personal-best-ms="personalBestMs"
+            @update="onUpdateRace"
+            @delete="onDeleteRace"
+          />
+          <p v-if="!races.length" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+            No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
+          </p>
+        </div>
+
+        <!-- Table layout (desktop) -->
+        <div class="hidden sm:block overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-brand-bg dark:bg-brand-bg-dark text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">
+              <tr>
+                <th class="py-2 pl-3 pr-3">When</th>
+                <th class="py-2 pr-3">Vehicle</th>
+                <th class="py-2 pr-3">Class (PI)</th>
+                <th class="py-2 pr-3 text-center">Tune</th>
+                <th class="py-2 pr-3 text-center">Place</th>
+                <th class="py-2 pr-3">Lap</th>
+                <th class="py-2 pr-3">Δ goal</th>
+                <th class="py-2 pr-3">Total</th>
+                <th class="py-2 pr-3">Notes</th>
+                <th class="py-2 pr-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <RaceRow
+                v-for="race in races"
+                :key="race.id"
+                :race="race"
+                :vehicles="vehicles"
+                :goal-lap-time-ms="goalLapTimeMs"
+                :personal-best-ms="personalBestMs"
+                @update="onUpdateRace"
+                @delete="onDeleteRace"
+              />
+              <tr v-if="!races.length">
+                <td colspan="9" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                  No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

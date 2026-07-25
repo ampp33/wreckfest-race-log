@@ -31,7 +31,7 @@
 
       <div>
         <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
-          Performance Index (PI)
+          Class (PI)
         </label>
         <div class="flex gap-2">
           <div

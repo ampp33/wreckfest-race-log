@@ -33,32 +33,59 @@
         <p v-if="!data.top_users || !data.top_users.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
           No activity yet.
         </p>
-        <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-              <th class="pb-2 font-medium">User</th>
-              <th class="pb-2 font-medium">Signed up</th>
-              <th class="pb-2 font-medium text-right">Races</th>
-              <th class="pb-2 font-medium text-right">Goals</th>
-              <th class="pb-2 font-medium text-right">Annotations</th>
-              <th class="pb-2 font-medium text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
-            <tr v-for="(user, i) in data.top_users" :key="user.email" class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30">
-              <td class="py-2 pr-4">
-                <span class="text-brand-muted dark:text-brand-muted-dark mr-2">{{ i + 1 }}.</span>
-                {{ user.email }}
-              </td>
-              <td class="py-2 pr-4 text-brand-muted dark:text-brand-muted-dark text-xs whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
-              <td class="py-2 text-right tabular-nums">{{ user.race_count }}</td>
-              <td class="py-2 text-right tabular-nums">{{ user.goal_count }}</td>
-              <td class="py-2 text-right tabular-nums">{{ user.annotation_count }}</td>
-              <td class="py-2 text-right tabular-nums font-semibold">{{ user.total_activity }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-else>
+          <!-- Card layout (mobile) -->
+          <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
+            <div v-for="(user, i) in data.top_users" :key="user.email" class="py-3 first:pt-0">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="truncate">
+                    <span class="text-brand-muted dark:text-brand-muted-dark mr-1">{{ i + 1 }}.</span>
+                    {{ user.email }}
+                  </div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">{{ formatDate(user.created_at) }}</div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="font-semibold tabular-nums">{{ user.total_activity }}</div>
+                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Total</div>
+                </div>
+              </div>
+              <div class="flex gap-4 mt-2 text-xs text-brand-secondary dark:text-brand-secondary-dark">
+                <span>{{ user.race_count }} races</span>
+                <span>{{ user.goal_count }} goals</span>
+                <span>{{ user.annotation_count }} annotations</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table layout (desktop) -->
+          <div class="hidden sm:block overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+                <th class="pb-2 font-medium">User</th>
+                <th class="pb-2 font-medium">Signed up</th>
+                <th class="pb-2 font-medium text-right">Races</th>
+                <th class="pb-2 font-medium text-right">Goals</th>
+                <th class="pb-2 font-medium text-right">Annotations</th>
+                <th class="pb-2 font-medium text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+              <tr v-for="(user, i) in data.top_users" :key="user.email" class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30">
+                <td class="py-2 pr-4">
+                  <span class="text-brand-muted dark:text-brand-muted-dark mr-2">{{ i + 1 }}.</span>
+                  {{ user.email }}
+                </td>
+                <td class="py-2 pr-4 text-brand-muted dark:text-brand-muted-dark text-xs whitespace-nowrap">{{ formatDate(user.created_at) }}</td>
+                <td class="py-2 text-right tabular-nums">{{ user.race_count }}</td>
+                <td class="py-2 text-right tabular-nums">{{ user.goal_count }}</td>
+                <td class="py-2 text-right tabular-nums">{{ user.annotation_count }}</td>
+                <td class="py-2 text-right tabular-nums font-semibold">{{ user.total_activity }}</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
         </div>
       </div>
     </div>
