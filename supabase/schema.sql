@@ -458,3 +458,144 @@ create policy "feedback select admin"
     on public.feedback for select
     to authenticated
     using (public.is_admin(auth.uid()));
+
+-- =====================================================================
+-- API keys: per-user tokens for the external companion tool.
+-- Raw keys are never stored — only a SHA-256 hex digest.
+-- =====================================================================
+
+create table if not exists public.api_keys (
+    id           uuid primary key default gen_random_uuid(),
+    user_id      uuid not null references auth.users(id) on delete cascade,
+    key_hash     text not null unique,
+    name         text not null,
+    created_at   timestamptz not null default now(),
+    last_used_at timestamptz
+);
+
+alter table public.api_keys enable row level security;
+
+drop policy if exists "api_keys select own" on public.api_keys;
+create policy "api_keys select own"
+    on public.api_keys for select
+    to authenticated
+    using (auth.uid() = user_id);
+
+drop policy if exists "api_keys insert own" on public.api_keys;
+create policy "api_keys insert own"
+    on public.api_keys for insert
+    to authenticated
+    with check (auth.uid() = user_id);
+
+drop policy if exists "api_keys delete own" on public.api_keys;
+create policy "api_keys delete own"
+    on public.api_keys for delete
+    to authenticated
+    using (auth.uid() = user_id);
+
+-- RPC called by the external companion tool: validates the raw API key,
+-- resolves track/variation by exact display-name match and vehicle by
+-- name (case-insensitive), reconstructs the tuning code from the four
+-- dial positions, and inserts a race for the key's owning user.
+-- SECURITY DEFINER bypasses RLS so it can write on behalf of any user
+-- without exposing the service role key.
+-- Named "_wf1" since a sibling project (Wreckfest 2 Race Log) exposes
+-- the equivalent RPC for Wreckfest 2 as insert_race_with_api_key_wf2.
+create or replace function public.insert_race_with_api_key_wf1(
+    api_key            text,
+    track              text,
+    variant            text,
+    vehicle            text,
+    performance_index  integer,
+    place              integer,
+    lap_time_ms        integer,
+    total_time_ms      integer,
+    suspension         integer default null,
+    gear_ratio         integer default null,
+    differential       integer default null,
+    brake_balance      integer default null
+)
+returns json
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    v_user_id            uuid;
+    v_key_hash           text;
+    v_track_id           uuid;
+    v_track_variation_id uuid;
+    v_vehicle_id         uuid;
+    v_tuning             integer;
+    v_race_id            uuid;
+begin
+    v_key_hash := encode(sha256(api_key::bytea), 'hex');
+
+    -- Validate key by hash.
+    select user_id into v_user_id
+    from public.api_keys
+    where key_hash = v_key_hash;
+
+    if v_user_id is null then
+        return json_build_object('success', false, 'error', 'Invalid API key');
+    end if;
+
+    if performance_index is not null and performance_index < 0 then
+        return json_build_object('success', false, 'error', 'performance_index must be >= 0');
+    end if;
+
+    -- Stamp last-used.
+    update public.api_keys
+    set last_used_at = now()
+    where key_hash = v_key_hash;
+
+    -- Resolve track, then variation scoped to that track — both by exact
+    -- case-insensitive name match.
+    select t.id into v_track_id
+    from public.tracks t
+    where lower(t.name) = lower(track);
+
+    if v_track_id is not null then
+        select tv.id into v_track_variation_id
+        from public.track_variations tv
+        where tv.track_id = v_track_id and lower(tv.name) = lower(variant);
+    end if;
+
+    if v_track_variation_id is null then
+        return json_build_object(
+            'success', false,
+            'error', 'Track/variant not found: ' || track || '/' || variant
+        );
+    end if;
+
+    -- Resolve vehicle (optional — null is fine).
+    if vehicle is not null and vehicle <> '' then
+        select id into v_vehicle_id
+        from public.vehicles
+        where lower(name) = lower(vehicle);
+    end if;
+
+    -- Reconstruct the combined tuning code from the four dial positions.
+    if suspension is not null and gear_ratio is not null
+       and differential is not null and brake_balance is not null then
+        v_tuning := suspension * 1000 + gear_ratio * 100 + differential * 10 + brake_balance;
+    end if;
+
+    -- Insert race bypassing RLS (security definer).
+    insert into public.races (
+        user_id, track_variation_id, vehicle_id,
+        place, lap_time_ms, total_time_ms, datetime,
+        performance_index, tuning
+    ) values (
+        v_user_id, v_track_variation_id, v_vehicle_id,
+        place::text, lap_time_ms, total_time_ms, now(),
+        performance_index, v_tuning
+    )
+    returning id into v_race_id;
+
+    return json_build_object('success', true, 'race_id', v_race_id);
+end;
+$$;
+
+-- Allow the anon key (used by the external tool) to call this function.
+-- Identity is verified inside via the API key hash — no session needed.
+grant execute on function public.insert_race_with_api_key_wf1 to anon, authenticated;

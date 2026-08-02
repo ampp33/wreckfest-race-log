@@ -31,6 +31,13 @@
         >
           Stats
         </router-link>
+        <router-link
+          to="/settings/api-keys"
+          class="hover:text-brand-accent"
+          active-class="text-brand-accent font-semibold"
+        >
+          API Keys
+        </router-link>
 
         <div v-if="auth.isAdmin" class="relative group">
           <button

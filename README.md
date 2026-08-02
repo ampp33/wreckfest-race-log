@@ -232,6 +232,16 @@ though the header text itself is legible).
 
 ---
 
+## Submitting races from an external tool
+
+Players can generate per-account API keys from **Settings → API Keys**
+and use them to POST completed races directly to the Supabase RPC
+endpoint that backs this feature — no custom backend involved, since the
+app itself is a static site. See [`docs/external-api.md`](docs/external-api.md)
+for the full request/response contract and a working `curl` example.
+
+---
+
 ## Known limitations
 
 - **Catalogue (tracks, variations, vehicles) is shared and read-only from
