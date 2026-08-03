@@ -6,8 +6,7 @@ const defaults = {
   lastVehicleId: null,
   lastTuning: null,
   lastTrackVariationId: null,
-  darkMode: false,
-  ocrPlayerName: ''
+  darkMode: false
 }
 
 function loadFromStorage() {

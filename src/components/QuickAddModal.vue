@@ -102,8 +102,7 @@ export default {
     formDefaults() {
       return {
         vehicleId: prefsStore.lastVehicleId,
-        tuning: prefsStore.lastTuning,
-        ...this.qa.ocrDefaults
+        tuning: prefsStore.lastTuning
       }
     }
   },

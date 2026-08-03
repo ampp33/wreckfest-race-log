@@ -54,15 +54,6 @@
           >
             + Add Race
           </button>
-          <button
-            type="button"
-            title="Import from screenshot"
-            aria-label="Import from screenshot"
-            class="font-display font-black px-4 py-3 rounded-none border border-brand-border dark:border-brand-border-dark hover:border-brand-accent transition-colors"
-            @click="showOcrImport = true"
-          >
-            📷
-          </button>
         </div>
       </div>
 
@@ -229,19 +220,12 @@
       </div>
     </div>
   </Teleport>
-
-  <OcrImportModal
-    v-model:open="showOcrImport"
-    :vehicles="vehicles"
-    @confirm="onOcrConfirm"
-  />
 </template>
 
 <script>
 import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
-import OcrImportModal from '../components/OcrImportModal.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { getRacesByVariation, updateRace, deleteRace } from '../services/raceService.js'
@@ -258,7 +242,7 @@ import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations, OcrImportModal },
+  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations },
   data() {
     return {
       loading: true,
@@ -271,7 +255,6 @@ export default {
       annotations: [],
       quickAddStore,
       showImageModal: false,
-      showOcrImport: false,
       notesEditMode: false,
       notesInput: ''
     }
@@ -435,10 +418,6 @@ export default {
     onAddRow() {
       this._quickAddOpenedHere = true
       openQuickAdd(this.currentVariation.id)
-    },
-    onOcrConfirm(defaults) {
-      this._quickAddOpenedHere = true
-      openQuickAdd(this.currentVariation.id, defaults)
     },
     async onUpdateRace({ id, patch }) {
       try {
