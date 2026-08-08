@@ -513,7 +513,8 @@ create or replace function public.insert_race_with_api_key_wf1(
     suspension         integer default null,
     gear_ratio         integer default null,
     differential       integer default null,
-    brake_balance      integer default null
+    brake_balance      integer default null,
+    notes              text default null
 )
 returns json
 language plpgsql
@@ -584,11 +585,11 @@ begin
     insert into public.races (
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
-        performance_index, tuning
+        performance_index, tuning, notes
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
-        performance_index, v_tuning
+        performance_index, v_tuning, notes
     )
     returning id into v_race_id;
 
