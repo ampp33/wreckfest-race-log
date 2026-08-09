@@ -131,7 +131,7 @@
           ref="notesInput"
           v-model="form.notes"
           rows="2"
-          class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 resize-none"
+          class="w-full font-mono rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 resize-none"
           @input="autoExpand"
         />
       </div>

@@ -96,8 +96,12 @@
       <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
       <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
       <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
-      <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark truncate max-w-[18ch]" :title="race.notes || ''">
-        {{ race.notes || '' }}
+      <td
+        class="py-2 pr-3 max-w-[18ch]"
+        @mouseenter="showNotesTooltip"
+        @mouseleave="notesTooltipVisible = false"
+      >
+        <span class="block truncate font-mono text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <div class="inline-flex items-center gap-1">
@@ -134,6 +138,16 @@
       />
     </td>
   </tr>
+
+  <Teleport to="body">
+    <div
+      v-if="notesTooltipVisible && race.notes"
+      :style="notesTooltipStyle"
+      class="pointer-events-none fixed z-50 max-w-xs whitespace-pre-wrap break-words rounded border border-brand-border dark:border-brand-border-dark bg-brand-surface dark:bg-brand-surface-dark px-2 py-1 font-mono text-xs text-brand-text dark:text-brand-text-dark shadow-lg"
+    >
+      {{ race.notes }}
+    </div>
+  </Teleport>
 </template>
 
 <script>
@@ -161,7 +175,9 @@ export default {
   data() {
     return {
       editing: false,
-      saving: false
+      saving: false,
+      notesTooltipVisible: false,
+      notesTooltipStyle: {}
     }
   },
   computed: {
@@ -226,6 +242,15 @@ export default {
     onDelete() {
       if (!window.confirm('Delete this race?')) return
       this.$emit('delete', this.race.id)
+    },
+    showNotesTooltip(event) {
+      if (!this.race.notes) return
+      const rect = event.currentTarget.getBoundingClientRect()
+      this.notesTooltipStyle = {
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`
+      }
+      this.notesTooltipVisible = true
     }
   }
 }
