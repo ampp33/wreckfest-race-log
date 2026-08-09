@@ -78,7 +78,10 @@
   </div>
 
   <!-- Table row layout (desktop) -->
-  <tr v-else class="border-b border-brand-border dark:border-brand-border-dark">
+  <tr
+    v-else
+    class="border-b border-brand-border dark:border-brand-border-dark"
+  >
     <template v-if="!editing">
       <td class="py-2 pl-3 pr-3 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">
         {{ formattedDate }}
@@ -96,15 +99,18 @@
       <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
       <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
       <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
-      <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark truncate max-w-[18ch]" :title="race.notes || ''">
-        {{ race.notes || '' }}
+      <td
+        class="py-2 pr-3 max-w-[18ch] cursor-pointer hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+        @click="toggleExpanded"
+      >
+        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes ? '(click to expand)' : '' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <div class="inline-flex items-center gap-1">
           <button
             class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Edit"
-            @click="editing = true"
+            @click.stop="editing = true"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -113,7 +119,7 @@
           <button
             class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Delete"
-            @click="onDelete"
+            @click.stop="onDelete"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
@@ -132,6 +138,13 @@
         @submit="onSave"
         @cancel="editing = false"
       />
+    </td>
+  </tr>
+
+  <tr v-if="layout === 'table' && !editing && expanded" class="border-b border-brand-border dark:border-brand-border-dark">
+    <td colspan="10" class="px-3 py-2 bg-brand-surface dark:bg-brand-surface-dark">
+      <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
+      <div class="mt-1 font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
     </td>
   </tr>
 </template>
@@ -161,7 +174,8 @@ export default {
   data() {
     return {
       editing: false,
-      saving: false
+      saving: false,
+      expanded: false
     }
   },
   computed: {
@@ -226,6 +240,9 @@ export default {
     onDelete() {
       if (!window.confirm('Delete this race?')) return
       this.$emit('delete', this.race.id)
+    },
+    toggleExpanded() {
+      this.expanded = !this.expanded
     }
   }
 }
