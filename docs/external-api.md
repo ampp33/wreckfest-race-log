@@ -53,6 +53,9 @@ convention — field names must exactly match the SQL parameter names):
 | `gear_ratio`         | integer | no       | Tuning dial position. |
 | `differential`       | integer | no       | Tuning dial position. |
 | `brake_balance`      | integer | no       | Tuning dial position. |
+| `notes`              | string  | no       | Free-form notes stored on the race. |
+| `lap_count`          | integer | no       | Number of laps in the race. Defaults to the length of `lap_times_ms` when omitted. |
+| `lap_times_ms`       | array   | no       | JSON array of per-lap times in milliseconds, in lap order — first entry is lap 1, second is lap 2, and so on (e.g. `[19160, 18994, 19340]`). Stored as a JSON object on the race and charted in the race's expand drawer on the track page. |
 
 If all four tuning fields are provided, they're combined server-side into
 a single `tuning` code as `suspension*1000 + gear_ratio*100 +
@@ -80,7 +83,9 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
     "brake_balance": 1,
     "place": 1,
     "lap_time_ms": 19160,
-    "total_time_ms": 42154
+    "total_time_ms": 42154,
+    "lap_count": 3,
+    "lap_times_ms": [19160, 18994, 19340]
   }'
 ```
 
@@ -109,6 +114,16 @@ error).
 **Negative performance index:**
 ```json
 { "success": false, "error": "performance_index must be >= 0" }
+```
+
+**`lap_times_ms` sent as something other than a JSON array:**
+```json
+{ "success": false, "error": "lap_times_ms must be a JSON array" }
+```
+
+**Negative lap count:**
+```json
+{ "success": false, "error": "lap_count must be >= 0" }
 ```
 
 **Unknown vehicle name:** not an error — the race is still inserted with

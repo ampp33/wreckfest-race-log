@@ -68,6 +68,11 @@ create table if not exists public.races (
 
 alter table public.races add column if not exists performance_index integer;
 
+-- Number of laps in the race, and the individual lap times in milliseconds
+-- stored as a JSON array ordered by lap (first entry = lap 1).
+alter table public.races add column if not exists lap_count integer;
+alter table public.races add column if not exists lap_times_ms jsonb;
+
 create index if not exists races_user_track_idx
     on public.races (user_id, track_variation_id, datetime desc);
 
@@ -501,6 +506,15 @@ create policy "api_keys delete own"
 -- without exposing the service role key.
 -- Named "_wf1" since a sibling project (Wreckfest 2 Race Log) exposes
 -- the equivalent RPC for Wreckfest 2 as insert_race_with_api_key_wf2.
+--
+-- Adding parameters changes the signature, so the pre-lap_count/lap_times_ms
+-- version has to be dropped explicitly — `create or replace` would leave the
+-- old overload in place and PostgREST could no longer resolve which to call.
+drop function if exists public.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text
+);
+
 create or replace function public.insert_race_with_api_key_wf1(
     api_key            text,
     track              text,
@@ -514,7 +528,9 @@ create or replace function public.insert_race_with_api_key_wf1(
     gear_ratio         integer default null,
     differential       integer default null,
     brake_balance      integer default null,
-    notes              text default null
+    notes              text default null,
+    lap_count          integer default null,
+    lap_times_ms       jsonb default null
 )
 returns json
 language plpgsql
@@ -528,6 +544,7 @@ declare
     v_vehicle_id         uuid;
     v_tuning             integer;
     v_race_id            uuid;
+    v_lap_count          integer;
 begin
     v_key_hash := encode(sha256(api_key::bytea), 'hex');
 
@@ -543,6 +560,17 @@ begin
     if performance_index is not null and performance_index < 0 then
         return json_build_object('success', false, 'error', 'performance_index must be >= 0');
     end if;
+
+    if lap_times_ms is not null and jsonb_typeof(lap_times_ms) <> 'array' then
+        return json_build_object('success', false, 'error', 'lap_times_ms must be a JSON array');
+    end if;
+
+    if lap_count is not null and lap_count < 0 then
+        return json_build_object('success', false, 'error', 'lap_count must be >= 0');
+    end if;
+
+    -- Fall back to the length of the lap array when lap_count isn't sent.
+    v_lap_count := coalesce(lap_count, jsonb_array_length(lap_times_ms));
 
     -- Stamp last-used.
     update public.api_keys
@@ -585,11 +613,11 @@ begin
     insert into public.races (
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
-        performance_index, tuning, notes
+        performance_index, tuning, notes, lap_count, lap_times_ms
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
-        performance_index, v_tuning, notes
+        performance_index, v_tuning, notes, v_lap_count, lap_times_ms
     )
     returning id into v_race_id;
 

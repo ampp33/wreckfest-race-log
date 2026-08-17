@@ -69,6 +69,10 @@
                 <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
               </div>
               <div>
+                <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Laps</div>
+                <div class="tabular-nums">{{ lapCount(race) }}</div>
+              </div>
+              <div>
                 <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap time</div>
                 <div class="font-mono tabular-nums">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
               </div>
@@ -90,6 +94,7 @@
                 <th class="px-4 py-2 font-medium">Vehicle</th>
                 <th class="px-4 py-2 font-medium">Class (PI)</th>
                 <th class="px-4 py-2 font-medium text-right">Place</th>
+                <th class="px-4 py-2 font-medium text-right">Laps</th>
                 <th class="px-4 py-2 font-medium text-right">Lap time</th>
                 <th class="px-4 py-2 font-medium text-right">Total time</th>
               </tr>
@@ -126,6 +131,9 @@
                 </td>
                 <td class="px-4 py-2 text-right tabular-nums">
                   {{ race.place != null ? race.place : '—' }}
+                </td>
+                <td class="px-4 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
+                  {{ lapCount(race) }}
                 </td>
                 <td class="px-4 py-2 text-right font-mono tabular-nums">
                   {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
@@ -235,6 +243,12 @@ export default {
     piInfo,
     formatMs(ms) {
       return formatMsToTime(ms)
+    },
+    lapCount(race) {
+      if (race.lap_count != null) return race.lap_count
+      // Older races may only carry the splits array.
+      if (Array.isArray(race.lap_times_ms)) return race.lap_times_ms.length
+      return '—'
     },
     formatDate(iso) {
       return new Date(iso).toLocaleString(undefined, {

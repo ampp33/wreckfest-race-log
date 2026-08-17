@@ -164,6 +164,7 @@
                 <th class="py-2 pr-3">Class (PI)</th>
                 <th class="py-2 pr-3 text-center">Tune</th>
                 <th class="py-2 pr-3 text-center">Place</th>
+                <th class="py-2 pr-3 text-center">Laps</th>
                 <th class="py-2 pr-3">Lap</th>
                 <th class="py-2 pr-3">Δ goal</th>
                 <th class="py-2 pr-3">Total</th>
@@ -183,7 +184,7 @@
                 @delete="onDeleteRace"
               />
               <tr v-if="!races.length">
-                <td colspan="9" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                <td colspan="11" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
                   No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
                 </td>
               </tr>
