@@ -29,6 +29,7 @@
         </div>
       </div>
 
+      <!-- Same fields, in the same order, as the desktop table columns. -->
       <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
         <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
@@ -41,6 +42,10 @@
           </div>
         </div>
         <div>
+          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Tune</div>
+          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+        </div>
+        <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Place</div>
           <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</div>
         </div>
@@ -50,35 +55,42 @@
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap</div>
-          <div class="font-mono text-brand-text dark:text-brand-text-dark">
-            {{ formatLap }}
-            <span v-if="deltaLabel" class="font-mono" :class="deltaColor">{{ deltaLabel }}</span>
-          </div>
+          <div class="font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</div>
+        </div>
+        <div>
+          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
+          <div class="font-mono" :class="deltaColor">{{ deltaLabel || '—' }}</div>
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Total</div>
           <div class="font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</div>
         </div>
-        <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Tune</div>
-          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+      </div>
+
+      <!-- Tap-to-expand detail, mirroring the desktop notes drawer. -->
+      <button
+        v-if="race.notes || hasLapTimes"
+        type="button"
+        class="mt-3 w-full flex items-start justify-between gap-2 text-left"
+        @click="toggleExpanded"
+      >
+        <div class="min-w-0">
+          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
+          <div v-if="!expanded" class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">
+            {{ race.notes || 'No notes' }}
+          </div>
         </div>
-      </div>
+        <span class="shrink-0 text-xs text-brand-muted dark:text-brand-muted-dark">{{ expanded ? '▲' : '▼' }}</span>
+      </button>
 
-      <div v-if="race.notes" class="mt-2 text-sm text-brand-muted dark:text-brand-muted-dark">
-        {{ race.notes }}
-      </div>
+      <div v-if="expanded" class="mt-1">
+        <div class="font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
-      <template v-if="hasLapTimes">
-        <button
-          type="button"
-          class="mt-2 text-xs uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent"
-          @click="toggleExpanded"
-        >
-          Lap times {{ expanded ? '▲' : '▼' }}
-        </button>
-        <LapSplitsChart v-if="expanded" :lap-times="race.lap_times_ms" class="mt-1" />
-      </template>
+        <template v-if="hasLapTimes">
+          <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
+          <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
+        </template>
+      </div>
     </template>
 
     <RaceForm
