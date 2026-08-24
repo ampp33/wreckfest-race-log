@@ -9,6 +9,26 @@
         </div>
         <div class="inline-flex items-center gap-1 shrink-0">
           <button
+            v-if="race.notes || hasLapTimes || hasRoster"
+            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            :title="expanded ? 'Collapse' : 'Expand'"
+            @click="toggleExpanded"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 10h12" />
+              <path v-if="!expanded" d="M10 4v12" />
+            </svg>
+          </button>
+          <button
             class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Edit"
             @click="editing = true"
@@ -67,28 +87,23 @@
         </div>
       </div>
 
-      <!-- Tap-to-expand detail, mirroring the desktop notes drawer. -->
-      <button
-        v-if="race.notes || hasLapTimes"
-        type="button"
-        class="mt-3 w-full flex items-start justify-between gap-2 text-left"
-        @click="toggleExpanded"
-      >
-        <div class="min-w-0">
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
-          <div v-if="!expanded" class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">
-            {{ race.notes || 'No notes' }}
-          </div>
-        </div>
-        <span class="shrink-0 text-xs text-brand-muted dark:text-brand-muted-dark">{{ expanded ? '▲' : '▼' }}</span>
-      </button>
+      <!-- Notes preview, expanded/collapsed via the icon in the button cluster above. -->
+      <div v-if="race.notes || hasLapTimes || hasRoster" class="mt-3">
+        <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
+        <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
+      </div>
 
-      <div v-if="expanded" class="mt-1">
+      <div v-if="expanded" class="mt-2 -mx-3 px-3 py-2 bg-brand-bg dark:bg-brand-bg-dark">
         <div class="font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
         <template v-if="hasLapTimes">
           <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
           <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
+        </template>
+
+        <template v-if="hasRoster">
+          <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Roster</div>
+          <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
         </template>
       </div>
     </template>
@@ -127,14 +142,31 @@
       <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
       <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
       <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
-      <td
-        class="py-2 pr-3 max-w-[18ch] cursor-pointer hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-        @click="toggleExpanded"
-      >
-        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || hasLapTimes ? '(click to expand)' : '' }}</span>
+      <td class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
+        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '—' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <div class="inline-flex items-center gap-1">
+          <button
+            v-if="race.notes || hasLapTimes || hasRoster"
+            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            :title="expanded ? 'Collapse' : 'Expand'"
+            @click.stop="toggleExpanded"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 10h12" />
+              <path v-if="!expanded" d="M10 4v12" />
+            </svg>
+          </button>
           <button
             class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
             title="Edit"
@@ -170,13 +202,18 @@
   </tr>
 
   <tr v-if="layout === 'table' && !editing && expanded" class="border-b border-brand-border dark:border-brand-border-dark">
-    <td colspan="11" class="px-3 py-2 bg-brand-surface dark:bg-brand-surface-dark">
+    <td colspan="11" class="px-3 py-2 bg-brand-bg dark:bg-brand-bg-dark">
       <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
       <div class="mt-1 font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
       <template v-if="hasLapTimes">
         <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
         <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
+      </template>
+
+      <template v-if="hasRoster">
+        <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Roster</div>
+        <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
       </template>
     </td>
   </tr>
@@ -185,6 +222,7 @@
 <script>
 import RaceForm from './RaceForm.vue'
 import LapSplitsChart from './LapSplitsChart.vue'
+import RaceResultsRoster from './RaceResultsRoster.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { piInfo } from '../utils/piInfo.js'
 
@@ -196,7 +234,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, LapSplitsChart },
+  components: { RaceForm, LapSplitsChart, RaceResultsRoster },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -229,6 +267,9 @@ export default {
     hasLapTimes() {
       return Array.isArray(this.race.lap_times_ms)
         && this.race.lap_times_ms.some(ms => ms != null)
+    },
+    hasRoster() {
+      return Array.isArray(this.race.results_roster) && this.race.results_roster.length > 0
     },
     lapCount() {
       if (this.race.lap_count != null) return this.race.lap_count
