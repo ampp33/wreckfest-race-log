@@ -56,6 +56,20 @@ convention — field names must exactly match the SQL parameter names):
 | `notes`              | string  | no       | Free-form notes stored on the race. |
 | `lap_count`          | integer | no       | Number of laps in the race. Defaults to the length of `lap_times_ms` when omitted. |
 | `lap_times_ms`       | array   | no       | JSON array of per-lap times in milliseconds, in lap order — first entry is lap 1, second is lap 2, and so on (e.g. `[19160, 18994, 19340]`). Stored as a JSON object on the race and charted in the race's expand drawer on the track page. |
+| `results_roster`     | array   | no       | JSON array of all racers in finishing order. Each entry is an object with the fields described below. Stored verbatim and intended for display as a structured results table in the app. |
+
+#### `results_roster` entry shape
+
+| Field            | Type    | Notes |
+|------------------|---------|-------|
+| `position`       | integer | Finishing position (1-based). |
+| `name`           | string  | Player name (color codes already stripped). |
+| `car`            | string  | Vehicle display name. |
+| `class`          | string  | Class letter + rating, e.g. `"A 450"`. |
+| `best_lap_ms`    | integer | Best lap time in milliseconds. `0` if the player completed zero laps. |
+| `total_time_ms`  | integer | Total race time in milliseconds. `0` if the player completed zero laps. |
+| `dnf`            | boolean | `true` if the engine's own DNF flag is set for this player. |
+| `laps_completed` | integer | Number of laps actually completed (0 for a DNF with no laps). |
 
 If all four tuning fields are provided, they're combined server-side into
 a single `tuning` code as `suspension*1000 + gear_ratio*100 +
@@ -119,6 +133,11 @@ error).
 **`lap_times_ms` sent as something other than a JSON array:**
 ```json
 { "success": false, "error": "lap_times_ms must be a JSON array" }
+```
+
+**`results_roster` sent as something other than a JSON array:**
+```json
+{ "success": false, "error": "results_roster must be a JSON array" }
 ```
 
 **Negative lap count:**
