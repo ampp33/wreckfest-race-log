@@ -122,7 +122,7 @@
   <!-- Table row layout (desktop) -->
   <tr
     v-else
-    class="border-b border-brand-border dark:border-brand-border-dark"
+    class="border-b border-brand-border dark:border-brand-border-dark hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
   >
     <template v-if="!editing">
       <td class="py-2 pl-3 pr-3 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">
