@@ -217,12 +217,22 @@
       </template>
     </td>
   </tr>
+
+  <ConfirmDialog
+    :open="confirmingDelete"
+    title="Delete this race?"
+    message="This can't be undone."
+    confirm-label="Delete"
+    @confirm="onConfirmDelete"
+    @cancel="confirmingDelete = false"
+  />
 </template>
 
 <script>
 import RaceForm from './RaceForm.vue'
 import LapSplitsChart from './LapSplitsChart.vue'
 import RaceResultsRoster from './RaceResultsRoster.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { piInfo } from '../utils/piInfo.js'
 
@@ -234,7 +244,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, LapSplitsChart, RaceResultsRoster },
+  components: { RaceForm, LapSplitsChart, RaceResultsRoster, ConfirmDialog },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -247,7 +257,8 @@ export default {
     return {
       editing: false,
       saving: false,
-      expanded: false
+      expanded: false,
+      confirmingDelete: false
     }
   },
   computed: {
@@ -323,7 +334,10 @@ export default {
       }
     },
     onDelete() {
-      if (!window.confirm('Delete this race?')) return
+      this.confirmingDelete = true
+    },
+    onConfirmDelete() {
+      this.confirmingDelete = false
       this.$emit('delete', this.race.id)
     },
     toggleExpanded() {

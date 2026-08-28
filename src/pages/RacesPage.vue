@@ -306,6 +306,15 @@
         </button>
       </div>
     </div>
+
+    <ConfirmDialog
+      :open="!!confirmDeleteRace"
+      title="Delete this race?"
+      message="This can't be undone."
+      confirm-label="Delete"
+      @confirm="onConfirmDelete"
+      @cancel="confirmDeleteRace = null"
+    />
   </div>
 </template>
 
@@ -319,6 +328,7 @@ import { pushToast } from '../stores/toastStore.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
 import RaceResultsRoster from '../components/RaceResultsRoster.vue'
 import RaceForm from '../components/RaceForm.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -328,7 +338,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog },
   data() {
     return {
       loading: true,
@@ -339,7 +349,8 @@ export default {
       pageSize: 50,
       expanded: {},
       editing: {},
-      saving: {}
+      saving: {},
+      confirmDeleteRace: null
     }
   },
   computed: {
@@ -459,8 +470,13 @@ export default {
         this.saving[race.id] = false
       }
     },
-    async onDelete(race) {
-      if (!window.confirm('Delete this race?')) return
+    onDelete(race) {
+      this.confirmDeleteRace = race
+    },
+    async onConfirmDelete() {
+      const race = this.confirmDeleteRace
+      if (!race) return
+      this.confirmDeleteRace = null
       try {
         await deleteRace(race.id)
         this.rows = this.rows.filter(r => r.id !== race.id)
