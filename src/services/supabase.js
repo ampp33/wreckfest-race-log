@@ -13,6 +13,10 @@ export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // PKCE returns the OAuth code as a `?code=` query param instead of a
+    // `#access_token=` hash fragment, so it can't collide with vue-router's
+    // hash-based routes (see router/index.js) on the redirect back from Google.
+    flowType: 'pkce'
   }
 })
