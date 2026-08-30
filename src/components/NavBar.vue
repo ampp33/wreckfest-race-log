@@ -1,12 +1,17 @@
 <template>
   <nav class="bg-brand-bg dark:bg-brand-surface-dark border-b border-brand-border dark:border-brand-border-dark">
     <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-      <router-link
-        to="/"
-        class="font-display font-black tracking-tighter leading-none text-brand-text dark:text-brand-text-dark text-xl"
-      >
-        Wreckfest Race <em class="signal">Log</em>
-      </router-link>
+      <div>
+        <router-link
+          to="/"
+          class="font-display font-black tracking-tighter leading-none text-brand-text dark:text-brand-text-dark text-xl"
+        >
+          Wreckfest Race <em class="signal">Log</em>
+        </router-link>
+        <p class="text-xs text-brand-muted dark:text-brand-muted-dark font-body mt-1">
+          Track your Wreckfest races, notes, and progress towards being a better racer
+        </p>
+      </div>
 
       <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-sm font-body">
         <router-link
