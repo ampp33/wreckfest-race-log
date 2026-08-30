@@ -71,6 +71,20 @@
               >
                 Users
               </router-link>
+              <router-link
+                to="/admin/api-keys"
+                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
+                active-class="text-brand-accent font-semibold"
+              >
+                API Keys
+              </router-link>
+              <router-link
+                to="/admin/feedback"
+                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
+                active-class="text-brand-accent font-semibold"
+              >
+                Feedback
+              </router-link>
             </div>
           </div>
         </div>

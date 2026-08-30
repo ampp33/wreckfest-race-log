@@ -640,3 +640,93 @@ $$;
 -- Allow the anon key (used by the external tool) to call this function.
 -- Identity is verified inside via the API key hash — no session needed.
 grant execute on function public.insert_race_with_api_key_wf1 to anon, authenticated;
+
+-- =====================================================================
+-- Admin RPCs: API keys and feedback overview.
+-- Raw key values are never stored (see api_keys above), so the admin
+-- listing exposes id/name/timestamps/issuer only — never a key value.
+-- =====================================================================
+
+-- Returns every issued API key with its issuing user's email — admin only.
+create or replace function public.get_all_api_keys()
+returns table(
+    id           uuid,
+    name         text,
+    created_at   timestamptz,
+    last_used_at timestamptz,
+    user_id      uuid,
+    user_email   text
+)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        k.id,
+        k.name,
+        k.created_at,
+        k.last_used_at,
+        k.user_id,
+        u.email::text as user_email
+    from public.api_keys k
+    join auth.users u on u.id = k.user_id
+    order by k.created_at desc;
+end;
+$$;
+
+-- Deletes any user's API key by id — admin only. The regular
+-- "api_keys delete own" RLS policy only lets a user delete their own
+-- key, so admin removal needs a security-definer RPC.
+create or replace function public.admin_delete_api_key(key_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    delete from public.api_keys where id = key_id;
+end;
+$$;
+
+-- Returns all feedback entries with the submitting user's email, newest
+-- first — admin only. The "feedback select admin" RLS policy already
+-- lets an admin select these rows directly, but a plain select() from
+-- the client can't join auth.users, so this RPC does the join.
+create or replace function public.get_all_feedback()
+returns table(
+    id            uuid,
+    url           text,
+    feedback_text text,
+    created_at    timestamptz,
+    user_id       uuid,
+    user_email    text
+)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        f.id,
+        f.url,
+        f.feedback_text,
+        f.created_at,
+        f.user_id,
+        u.email::text as user_email
+    from public.feedback f
+    join auth.users u on u.id = f.user_id
+    order by f.created_at desc;
+end;
+$$;
