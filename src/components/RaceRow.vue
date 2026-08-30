@@ -75,7 +75,10 @@
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap</div>
-          <div class="font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</div>
+          <div
+            class="font-mono"
+            :class="isPersonalBest ? 'text-brand-accent font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
+          >{{ formatLap }}</div>
         </div>
         <div>
           <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
@@ -139,7 +142,10 @@
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</td>
-      <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
+      <td
+        class="py-2 pr-3 font-mono"
+        :class="isPersonalBest ? 'text-brand-accent font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
+      >{{ formatLap }}</td>
       <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
       <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
       <td class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
@@ -288,10 +294,14 @@ export default {
       if (Array.isArray(this.race.lap_times_ms)) return this.race.lap_times_ms.length
       return '—'
     },
+    isPersonalBest() {
+      return this.race.lap_time_ms != null
+        && this.personalBestMs != null
+        && this.race.lap_time_ms === this.personalBestMs
+    },
     formatLap() {
       if (this.race.lap_time_ms == null) return '—'
-      const isPb = this.personalBestMs != null && this.race.lap_time_ms === this.personalBestMs
-      return isPb ? `★ ${formatMsToTime(this.race.lap_time_ms)}` : formatMsToTime(this.race.lap_time_ms)
+      return this.isPersonalBest ? `★ ${formatMsToTime(this.race.lap_time_ms)}` : formatMsToTime(this.race.lap_time_ms)
     },
     formatTotal() {
       return this.race.total_time_ms != null

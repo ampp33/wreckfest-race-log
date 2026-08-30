@@ -28,7 +28,10 @@
             </template>
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </td>
-          <td class="py-1 pr-3 text-right font-mono text-brand-text dark:text-brand-text-dark">{{ formatTime(row.best_lap_ms) }}</td>
+          <td
+            class="py-1 pr-3 text-right font-mono"
+            :class="isFastestLap(row) ? 'text-brand-accent font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
+          >{{ formatTime(row.best_lap_ms) }}</td>
           <td class="py-1 pr-3 text-right font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTime(row.total_time_ms) }}</td>
           <td class="py-1 pr-3 text-right font-mono whitespace-nowrap" :class="row.dnf ? 'text-red-500' : 'text-brand-secondary dark:text-brand-secondary-dark'">
             {{ row.dnf ? 'DNF' : (row.laps_completed ?? '—') }}
@@ -54,9 +57,20 @@ export default {
   computed: {
     rows() {
       return Array.isArray(this.roster) ? this.roster : []
+    },
+    fastestLapMs() {
+      const times = this.rows
+        .map(r => r.best_lap_ms)
+        .filter(ms => ms != null && ms > 0)
+      return times.length ? Math.min(...times) : null
     }
   },
   methods: {
+    isFastestLap(row) {
+      return row.best_lap_ms != null
+        && row.best_lap_ms > 0
+        && row.best_lap_ms === this.fastestLapMs
+    },
     formatTime(ms) {
       if (ms == null || ms === 0) return '—'
       return formatMsToTime(ms)
