@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between gap-2">
         <div>
           <router-link
-            to="/"
+            to="/tracks"
             class="font-display font-black tracking-tighter leading-none text-brand-text dark:text-brand-text-dark text-xl"
           >
             Wreckfest Race <em class="signal">Log</em>
@@ -17,7 +17,7 @@
         <!-- Desktop nav -->
         <div class="hidden sm:flex flex-wrap items-center gap-2 sm:gap-4 text-sm font-body">
           <router-link
-            to="/"
+            to="/tracks"
             class="hover:text-brand-accent"
             active-class="text-brand-accent font-semibold"
             :class="{ 'text-brand-accent font-semibold': isTrackListRoute }"
@@ -44,6 +44,13 @@
             active-class="text-brand-accent font-semibold"
           >
             API Keys
+          </router-link>
+          <router-link
+            to="/telemetry"
+            class="hover:text-brand-accent"
+            active-class="text-brand-accent font-semibold"
+          >
+            Telemetry
           </router-link>
 
           <div v-if="auth.isAdmin" class="relative group">
@@ -143,7 +150,7 @@
       <div v-if="mobileMenuOpen" class="sm:hidden mt-3 rounded-lg bg-brand-accent text-white shadow-lg p-3 text-sm font-body">
         <div class="flex flex-col gap-1">
           <router-link
-            to="/"
+            to="/tracks"
             class="px-2 py-2 rounded hover:bg-white/10"
             active-class="bg-white/15 font-semibold"
             :class="{ 'bg-white/15 font-semibold': isTrackListRoute }"
@@ -174,6 +181,14 @@
             @click="mobileMenuOpen = false"
           >
             API Keys
+          </router-link>
+          <router-link
+            to="/telemetry"
+            class="px-2 py-2 rounded hover:bg-white/10"
+            active-class="bg-white/15 font-semibold"
+            @click="mobileMenuOpen = false"
+          >
+            Telemetry
           </router-link>
 
           <template v-if="auth.isAdmin">
@@ -269,7 +284,7 @@ export default {
   },
   computed: {
     isTrackListRoute() {
-      return this.$route.path === '/'
+      return this.$route.path === '/tracks'
     },
     isAdminRoute() {
       return this.$route.path.startsWith('/admin')
