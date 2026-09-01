@@ -9,23 +9,33 @@ export default {
     extend: {
       colors: {
         brand: {
-          bg:        { DEFAULT: '#FFFFFF',  dark: '#0A0A0A'  },
-          surface:   { DEFAULT: '#EFEFED',  dark: '#222220'  },
-          text:      { DEFAULT: '#1C1C1A',  dark: '#F5F4F0'  },
-          muted:     { DEFAULT: '#5F5E5A',  dark: '#B4B2A9'  },
-          secondary: { DEFAULT: '#444441',  dark: '#888780'  },
-          accent:    { DEFAULT: '#C41E1E'                    },
-          border:    { DEFAULT: '#C8C6BF',  dark: '#383836'  },
-          strong:    { DEFAULT: '#1C1C1A',  dark: '#F5F4F0'  },
+          // Grid Break: off-white ground, warm near-black ink, one red.
+          bg:        { DEFAULT: '#EFEFED',  dark: '#0A0A0A'  },
+          surface:   { DEFAULT: '#E4E2DC',  dark: '#141412'  },
+          text:      { DEFAULT: '#16150F',  dark: '#F5F4F0'  },
+          muted:     { DEFAULT: '#5F5E5A',  dark: '#93918A'  },
+          secondary: { DEFAULT: '#3B3A36',  dark: '#B4B2A9'  },
+          accent:    { DEFAULT: '#C41E1E',  dark: '#E5332F'  },
+          border:    { DEFAULT: '#C8C6BF',  dark: '#2E2E2B'  },
+          strong:    { DEFAULT: '#16150F',  dark: '#F5F4F0'  },
+          // the black slab the page ends on, in both themes
+          slab:      { DEFAULT: '#0A0A0A',  dark: '#000000'  },
+          good:      { DEFAULT: '#15803d',  dark: '#22c55e'  },
         },
       },
       fontFamily: {
-        display: ['"Helvetica Neue"', 'Arial', 'sans-serif'],
-        body:    ['system-ui', '-apple-system', 'sans-serif'],
+        display: ['Switzer', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        body:    ['Switzer', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
       },
       fontSize: {
-        'display-sm': ['clamp(32px, 5vw, 48px)', { lineHeight: '0.88', letterSpacing: '-0.03em' }],
-        'display-lg': ['clamp(40px, 7vw, 64px)', { lineHeight: '0.88', letterSpacing: '-0.03em' }],
+        // Grid Break sets headings tight and heavy; the ramp is the design's.
+        'display-sm': ['clamp(30px, 4.4vw, 44px)', { lineHeight: '0.86', letterSpacing: '-0.035em' }],
+        'display-lg': ['clamp(44px, 7.6vw, 82px)', { lineHeight: '0.86', letterSpacing: '-0.035em' }],
+        'display-xl': ['clamp(52px, 9vw, 104px)',  { lineHeight: '0.86', letterSpacing: '-0.035em' }],
+        'ov':         ['10px', { lineHeight: '1', letterSpacing: '0.2em' }],
+      },
+      letterSpacing: {
+        tightest: '-0.035em',
       },
     }
   },

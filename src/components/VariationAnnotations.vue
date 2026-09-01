@@ -1,12 +1,12 @@
 <template>
-  <div class="mb-4 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
+  <div class="mb-6 border-t-2 border-brand-strong dark:border-brand-strong-dark">
     <!-- Collapsible header -->
     <button
       type="button"
-      class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-brand-bg dark:hover:bg-brand-surface-dark/70 rounded transition-colors"
+      class="w-full flex items-center justify-between py-3 min-h-[44px] text-left"
       @click="collapsed = !collapsed"
     >
-      <span class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark">Turn Annotations</span>
+      <span class="ov text-brand-text dark:text-brand-text-dark">Layout &amp; turn markers</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="w-4 h-4 text-brand-muted dark:text-brand-muted-dark transition-transform"
@@ -21,13 +21,16 @@
     </button>
 
     <!-- Content -->
-    <div v-if="!collapsed" class="p-3 border-t border-brand-border dark:border-brand-border-dark">
+    <div v-if="!collapsed" class="pb-4 border-t border-brand-border dark:border-brand-border-dark pt-4">
       <div class="flex flex-col md:flex-row gap-4">
         <!-- Map (left) -->
         <div class="md:w-1/2">
           <AnnotationMap
             :image-url="imageUrl"
             :alt="alt"
+            :track-slug="trackSlug"
+            :variation-slug="variationSlug"
+            :ring-label="ringLabel"
             :annotations="workingAnnotations"
             :edit-mode="editMode"
             :selected-id="selectedId"
@@ -66,6 +69,9 @@ export default {
     imageUrl: { type: String, required: true },
     alt: { type: String, default: 'Track map' },
     annotations: { type: Array, default: () => [] },
+    trackSlug: { type: String, default: '' },
+    variationSlug: { type: String, default: '' },
+    ringLabel: { type: String, default: '' },
   },
   emits: ['save'],
   data() {

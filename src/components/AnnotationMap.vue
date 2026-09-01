@@ -1,22 +1,53 @@
 <template>
   <div
     ref="container"
-    class="relative select-none rounded overflow-hidden bg-black"
+    class="relative select-none overflow-hidden bg-brand-surface dark:bg-brand-surface-dark"
     :class="editMode ? 'cursor-crosshair' : ''"
     @click="onContainerClick"
   >
+    <!-- The layout drawn as its own name, set round the racing line. Only
+         layouts that enclose one region are traced; everything else falls
+         back to the artwork below. -->
+    <svg
+      v-if="ringPath"
+      ref="mapImg"
+      :viewBox="`0 0 ${ringPath.w} ${ringPath.h}`"
+      class="block w-full h-auto"
+      role="img"
+      :aria-label="`${alt} layout`"
+    >
+      <path
+        :d="ringPath.d"
+        fill="none"
+        class="stroke-brand-border dark:stroke-brand-border-dark"
+        stroke-width="30"
+      />
+      <path :id="pathId" ref="ringPathEl" :d="ringPath.d" fill="none" stroke="none" />
+      <text
+        ref="ringTextEl"
+        font-family="Switzer, Helvetica, Arial, sans-serif"
+        font-size="18"
+        font-weight="800"
+        letter-spacing="0.01em"
+        class="fill-brand-text dark:fill-brand-text-dark"
+      >
+        <textPath :href="`#${pathId}`" startOffset="0">{{ ringText }}</textPath>
+      </text>
+    </svg>
+
     <img
+      v-else
       ref="mapImg"
       :src="imageUrl"
       :alt="alt"
-      class="w-full h-auto block pointer-events-none"
+      class="w-full h-auto block pointer-events-none map-art"
       draggable="false"
     />
 
     <!-- Edit mode hint -->
     <div
       v-if="editMode"
-      class="absolute top-2 left-2 bg-orange-500/80 text-white text-xs px-2 py-0.5 rounded font-medium pointer-events-none"
+      class="ov absolute top-2 left-2 bg-brand-accent text-white px-2 py-1.5 pointer-events-none"
     >
       Click map to add turn
     </div>
@@ -26,7 +57,7 @@
       <template v-if="!editMode">
         <button
           type="button"
-          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent transition-colors"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-bg-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark transition-colors"
           title="Edit annotations"
           @click.stop="$emit('toggle-edit')"
         >
@@ -38,7 +69,7 @@
       <template v-else>
         <button
           type="button"
-          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-muted dark:text-brand-muted-dark hover:text-red-500 transition-colors"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-bg-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent transition-colors"
           title="Discard changes"
           @click.stop="$emit('discard')"
         >
@@ -48,7 +79,7 @@
         </button>
         <button
           type="button"
-          class="p-1.5 bg-brand-bg/80 dark:bg-brand-surface-dark/80 backdrop-blur-sm rounded shadow text-brand-muted dark:text-brand-muted-dark hover:text-green-600 transition-colors"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center bg-brand-accent text-white hover:opacity-85 transition-opacity"
           title="Save annotations"
           @click.stop="$emit('save')"
         >
@@ -59,14 +90,14 @@
       </template>
     </div>
 
-    <!-- Annotation circles, positioned by normalized percentage coordinates -->
+    <!-- Turn markers, positioned by normalized percentage coordinates -->
     <div
       v-for="ann in annotations"
       :key="ann.id"
-      class="absolute -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all cursor-pointer ring-2"
+      class="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer tabular"
       :class="ann.id === selectedId
-        ? 'bg-blue-500/85 ring-blue-300 scale-110'
-        : 'bg-brand-accent/75 ring-brand-accent/50 hover:bg-brand-accent hover:scale-105'"
+        ? 'bg-brand-text dark:bg-brand-text-dark text-brand-bg dark:text-brand-bg-dark scale-110'
+        : 'bg-brand-accent dark:bg-brand-accent-dark hover:scale-105'"
       :style="{ left: ann.x + '%', top: ann.y + '%' }"
       @click.stop="$emit('select', ann.id)"
     >
@@ -76,6 +107,10 @@
 </template>
 
 <script>
+import { loadTrackPaths, getTrackPath } from '../utils/trackPath.js'
+
+let uid = 0
+
 export default {
   name: 'AnnotationMap',
   props: {
@@ -84,13 +119,62 @@ export default {
     annotations: { type: Array, default: () => [] },
     editMode: { type: Boolean, default: false },
     selectedId: { type: String, default: null },
+    trackSlug: { type: String, default: '' },
+    variationSlug: { type: String, default: '' },
+    // What gets written round the line. Defaults to the variation's own name.
+    ringLabel: { type: String, default: '' }
   },
   emits: ['toggle-edit', 'add-annotation', 'select', 'save', 'discard'],
+  data() {
+    return {
+      ringPath: null,
+      reps: 1,
+      pathId: `ring-${++uid}`
+    }
+  },
+  computed: {
+    ringUnit() {
+      const label = (this.ringLabel || this.alt || 'Track').toUpperCase()
+      return `${label} · `
+    },
+    ringText() {
+      return this.ringUnit.repeat(this.reps)
+    }
+  },
+  watch: {
+    // the detail page swaps variation without remounting
+    variationSlug() { this.resolvePath() },
+    ringUnit() { this.$nextTick(this.fitRing) }
+  },
+  async mounted() {
+    await loadTrackPaths()
+    this.resolvePath()
+  },
   methods: {
+    resolvePath() {
+      this.ringPath = getTrackPath(this.trackSlug, this.variationSlug)
+      this.reps = 1
+      if (this.ringPath) this.$nextTick(this.fitRing)
+    },
+    // Repeat the name until it closes the loop without lapping over its own
+    // start: measure one pass against the real path length rather than guessing
+    // from character count, which is wrong by a factor of several.
+    fitRing() {
+      const path = this.$refs.ringPathEl
+      const text = this.$refs.ringTextEl
+      if (!path || !text || typeof path.getTotalLength !== 'function') return
+      const total = path.getTotalLength()
+      const drawn = text.getComputedTextLength()
+      if (!total || !drawn) return
+      const perRep = drawn / this.reps
+      if (perRep <= 0) return
+      this.reps = Math.max(1, Math.floor(total / perRep))
+    },
     onContainerClick(event) {
       if (!this.editMode) return
-      const img = this.$refs.mapImg
-      const rect = img.getBoundingClientRect()
+      const el = this.$refs.mapImg
+      if (!el) return
+      const rect = el.getBoundingClientRect()
       if (
         event.clientX < rect.left || event.clientX > rect.right ||
         event.clientY < rect.top || event.clientY > rect.bottom

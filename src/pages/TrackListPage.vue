@@ -1,31 +1,28 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-6 pb-24">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
       <div>
-        <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
-          <em class="signal">Tracks</em>
+        <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+          Tracks
         </h1>
-        <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-1">
-          Pick a track to view its variations and race history.
-          Press <kbd class="px-1 py-0.5 text-xs bg-brand-surface dark:bg-brand-surface-dark rounded">Q</kbd> for quick add,
-          and <kbd class="px-1 py-0.5 text-xs bg-brand-surface dark:bg-brand-surface-dark rounded">T</kbd> for a quick track search.
+        <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 max-w-lg">
+          Every track you have logged a lap on. Pick one to open its variations, its trend and its notes.
+          Press <b class="text-brand-text dark:text-brand-text-dark">T</b> to search from anywhere.
         </p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2.5 shrink-0">
         <input
           v-model="search"
           type="text"
-          placeholder="Search tracks..."
-          class="w-full sm:w-64 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+          placeholder="Search tracks"
+          class="min-h-[44px] w-full sm:w-60 border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-bg-dark px-3.5 text-sm text-brand-text dark:text-brand-text-dark focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         />
         <button
           type="button"
-          class="px-3 py-2 text-xs border border-brand-border dark:border-brand-border-dark rounded hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+          class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
           @click="onExport"
-        >
-          Export
-        </button>
-        <label class="px-3 py-2 text-xs border border-brand-border dark:border-brand-border-dark rounded hover:bg-brand-surface dark:hover:bg-brand-surface-dark cursor-pointer">
+        >Export</button>
+        <label class="ov min-h-[44px] px-4 flex items-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark cursor-pointer">
           Import
           <input type="file" accept="application/json" class="hidden" @change="onImport" />
         </label>
@@ -38,7 +35,7 @@
     </p>
     <div
       v-else
-      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12"
     >
       <TrackCard v-for="track in filteredTracks" :key="track.id" :track="track" />
     </div>

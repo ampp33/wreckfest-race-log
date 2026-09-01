@@ -1,5 +1,40 @@
-/* Oblique design system: em.signal = italic + 900 + accent color.
-   One per heading, everywhere, no exceptions. */
+/* Grid Break.
+ *
+ * One neutral grotesk (Switzer), one red, an off-white ground and a warm
+ * near-black ink. Headings are set heavy and tight; the accent word in a
+ * heading is knocked out to an outline rather than italicised, which is the
+ * one place type is used as image rather than as text. The page ends on a
+ * black slab.
+ */
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-900.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -13,11 +48,21 @@ body,
 
 body {
   overflow-x: hidden;
+  font-feature-settings: 'kern' 1;
+}
+
+/* Switzer ships tabular figures by default, so lap times line up digit for
+ * digit without pulling in a mono. This just makes the intent explicit where
+ * a column of times has to stay aligned. */
+.tabular,
+.font-mono,
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Disable layout-shifting transitions while still letting Tailwind's
- * `transition` utilities work where intentionally applied. The spec asks
- * for "minimal animations" in service of fast input. */
+ * `transition` utilities work where intentionally applied. */
 * {
   transition-duration: 100ms;
 }
@@ -26,12 +71,50 @@ body {
   background-color: rgba(196, 30, 30, 0.3);
 }
 
+/* The signal word in a heading. Grid Break knocks it out to an outline instead
+ * of italicising it — the accent is the counter, not the colour. */
 em.signal {
-  font-style: italic;
+  font-style: normal;
   font-weight: 900;
-  color: theme('colors.brand.accent.DEFAULT');
+  color: transparent;
+  /* relative so the outline holds from a 30px panel heading to an 82px page title */
+  -webkit-text-stroke: 0.032em theme('colors.brand.accent.DEFAULT');
+  paint-order: stroke;
+}
+
+.dark em.signal {
+  -webkit-text-stroke-color: theme('colors.brand.accent.dark');
+}
+
+/* Small caps label, used for every overline and column head in the system. */
+.ov {
+  font-weight: 500;
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* The rule that opens a section. Two-pixel ink above, hairline between rows. */
+.rule-top {
+  border-top: 2px solid theme('colors.brand.strong.DEFAULT');
+}
+
+.dark .rule-top {
+  border-top-color: theme('colors.brand.strong.dark');
 }
 
 .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+/* Track layout drawn as type on a path: the white line-art fallback needs
+ * inverting on the light ground, and sits as-is on the dark one. */
+.map-art {
+  filter: invert(1) opacity(0.78);
+}
+
+.dark .map-art {
+  filter: none;
+  opacity: 0.9;
 }

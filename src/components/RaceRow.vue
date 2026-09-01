@@ -32,37 +32,37 @@
       <!-- Same fields, in the same order, as the desktop table columns. -->
       <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
           <div>
             <template v-if="race.performance_index != null">
-              <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-              {{ race.performance_index }}
+              <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
+              <span class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
             </template>
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Tune</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
           <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Place</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
           <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Laps</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Laps</div>
           <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Lap</div>
           <div class="font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
           <div class="font-mono" :class="deltaColor">{{ deltaLabel || '—' }}</div>
         </div>
         <div>
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Total</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Total</div>
           <div class="font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</div>
         </div>
       </div>
@@ -75,7 +75,7 @@
         @click="toggleExpanded"
       >
         <div class="min-w-0">
-          <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
           <div v-if="!expanded" class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">
             {{ race.notes || 'No notes' }}
           </div>
@@ -87,7 +87,7 @@
         <div class="font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
         <template v-if="hasLapTimes">
-          <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
+          <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
           <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
         </template>
       </div>
@@ -107,26 +107,27 @@
   <!-- Table row layout (desktop) -->
   <tr
     v-else
-    class="border-b border-brand-border dark:border-brand-border-dark"
+    class="border-t border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
   >
     <template v-if="!editing">
-      <td class="py-2 pl-3 pr-3 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">
+      <td class="py-2 pl-0 pr-3 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
         {{ formattedDate }}
       </td>
-      <td class="py-2 pr-3 text-brand-secondary dark:text-brand-secondary-dark">{{ vehicleName }}</td>
+      <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
       <td class="py-2 pr-3 whitespace-nowrap">
         <template v-if="race.performance_index != null">
-          <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-          {{ race.performance_index }}
+          <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
+          <span class="tabular text-brand-muted dark:text-brand-muted-dark">
+{{ race.performance_index }}</span>
         </template>
         <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
       </td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
-      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</td>
-      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</td>
-      <td class="py-2 pr-3 font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
-      <td class="py-2 pr-3 font-mono" :class="deltaColor">{{ deltaLabel }}</td>
-      <td class="py-2 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</td>
+      <td class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
+      <td class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
+      <td class="py-2 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
+      <td class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
+      <td class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
       <td
         class="py-2 pr-3 max-w-[18ch] cursor-pointer hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
         @click="toggleExpanded"
@@ -171,11 +172,11 @@
 
   <tr v-if="layout === 'table' && !editing && expanded" class="border-b border-brand-border dark:border-brand-border-dark">
     <td colspan="11" class="px-3 py-2 bg-brand-surface dark:bg-brand-surface-dark">
-      <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
-      <div class="mt-1 font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
+      <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
+      <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
       <template v-if="hasLapTimes">
-        <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
+        <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
         <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
       </template>
     </td>

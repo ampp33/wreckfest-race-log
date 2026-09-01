@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-6 pb-24">
+  <div class="max-w-6xl mx-auto px-6 py-10">
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <div v-else-if="!track">
@@ -13,7 +13,7 @@
         v-if="track"
         :src="trackImage"
         :alt="track.name"
-        class="w-full h-40 sm:h-56 object-cover rounded border border-brand-border dark:border-brand-border-dark mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+        class="w-full h-28 sm:h-40 object-cover border border-brand-border dark:border-brand-border-dark mb-8 cursor-pointer hover:opacity-90 transition-opacity"
         @click="openImageModal"
       />
 
@@ -29,16 +29,16 @@
               v-for="v in track.track_variations"
               :key="v.id"
               :to="`/track/${track.slug}/${v.slug}`"
-              class="flex items-center gap-2 pl-1 pr-3 py-1 text-xs rounded border"
+              class="flex items-center gap-2 min-h-[44px] pl-1 pr-4 text-xs border"
               :class="v.id === currentVariation.id
-                ? 'bg-brand-accent text-white border-brand-accent'
-                : 'border-brand-border dark:border-brand-border-dark hover:border-brand-accent'"
+                ? 'bg-brand-accent dark:bg-brand-accent-dark text-white border-brand-accent dark:border-brand-accent-dark'
+                : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
             >
               <img
                 :src="variationImageUrl(track.slug, v.slug)"
                 alt=""
                 aria-hidden="true"
-                class="w-8 h-6 object-contain bg-black rounded"
+                class="w-8 h-6 object-contain map-art"
                 loading="lazy"
               />
               <span>{{ v.name }}</span>
@@ -49,16 +49,16 @@
         <div class="flex gap-2 w-full sm:w-auto sm:self-start shrink-0">
           <button
             type="button"
-            class="flex-1 sm:flex-none font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity"
+            class="flex-1 sm:flex-none min-h-[44px] font-display font-bold text-[13px] bg-brand-accent dark:bg-brand-accent-dark text-white px-6 hover:opacity-85 active:opacity-70 transition-opacity"
             @click="onAddRow"
           >
-            + Add Race
+            + Add race
           </button>
         </div>
       </div>
 
       <!-- Track Notes -->
-      <div class="mb-4 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
+      <div class="mb-8 rule-top pt-4">
         <div v-if="!notesEditMode" class="flex items-start gap-2">
           <div
             v-if="trackNotesHtml"
@@ -108,33 +108,46 @@
         v-if="currentVariation"
         :image-url="variationMapImage"
         :alt="currentVariation.name"
+        :track-slug="track.slug"
+        :variation-slug="currentVariation.slug"
+        :ring-label="`${track.name} — ${currentVariation.name}`"
         :annotations="annotations"
         @save="onSaveAnnotations"
       />
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <div class="col-span-2 sm:col-span-1 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
-          <div class="flex items-center gap-2 mt-1">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ pbDisplay }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
+          <div class="mt-2">
             <LapTimeInput v-model="goalInputMs" @blur="onSaveGoal" />
           </div>
         </div>
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Personal best</div>
-          <div class="font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark mt-1">{{ pbDisplay }}</div>
+        <div class="pt-3 border-t-2 border-brand-accent dark:border-brand-accent-dark">
+          <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular mt-2"
+               :class="gapMs != null && gapMs <= 0 ? 'text-brand-good dark:text-brand-good-dark' : 'text-brand-accent dark:text-brand-accent-dark'">
+            {{ gapDisplay }}
+          </div>
         </div>
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races</div>
-          <div class="font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark mt-1">{{ races.length }}</div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ races.length }}</div>
         </div>
       </div>
 
       <LapTimeChart :races="races" :vehicles="vehicles" />
 
-      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark px-3 pt-3 pb-2">
-          Logged <em class="signal">races</em>
-        </h2>
+      <div>
+        <div class="flex items-end justify-between border-b-2 border-brand-strong dark:border-brand-strong-dark pb-2.5 mb-1">
+          <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+            Logged races
+          </h2>
+          <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ races.length }} at this variation</span>
+        </div>
 
         <!-- Card layout (mobile) -->
         <div class="sm:hidden">
@@ -157,9 +170,9 @@
         <!-- Table layout (desktop) -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="bg-brand-bg dark:bg-brand-bg-dark text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">
+            <thead class="text-left ov text-brand-muted dark:text-brand-muted-dark">
               <tr>
-                <th class="py-2 pl-3 pr-3">When</th>
+                <th class="py-2.5 pl-0 pr-3">When</th>
                 <th class="py-2 pr-3">Vehicle</th>
                 <th class="py-2 pr-3">Class (PI)</th>
                 <th class="py-2 pr-3 text-center">Tune</th>
@@ -237,7 +250,7 @@ import DOMPurify from 'dompurify'
 import { authStore } from '../stores/authStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import { quickAddStore, setOnRaceSaved, clearOnRaceSaved, openQuickAdd } from '../stores/quickAddStore.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 
@@ -276,6 +289,14 @@ export default {
     },
     pbDisplay() {
       return this.personalBestMs != null ? formatMsToTime(this.personalBestMs) : '—'
+    },
+    gapMs() {
+      if (this.personalBestMs == null || this.goalLapTimeMs == null) return null
+      return this.personalBestMs - this.goalLapTimeMs
+    },
+    gapDisplay() {
+      if (this.gapMs == null) return '—'
+      return formatDelta(this.gapMs)
     },
     trackNotes() {
       return this.goal ? (this.goal.notes || '') : ''

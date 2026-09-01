@@ -13,6 +13,8 @@
       <router-view v-else />
     </main>
 
+    <AppFooter v-if="!isLoginRoute" />
+
     <QuickAddModal v-if="auth.isAuthenticated" />
     <TrackSearchModal v-if="auth.isAuthenticated" />
     <FeedbackModal v-if="auth.isAuthenticated" />
@@ -23,6 +25,7 @@
 
 <script>
 import NavBar from './components/NavBar.vue'
+import AppFooter from './components/AppFooter.vue'
 import WF2Banner from './components/WF2Banner.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
@@ -36,7 +39,7 @@ import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
   data() {
     return {
       auth: authStore,

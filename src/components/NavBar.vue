@@ -1,49 +1,39 @@
 <template>
-  <nav class="bg-brand-bg dark:bg-brand-surface-dark border-b border-brand-border dark:border-brand-border-dark">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-      <router-link
-        to="/"
-        class="font-display font-black tracking-tighter leading-none text-brand-text dark:text-brand-text-dark text-xl"
-      >
-        Wreckfest Race <em class="signal">Log</em>
+  <nav class="bg-brand-bg dark:bg-brand-bg-dark border-b border-brand-border dark:border-brand-border-dark">
+    <div class="max-w-6xl mx-auto px-6 min-h-[88px] py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <router-link to="/" class="flex items-baseline gap-2.5 shrink-0">
+        <span class="font-display font-black tracking-tightest leading-none text-[17px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
+        <span class="ov text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
       </router-link>
 
-      <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-sm font-body">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] font-body">
         <router-link
           to="/"
-          class="hover:text-brand-accent"
-          active-class="text-brand-accent font-semibold"
-          :class="{ 'text-brand-accent font-semibold': isTrackListRoute }"
-        >
-          Tracks
-        </router-link>
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+          :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTrackListRoute }"
+        >Tracks</router-link>
         <router-link
           to="/races"
-          class="hover:text-brand-accent"
-          active-class="text-brand-accent font-semibold"
-        >
-          Races
-        </router-link>
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+        >Races</router-link>
         <router-link
           to="/stats"
-          class="hover:text-brand-accent"
-          active-class="text-brand-accent font-semibold"
-        >
-          Stats
-        </router-link>
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+        >Stats</router-link>
         <router-link
           to="/settings/api-keys"
-          class="hover:text-brand-accent"
-          active-class="text-brand-accent font-semibold"
-        >
-          API Keys
-        </router-link>
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+        >API keys</router-link>
 
         <div v-if="auth.isAdmin" class="relative group">
           <button
             type="button"
-            class="flex items-center gap-1 hover:text-brand-accent"
-            :class="{ 'text-brand-accent font-semibold': isAdminRoute }"
+            class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isAdminRoute }"
           >
             Admin
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-px" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -51,38 +41,32 @@
             </svg>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
-            <div class="w-40 bg-brand-bg dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark rounded shadow-lg py-1">
+            <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
               <router-link
                 to="/admin/diagnostics"
-                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
-                active-class="text-brand-accent font-semibold"
-              >
-                Diagnostics
-              </router-link>
+                class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+              >Diagnostics</router-link>
               <router-link
                 to="/admin/users"
-                class="block px-4 py-2 text-sm hover:bg-brand-surface dark:hover:bg-brand-surface-dark/70"
-                active-class="text-brand-accent font-semibold"
-              >
-                Users
-              </router-link>
+                class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+              >Users</router-link>
             </div>
           </div>
         </div>
 
         <button
           type="button"
-          class="h-7 px-2 flex items-center justify-center leading-none rounded border border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+          class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
           @click="onToggleDark"
           :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-        >
-          {{ prefs.darkMode ? '☀' : '🌙' }}
-        </button>
+        >{{ prefs.darkMode ? 'Light' : 'Dark' }}</button>
 
         <button
           type="button"
-          class="h-7 px-2 flex items-center justify-center rounded border border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-          aria-label="feedback"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          aria-label="Send feedback"
           @click="onOpenFeedback"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
@@ -93,11 +77,9 @@
         <button
           v-if="auth.isAuthenticated"
           type="button"
-          class="ml-2 text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent text-xs"
+          class="min-h-[44px] flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark text-[13px]"
           @click="onSignOut"
-        >
-          Sign out
-        </button>
+        >Sign out</button>
       </div>
     </div>
   </nav>

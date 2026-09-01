@@ -1,36 +1,41 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
-      Your <em class="signal">races</em>
+  <div class="max-w-6xl mx-auto px-6 py-10">
+    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+      Races
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">All of your logged races, newest first.</p>
+    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10">
+      <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
+    </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
     <div v-else>
       <!-- Controls row -->
-      <div class="flex items-center justify-between mb-3 gap-4 flex-wrap">
-        <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+      <div class="flex items-end justify-between mb-6 gap-4 flex-wrap">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">
           {{ total }} race{{ total === 1 ? '' : 's' }}
         </div>
-        <div class="flex items-center gap-2 text-sm font-body">
-          <label class="text-brand-muted dark:text-brand-muted-dark">Per page</label>
-          <select
-            v-model="pageSize"
-            class="border border-brand-border dark:border-brand-border-dark rounded px-2 py-1 bg-brand-bg dark:bg-brand-surface-dark text-sm"
-            @change="currentPage = 1"
-          >
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
+        <div class="flex items-center gap-3">
+          <span class="ov text-brand-muted dark:text-brand-muted-dark">Per page</span>
+          <div class="flex">
+            <button
+              v-for="size in [25, 50, 100]"
+              :key="size"
+              type="button"
+              class="tabular min-h-[44px] min-w-[52px] border text-sm font-semibold -ml-px first:ml-0"
+              :class="pageSize === size
+                ? 'bg-brand-strong dark:bg-brand-strong-dark border-brand-strong dark:border-brand-strong-dark text-brand-bg dark:text-brand-bg-dark'
+                : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
+              @click="pageSize = size; currentPage = 1"
+            >{{ size }}</button>
+          </div>
         </div>
       </div>
 
       <p v-if="total === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
 
-      <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
+      <div v-else>
         <!-- Card layout (mobile) -->
         <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
           <div v-for="race in pageRows" :key="race.id" class="p-3">
@@ -39,7 +44,7 @@
                 <router-link
                   v-if="race.trackSlug && race.variationSlug"
                   :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                  class="font-bold text-brand-accent hover:underline truncate block"
+                  class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
                 >
                   {{ race.trackName }}
                   <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
@@ -88,57 +93,57 @@
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-                <th class="px-4 py-2 font-medium">Date</th>
-                <th class="px-4 py-2 font-medium">Track / Variation</th>
-                <th class="px-4 py-2 font-medium">Vehicle</th>
-                <th class="px-4 py-2 font-medium">Class (PI)</th>
-                <th class="px-4 py-2 font-medium text-right">Place</th>
-                <th class="px-4 py-2 font-medium text-right">Laps</th>
-                <th class="px-4 py-2 font-medium text-right">Lap time</th>
-                <th class="px-4 py-2 font-medium text-right">Total time</th>
+              <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+                <th class="px-3.5 pb-2.5 font-medium">Date</th>
+                <th class="px-3.5 pb-2.5 font-medium">Track / Variation</th>
+                <th class="px-3.5 pb-2.5 font-medium">Vehicle</th>
+                <th class="px-3.5 pb-2.5 font-medium">Class (PI)</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Place</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
               <tr
                 v-for="race in pageRows"
                 :key="race.id"
-                class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
+                class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
               >
-                <td class="px-4 py-2 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark text-xs">
+                <td class="px-3.5 py-2 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark text-xs">
                   {{ formatDate(race.datetime) }}
                 </td>
-                <td class="px-4 py-2">
+                <td class="px-3.5 py-2">
                   <router-link
                     v-if="race.trackSlug && race.variationSlug"
                     :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                    class="text-brand-accent hover:underline"
+                    class="font-semibold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
                   >
                     {{ race.trackName }}
                     <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
                   </router-link>
                   <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
                 </td>
-                <td class="px-4 py-2 text-brand-secondary dark:text-brand-secondary-dark">
+                <td class="px-3.5 py-2 text-brand-secondary dark:text-brand-secondary-dark">
                   {{ race.vehicleName }}
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap">
+                <td class="px-3.5 py-2 whitespace-nowrap">
                   <template v-if="race.performance_index != null">
                     <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
                     {{ race.performance_index }}
                   </template>
                   <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
                 </td>
-                <td class="px-4 py-2 text-right tabular-nums">
+                <td class="px-3.5 py-2 text-right tabular-nums">
                   {{ race.place != null ? race.place : '—' }}
                 </td>
-                <td class="px-4 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
+                <td class="px-3.5 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
                   {{ lapCount(race) }}
                 </td>
-                <td class="px-4 py-2 text-right font-mono tabular-nums">
+                <td class="px-3.5 py-2 text-right font-mono tabular-nums">
                   {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
                 </td>
-                <td class="px-4 py-2 text-right font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">
+                <td class="px-3.5 py-2 text-right font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">
                   {{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}
                 </td>
               </tr>
@@ -148,22 +153,32 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-6 mt-4 text-sm">
-        <button
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded border border-brand-border dark:border-brand-border-dark disabled:opacity-40 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-          @click="currentPage--"
-        >
-          ← Prev
-        </button>
-        <span class="text-brand-muted dark:text-brand-muted-dark">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded border border-brand-border dark:border-brand-border-dark disabled:opacity-40 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-          @click="currentPage++"
-        >
-          Next →
-        </button>
+      <div class="flex items-center justify-between gap-4 mt-5 flex-wrap">
+        <span class="ov tabular text-brand-muted dark:text-brand-muted-dark">
+          Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
+        </span>
+        <div v-if="totalPages > 1" class="flex items-center gap-1.5">
+          <button
+            :disabled="currentPage === 1"
+            class="min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-[13px] text-brand-muted dark:text-brand-muted-dark disabled:opacity-40 hover:border-brand-accent"
+            @click="currentPage--"
+          >Prev</button>
+          <button
+            v-for="p in pageWindow"
+            :key="p"
+            type="button"
+            class="tabular min-h-[44px] min-w-[44px] border text-[13px] font-semibold"
+            :class="p === currentPage
+              ? 'bg-brand-strong dark:bg-brand-strong-dark border-brand-strong dark:border-brand-strong-dark text-brand-bg dark:text-brand-bg-dark'
+              : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button
+            :disabled="currentPage === totalPages"
+            class="min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-[13px] text-brand-muted dark:text-brand-muted-dark disabled:opacity-40 hover:border-brand-accent"
+            @click="currentPage++"
+          >Next</button>
+        </div>
       </div>
     </div>
   </div>
@@ -198,6 +213,21 @@ export default {
     pageRows() {
       const start = (this.currentPage - 1) * this.pageSize
       return this.rows.slice(start, start + this.pageSize)
+    },
+    rangeStart() {
+      return this.total === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
+    },
+    rangeEnd() {
+      return Math.min(this.total, this.currentPage * this.pageSize)
+    },
+    pageWindow() {
+      const span = 5
+      let first = Math.max(1, this.currentPage - Math.floor(span / 2))
+      const last = Math.min(this.totalPages, first + span - 1)
+      first = Math.max(1, last - span + 1)
+      const out = []
+      for (let p = first; p <= last; p++) out.push(p)
+      return out
     }
   },
   async mounted() {
