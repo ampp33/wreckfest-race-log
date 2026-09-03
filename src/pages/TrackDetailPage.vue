@@ -4,7 +4,7 @@
 
     <div v-else-if="!track">
       <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Track not found.</p>
-      <router-link to="/" class="text-brand-accent text-sm hover:underline">← Back to tracks</router-link>
+      <router-link to="/tracks" class="text-brand-accent text-sm hover:underline">← Back to tracks</router-link>
     </div>
 
     <div v-else>

@@ -2,25 +2,25 @@
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2 min-w-0 overflow-hidden">
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Date / time
         </label>
         <input
           ref="datetimeInput"
           v-model="form.datetime"
           type="datetime-local"
-          class="w-full min-w-0 max-w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-w-0 max-w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Vehicle
         </label>
         <select
           ref="vehicleInput"
           v-model="form.vehicleId"
-          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         >
           <option :value="null">— none —</option>
           <option v-for="v in vehicles" :key="v.id" :value="v.id">
@@ -30,28 +30,28 @@
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Class (PI)
         </label>
         <div class="flex gap-2">
           <div
-            class="w-10 h-10 shrink-0 flex items-center justify-center rounded font-display font-black text-white text-base"
+            class="w-11 min-h-[44px] shrink-0 flex items-center justify-center font-display font-black text-white text-base"
             :style="{ backgroundColor: piColor }"
           >{{ piClass }}</div>
           <input
             :value="form.performanceIndex"
             type="text"
             inputmode="numeric"
-            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+            class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
             placeholder="0"
             @input="form.performanceIndex = $event.target.value.replace(/[^0-9]/g, '')"
           />
         </div>
       </div>
 
-      <div class="col-span-2 rounded bg-brand-surface dark:bg-brand-bg-dark px-3 py-1 space-y-1">
+      <div class="col-span-2 bg-brand-surface dark:bg-brand-surface-dark px-4 py-1 space-y-1">
         <div v-for="(cfg, i) in tuningSliderConfig" :key="i">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark mb-0 mt-3">{{ cfg.label }}</div>
+          <div class="ov block text-brand-text dark:text-brand-text-dark mb-0 mt-3">{{ cfg.label }}</div>
           <div class="relative flex items-center">
             <div class="absolute inset-x-0 h-px bg-brand-border dark:bg-brand-border-dark" />
             <div class="relative flex justify-between w-full">
@@ -83,7 +83,7 @@
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Tuning
         </label>
         <input
@@ -91,59 +91,59 @@
           type="number"
           min="0"
           inputmode="numeric"
-          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         />
       </div>
       
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Place
         </label>
         <input
           :value="form.place"
           type="text"
           inputmode="numeric"
-          class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
           placeholder="1"
           @input="form.place = $event.target.value.replace(/[^0-9]/g, '')"
         />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Lap time<template v-if="goalLapTimeMs"> (🎯 {{ formatMsToTime(goalLapTimeMs) }})</template>
         </label>
         <LapTimeInput v-model="form.lapTimeMs" />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Total time (optional)
         </label>
         <LapTimeInput v-model="form.totalTimeMs" />
       </div>
 
       <div class="col-span-2">
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Notes (Ctrl+Enter to save)
         </label>
         <textarea
           ref="notesInput"
           v-model="form.notes"
           rows="2"
-          class="w-full font-mono rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 resize-none"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark resize-none"
           @input="autoExpand"
         />
       </div>
 
     </div>
 
-    <p v-if="errorMessage" class="mt-3 text-sm text-red-600">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="mt-3 text-sm text-brand-accent dark:text-brand-accent-dark">{{ errorMessage }}</p>
 
     <div class="mt-4 flex items-center justify-between gap-3">
       <button
         type="button"
-        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
+        class="ov min-h-[44px] flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
         @click="$emit('cancel')"
       >
         Cancel (Esc)
@@ -152,7 +152,7 @@
         <button
           type="submit"
           :disabled="saving"
-          class="font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-60"
+          class="ov min-h-[44px] px-7 flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85 disabled:opacity-60"
         >
           {{ saving ? 'Saving...' : 'Save (Enter)' }}
         </button>

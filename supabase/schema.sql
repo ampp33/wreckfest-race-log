@@ -72,6 +72,7 @@ alter table public.races add column if not exists performance_index integer;
 -- stored as a JSON array ordered by lap (first entry = lap 1).
 alter table public.races add column if not exists lap_count integer;
 alter table public.races add column if not exists lap_times_ms jsonb;
+alter table public.races add column if not exists results_roster jsonb;
 
 create index if not exists races_user_track_idx
     on public.races (user_id, track_variation_id, datetime desc);
@@ -507,12 +508,18 @@ create policy "api_keys delete own"
 -- Named "_wf1" since a sibling project (Wreckfest 2 Race Log) exposes
 -- the equivalent RPC for Wreckfest 2 as insert_race_with_api_key_wf2.
 --
--- Adding parameters changes the signature, so the pre-lap_count/lap_times_ms
--- version has to be dropped explicitly — `create or replace` would leave the
--- old overload in place and PostgREST could no longer resolve which to call.
+-- Adding parameters changes the signature, so old overloads have to be
+-- dropped explicitly — `create or replace` would leave them in place and
+-- PostgREST could no longer resolve which to call.
+-- Drop the pre-lap_count/lap_times_ms version (13 params).
 drop function if exists public.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text
+);
+-- Drop the pre-results_roster version (15 params).
+drop function if exists public.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb
 );
 
 create or replace function public.insert_race_with_api_key_wf1(
@@ -530,7 +537,8 @@ create or replace function public.insert_race_with_api_key_wf1(
     brake_balance      integer default null,
     notes              text default null,
     lap_count          integer default null,
-    lap_times_ms       jsonb default null
+    lap_times_ms       jsonb default null,
+    results_roster     jsonb default null
 )
 returns json
 language plpgsql
@@ -563,6 +571,10 @@ begin
 
     if lap_times_ms is not null and jsonb_typeof(lap_times_ms) <> 'array' then
         return json_build_object('success', false, 'error', 'lap_times_ms must be a JSON array');
+    end if;
+
+    if results_roster is not null and jsonb_typeof(results_roster) <> 'array' then
+        return json_build_object('success', false, 'error', 'results_roster must be a JSON array');
     end if;
 
     if lap_count is not null and lap_count < 0 then
@@ -613,11 +625,11 @@ begin
     insert into public.races (
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
-        performance_index, tuning, notes, lap_count, lap_times_ms
+        performance_index, tuning, notes, lap_count, lap_times_ms, results_roster
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
-        performance_index, v_tuning, notes, v_lap_count, lap_times_ms
+        performance_index, v_tuning, notes, v_lap_count, lap_times_ms, results_roster
     )
     returning id into v_race_id;
 
@@ -628,3 +640,108 @@ $$;
 -- Allow the anon key (used by the external tool) to call this function.
 -- Identity is verified inside via the API key hash — no session needed.
 grant execute on function public.insert_race_with_api_key_wf1 to anon, authenticated;
+
+-- =====================================================================
+-- Admin RPCs: API keys and feedback overview.
+-- Raw key values are never stored (see api_keys above), so the admin
+-- listing exposes id/name/timestamps/issuer only — never a key value.
+-- =====================================================================
+
+-- Returns every issued API key with its issuing user's email — admin only.
+create or replace function public.get_all_api_keys()
+returns table(
+    id           uuid,
+    name         text,
+    created_at   timestamptz,
+    last_used_at timestamptz,
+    user_id      uuid,
+    user_email   text
+)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        k.id,
+        k.name,
+        k.created_at,
+        k.last_used_at,
+        k.user_id,
+        u.email::text as user_email
+    from public.api_keys k
+    join auth.users u on u.id = k.user_id
+    order by k.created_at desc;
+end;
+$$;
+
+-- Deletes any user's API key by id — admin only. The regular
+-- "api_keys delete own" RLS policy only lets a user delete their own
+-- key, so admin removal needs a security-definer RPC.
+create or replace function public.admin_delete_api_key(key_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    delete from public.api_keys where id = key_id;
+end;
+$$;
+
+-- Returns the total number of races logged, site-wide — intentionally
+-- PUBLIC (no is_admin check, granted to anon). Used by the public home
+-- page to show a live "races logged" count to signed-out visitors, who
+-- can't otherwise see into the `races` table (its RLS policies are all
+-- `to authenticated ... using (auth.uid() = user_id)` — see above).
+create or replace function public.get_total_race_count()
+returns bigint
+language sql
+security definer stable set search_path = public
+as $$
+    select count(*) from public.races
+$$;
+
+grant execute on function public.get_total_race_count to anon, authenticated;
+
+-- Returns all feedback entries with the submitting user's email, newest
+-- first — admin only. The "feedback select admin" RLS policy already
+-- lets an admin select these rows directly, but a plain select() from
+-- the client can't join auth.users, so this RPC does the join.
+create or replace function public.get_all_feedback()
+returns table(
+    id            uuid,
+    url           text,
+    feedback_text text,
+    created_at    timestamptz,
+    user_id       uuid,
+    user_email    text
+)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select
+        f.id,
+        f.url,
+        f.feedback_text,
+        f.created_at,
+        f.user_id,
+        u.email::text as user_email
+    from public.feedback f
+    join auth.users u on u.id = f.user_id
+    order by f.created_at desc;
+end;
+$$;

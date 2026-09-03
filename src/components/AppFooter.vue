@@ -9,10 +9,13 @@
           <div class="ov text-brand-accent-dark mb-3">{{ col.title }}</div>
           <div class="flex flex-col">
             <component
-              :is="link.to ? 'router-link' : 'span'"
+              :is="link.to ? 'router-link' : (link.href ? 'a' : 'span')"
               v-for="link in col.links"
               :key="link.label"
               :to="link.to"
+              :href="link.href"
+              :target="link.href ? '_blank' : undefined"
+              :rel="link.href ? 'noopener noreferrer' : undefined"
               class="flex min-h-[44px] items-center text-[13px] text-white/70 hover:text-white"
             >{{ link.label }}</component>
           </div>
@@ -50,7 +53,7 @@ export default {
     return {
       columns: [
         { title: 'Log', links: [
-          { label: 'Tracks', to: '/' },
+          { label: 'Tracks', to: '/tracks' },
           { label: 'Races', to: '/races' },
           { label: 'Stats', to: '/stats' }
         ] },
@@ -63,9 +66,9 @@ export default {
           { label: 'Export JSON' },
           { label: 'Import JSON' }
         ] },
-        { title: 'This site', links: [
-          { label: 'Send feedback' },
-          { label: 'What is this' }
+        { title: 'Auto-logging', links: [
+          { label: 'Setup guide', to: '/telemetry' },
+          { label: 'Tool on GitHub', href: 'https://github.com/ampp33/wreckfest-telemetry' }
         ] }
       ]
     }

@@ -25,3 +25,20 @@ export async function setUserRole(userId, role) {
   })
   if (error) throw error
 }
+
+export async function getAllApiKeys() {
+  const { data, error } = await supabase.rpc('get_all_api_keys')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function adminDeleteApiKey(id) {
+  const { error } = await supabase.rpc('admin_delete_api_key', { key_id: id })
+  if (error) throw error
+}
+
+export async function getAllFeedback() {
+  const { data, error } = await supabase.rpc('get_all_feedback')
+  if (error) throw error
+  return data ?? []
+}

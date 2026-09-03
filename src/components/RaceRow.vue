@@ -9,7 +9,27 @@
         </div>
         <div class="inline-flex items-center gap-1 shrink-0">
           <button
-            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            v-if="race.notes || hasLapTimes || hasRoster"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            :title="expanded ? 'Collapse' : 'Expand'"
+            @click="toggleExpanded"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 10h12" />
+              <path v-if="!expanded" d="M10 4v12" />
+            </svg>
+          </button>
+          <button
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
             title="Edit"
             @click="editing = true"
           >
@@ -18,7 +38,7 @@
             </svg>
           </button>
           <button
-            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
             title="Delete"
             @click="onDelete"
           >
@@ -36,7 +56,7 @@
           <div>
             <template v-if="race.performance_index != null">
               <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-              <span class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
+              <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
             </template>
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </div>
@@ -55,40 +75,38 @@
         </div>
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Lap</div>
-          <div class="font-mono text-brand-text dark:text-brand-text-dark">{{ formatLap }}</div>
+          <div
+            class="tabular font-semibold"
+            :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
+          >{{ formatLap }}</div>
         </div>
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
-          <div class="font-mono" :class="deltaColor">{{ deltaLabel || '—' }}</div>
+          <div class="tabular" :class="deltaColor">{{ deltaLabel || '—' }}</div>
         </div>
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Total</div>
-          <div class="font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTotal }}</div>
+          <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</div>
         </div>
       </div>
 
-      <!-- Tap-to-expand detail, mirroring the desktop notes drawer. -->
-      <button
-        v-if="race.notes || hasLapTimes"
-        type="button"
-        class="mt-3 w-full flex items-start justify-between gap-2 text-left"
-        @click="toggleExpanded"
-      >
-        <div class="min-w-0">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
-          <div v-if="!expanded" class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">
-            {{ race.notes || 'No notes' }}
-          </div>
-        </div>
-        <span class="shrink-0 text-xs text-brand-muted dark:text-brand-muted-dark">{{ expanded ? '▲' : '▼' }}</span>
-      </button>
+      <!-- Notes preview, expanded/collapsed via the icon in the button cluster above. -->
+      <div v-if="race.notes || hasLapTimes || hasRoster" class="mt-3">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
+        <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
+      </div>
 
-      <div v-if="expanded" class="mt-1">
-        <div class="font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
+      <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+        <div class="text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
         <template v-if="hasLapTimes">
           <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
           <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
+        </template>
+
+        <template v-if="hasRoster">
+          <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Roster</div>
+          <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
         </template>
       </div>
     </template>
@@ -117,27 +135,46 @@
       <td class="py-2 pr-3 whitespace-nowrap">
         <template v-if="race.performance_index != null">
           <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-          <span class="tabular text-brand-muted dark:text-brand-muted-dark">
-{{ race.performance_index }}</span>
+          <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
         </template>
         <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
       </td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
       <td class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
       <td class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
-      <td class="py-2 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ formatLap }}</td>
+      <td
+        class="py-2 pr-3 tabular font-semibold"
+        :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
+      >{{ formatLap }}</td>
       <td class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
       <td class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
-      <td
-        class="py-2 pr-3 max-w-[18ch] cursor-pointer hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-        @click="toggleExpanded"
-      >
-        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || hasLapTimes ? '(click to expand)' : '' }}</span>
+      <td class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
+        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '—' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <div class="inline-flex items-center gap-1">
           <button
-            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            v-if="race.notes || hasLapTimes || hasRoster"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            :title="expanded ? 'Collapse' : 'Expand'"
+            @click.stop="toggleExpanded"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 10h12" />
+              <path v-if="!expanded" d="M10 4v12" />
+            </svg>
+          </button>
+          <button
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
             title="Edit"
             @click.stop="editing = true"
           >
@@ -146,7 +183,7 @@
             </svg>
           </button>
           <button
-            class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
             title="Delete"
             @click.stop="onDelete"
           >
@@ -170,8 +207,8 @@
     </td>
   </tr>
 
-  <tr v-if="layout === 'table' && !editing && expanded" class="border-b border-brand-border dark:border-brand-border-dark">
-    <td colspan="11" class="px-3 py-2 bg-brand-surface dark:bg-brand-surface-dark">
+  <tr v-if="layout === 'table' && !editing && expanded">
+    <td colspan="11" class="px-0 py-3 bg-brand-surface dark:bg-brand-surface-dark">
       <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
       <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
@@ -179,13 +216,29 @@
         <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
         <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
       </template>
+
+      <template v-if="hasRoster">
+        <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Roster</div>
+        <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
+      </template>
     </td>
   </tr>
+
+  <ConfirmDialog
+    :open="confirmingDelete"
+    title="Delete this race?"
+    message="This can't be undone."
+    confirm-label="Delete"
+    @confirm="onConfirmDelete"
+    @cancel="confirmingDelete = false"
+  />
 </template>
 
 <script>
 import RaceForm from './RaceForm.vue'
 import LapSplitsChart from './LapSplitsChart.vue'
+import RaceResultsRoster from './RaceResultsRoster.vue'
+import ConfirmDialog from './ConfirmDialog.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { piInfo } from '../utils/piInfo.js'
 
@@ -197,7 +250,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, LapSplitsChart },
+  components: { RaceForm, LapSplitsChart, RaceResultsRoster, ConfirmDialog },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -210,7 +263,8 @@ export default {
     return {
       editing: false,
       saving: false,
-      expanded: false
+      expanded: false,
+      confirmingDelete: false
     }
   },
   computed: {
@@ -231,16 +285,23 @@ export default {
       return Array.isArray(this.race.lap_times_ms)
         && this.race.lap_times_ms.some(ms => ms != null)
     },
+    hasRoster() {
+      return Array.isArray(this.race.results_roster) && this.race.results_roster.length > 0
+    },
     lapCount() {
       if (this.race.lap_count != null) return this.race.lap_count
       // Older races may only carry the splits array.
       if (Array.isArray(this.race.lap_times_ms)) return this.race.lap_times_ms.length
       return '—'
     },
+    isPersonalBest() {
+      return this.race.lap_time_ms != null
+        && this.personalBestMs != null
+        && this.race.lap_time_ms === this.personalBestMs
+    },
     formatLap() {
       if (this.race.lap_time_ms == null) return '—'
-      const isPb = this.personalBestMs != null && this.race.lap_time_ms === this.personalBestMs
-      return isPb ? `★ ${formatMsToTime(this.race.lap_time_ms)}` : formatMsToTime(this.race.lap_time_ms)
+      return this.isPersonalBest ? `★ ${formatMsToTime(this.race.lap_time_ms)}` : formatMsToTime(this.race.lap_time_ms)
     },
     formatTotal() {
       return this.race.total_time_ms != null
@@ -254,8 +315,8 @@ export default {
     deltaColor() {
       if (!this.deltaLabel) return ''
       const diff = this.race.lap_time_ms - this.goalLapTimeMs
-      if (diff < 0) return 'text-green-600'
-      if (diff > 0) return 'text-red-500'
+      if (diff < 0) return 'text-brand-good dark:text-brand-good-dark'
+      if (diff > 0) return 'text-brand-accent dark:text-brand-accent-dark'
       return 'text-brand-muted dark:text-brand-muted-dark'
     },
     editDefaults() {
@@ -283,7 +344,10 @@ export default {
       }
     },
     onDelete() {
-      if (!window.confirm('Delete this race?')) return
+      this.confirmingDelete = true
+    },
+    onConfirmDelete() {
+      this.confirmingDelete = false
       this.$emit('delete', this.race.id)
     },
     toggleExpanded() {

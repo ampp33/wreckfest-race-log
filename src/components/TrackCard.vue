@@ -58,7 +58,7 @@ export default {
     },
     firstVariationLink() {
       const first = (this.track.track_variations || [])[0]
-      if (!first) return '/'
+      if (!first) return '/tracks'
       return `/track/${this.track.slug}/${first.slug}`
     },
     resolvedImage() {

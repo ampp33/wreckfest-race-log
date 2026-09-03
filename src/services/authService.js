@@ -14,6 +14,16 @@ export async function signUpWithPassword(email, password) {
   return { session: data.session, user: data.user }
 }
 
+export async function signInWithGoogle(redirectTo) {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo }
+  })
+  if (error) throw error
+  // On success the browser navigates away to Google's consent screen, so
+  // there's no session to return here — onAuthChange picks it up on redirect back.
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
