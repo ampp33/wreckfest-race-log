@@ -27,7 +27,7 @@
         <ul class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark list-disc list-inside space-y-1">
           <li>Linux, with Wreckfest running via Steam Play (Proton)</li>
           <li>Python 3.8+ (standard library only — no extra packages to install)</li>
-          <li>Read access to <code class="font-mono text-[13px] bg-brand-surface dark:bg-brand-surface-dark px-1.5 py-0.5">/proc/&lt;pid&gt;/mem</code> for the game process</li>
+          <li>Read access to <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">/proc/&lt;pid&gt;/mem</code> for the game process</li>
         </ul>
       </section>
 
@@ -47,8 +47,8 @@
             <a href="https://github.com/ampp33/wreckfest-telemetry" target="_blank" rel="noopener noreferrer" class="text-brand-accent hover:underline">its GitHub repo</a>.
           </li>
           <li>
-            Copy <code class="font-mono text-[13px] bg-brand-surface dark:bg-brand-surface-dark px-1.5 py-0.5">config.json.example</code>
-            to <code class="font-mono text-[13px] bg-brand-surface dark:bg-brand-surface-dark px-1.5 py-0.5">config.json</code>
+            Copy <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">config.json.example</code>
+            to <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">config.json</code>
             and fill in three fields:
             <div class="mt-3 bg-brand-surface dark:bg-brand-surface-dark border-l-2 border-brand-accent dark:border-brand-accent-dark p-4 font-mono text-xs overflow-x-auto">
 <pre>{
@@ -69,7 +69,7 @@
               python3 wreckfest_telemetry.py --pid 12345
             </div>
             It attaches to the process, waits for each race to finish, then displays the
-            results and appends them to <code class="font-mono text-[13px] bg-brand-surface dark:bg-brand-surface-dark px-1.5 py-0.5">race_log.jsonl</code>
+            results and appends them to <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">race_log.jsonl</code>
             — and, with a valid <code class="font-mono">config.json</code>, posts them straight to your account.
           </li>
         </ol>
@@ -99,7 +99,7 @@
       </section>
 
       <!-- Note -->
-      <section class="bg-brand-surface dark:bg-brand-surface-dark border-l-2 border-brand-accent dark:border-brand-accent-dark p-5">
+      <section class="border-l-2 border-brand-accent dark:border-brand-accent-dark pl-5 py-1">
         <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">
           <strong class="text-brand-text dark:text-brand-text-dark">Heads up:</strong>
           if <code class="font-mono text-sm">config.json</code> is missing or incomplete, the tool

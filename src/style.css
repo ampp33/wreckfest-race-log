@@ -76,14 +76,34 @@ table th {
 em.signal {
   font-style: normal;
   font-weight: 900;
-  color: transparent;
-  /* relative so the outline holds from a 30px panel heading to an 82px page title */
-  -webkit-text-stroke: 0.032em theme('colors.brand.accent.DEFAULT');
-  paint-order: stroke;
+  color: theme('colors.brand.accent.DEFAULT');
 }
 
 .dark em.signal {
-  -webkit-text-stroke-color: theme('colors.brand.accent.dark');
+  color: theme('colors.brand.accent.dark');
+}
+
+/* Display type used as image, in two flavours that are not interchangeable:
+ * ink is the emphasis word inside a headline, accent is the numeral standing
+ * on its own. Only ink is knocked out to an outline — the stroke is relative
+ * so it holds from 40px to 100px+ without retuning. Accent is a solid fill.
+ * (`outline-acc` keeps its name so the two can be swapped back in one block.) */
+.outline-ink {
+  color: transparent;
+  paint-order: stroke;
+  -webkit-text-stroke: 0.021em theme('colors.brand.strong.DEFAULT');
+}
+
+.dark .outline-ink {
+  -webkit-text-stroke-color: theme('colors.brand.strong.dark');
+}
+
+.outline-acc {
+  color: theme('colors.brand.accent.DEFAULT');
+}
+
+.dark .outline-acc {
+  color: theme('colors.brand.accent.dark');
 }
 
 /* Small caps label, used for every overline and column head in the system. */

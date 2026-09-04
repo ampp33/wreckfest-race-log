@@ -1,7 +1,7 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
-      Your <em class="signal">stats</em>
+  <div class="max-w-4xl mx-auto px-6 py-10">
+    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+      Stats
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
       Aggregated from all of your saved races.

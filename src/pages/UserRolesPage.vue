@@ -1,6 +1,6 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+  <div class="max-w-4xl mx-auto px-6 py-10">
+    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       User <em class="signal">Roles</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage admin access for registered users.</p>

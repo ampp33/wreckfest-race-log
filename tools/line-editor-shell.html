@@ -1,0 +1,1048 @@
+<title>Racing Line Editor</title>
+<style>/*FACES*/
+:root{--bg:#EFEFED;--ink:#16150F;--mut:#5F5F5D;--line:#C7C7C5;--panel:#E4E4E2;--acc:#C41E1E;
+  --art:invert(1);--artop:.45}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A0A0A;--ink:#F5F4F0;--mut:#93918A;
+  --line:#2E2E2B;--panel:#141412;--acc:#E5332F;--art:none;--artop:.5}}
+:root[data-theme="dark"]{--bg:#0A0A0A;--ink:#F5F4F0;--mut:#93918A;--line:#2E2E2B;--panel:#141412;
+  --acc:#E5332F;--art:none;--artop:.5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:400 15px/1.5 Switzer,"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.ov{font-weight:500;font-size:10px;line-height:1;letter-spacing:.2em;text-transform:uppercase}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 48px}
+header{border-bottom:1px solid var(--line);margin-bottom:22px}
+.hd{max-width:1180px;margin:0 auto;padding:18px 20px;display:flex;align-items:baseline;
+  justify-content:space-between;gap:16px;flex-wrap:wrap}
+.mark{font-weight:900;letter-spacing:-.035em;font-size:17px;line-height:1}
+.mark span{color:var(--acc);margin-left:10px}
+.prog{color:var(--mut);font-variant-numeric:tabular-nums}
+.prog b{color:var(--ink);font-weight:700}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+button{font:500 10px/1 Switzer,Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;
+  min-height:44px;padding:0 16px;background:none;color:var(--ink);border:1px solid var(--line);cursor:pointer}
+button:hover{border-color:var(--acc)}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+button.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+button.acc:hover{opacity:.85}
+button[disabled]{opacity:.35;cursor:default}
+.spacer{flex:1}
+.title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  border-top:2px solid var(--ink);padding-top:10px;margin-bottom:12px}
+h1{font-weight:900;letter-spacing:-.035em;line-height:.92;margin:0;font-size:clamp(22px,3.4vw,34px)}
+.badge{border:1px solid var(--line);padding:6px 9px;color:var(--mut)}
+.badge.done{border-color:var(--acc);color:var(--acc)}
+.badge.warn{border-color:var(--acc);color:var(--mut)}
+.lines{display:inline-flex;gap:4px;align-items:center}
+.lines button{min-width:44px;padding:0 10px}
+.lines button.cur{background:var(--acc);border-color:var(--acc);color:#fff}
+.clip{color:var(--mut);margin:-4px 0 12px;display:flex;align-items:center;gap:8px}
+.clip b{color:var(--acc);font-weight:500}
+.stage{background:var(--panel);position:relative;touch-action:none;user-select:none}
+.stage svg{display:block;width:100%;height:auto}
+.stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
+  filter:var(--art);opacity:var(--artop);pointer-events:none}
+.hint{color:var(--mut);font-size:13px;margin:10px 0 24px}
+.hint kbd{font:inherit;border:1px solid var(--line);padding:1px 5px}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:6px;
+  border-top:2px solid var(--ink);padding-top:12px}
+.chip{aspect-ratio:16/9;background:var(--panel);border:2px solid transparent;padding:0;cursor:pointer;
+  position:relative;min-height:0}
+.chip img{width:100%;height:100%;object-fit:contain;filter:var(--art);opacity:.55}
+.chip.cur{border-color:var(--acc)}
+.chip.done::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--acc)}
+.out{margin-top:30px;border-top:2px solid var(--ink);padding-top:12px}
+textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border:1px solid var(--line);
+  font:400 11px/1.6 ui-monospace,Menlo,monospace;padding:10px;resize:vertical}
+.state{color:var(--mut);margin-top:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header><div class="hd">
+  <div class="mark">RACING LINE EDITOR<span class="ov">WRECKFEST RACE LOG</span></div>
+  <div class="prog ov"><b id="ndone">0</b> of 98 confirmed</div>
+</div></header>
+
+<div class="wrap">
+  <div class="title">
+    <h1 id="tname">—</h1>
+    <span class="badge ov" id="tbadge">—</span>
+  </div>
+
+  <div class="bar">
+    <button id="prev">← Prev</button>
+    <button id="next">Next →</button>
+    <span class="spacer"></span>
+    <button id="undo">Undo</button>
+    <button id="reset">Reset to auto</button>
+    <button id="clear">Clear</button>
+    <span class="lines" id="lines"></span>
+    <button id="addline">+ Line</button>
+    <button id="arrow">Arrow</button>
+    <button id="flip">Flip</button>
+    <button id="loopmode">Open loop</button>
+    <button id="delline">Delete line</button>
+    <span class="spacer"></span>
+    <button id="copy">Copy</button>
+    <button id="paste" disabled>Paste</button>
+    <button id="fillrev">Fill reverses</button>
+    <button id="preview">Name preview</button>
+    <button id="done" class="acc">Mark confirmed</button>
+  </div>
+
+  <div class="clip ov" id="clipnote" hidden></div>
+
+  <div class="stage" id="stage">
+    <img id="artimg" alt="">
+    <svg id="svg" aria-label="racing line editor"></svg>
+  </div>
+  <p class="hint">Drag a handle to move it · click the line or empty space to add one ·
+    double-click a handle to delete · <kbd>←</kbd> <kbd>→</kbd> tracks ·
+    <kbd>Z</kbd> undo · <kbd>Enter</kbd> confirm</p>
+
+  <div class="strip" id="strip"></div>
+
+  <div class="out">
+    <div class="ov" style="color:var(--mut);margin-bottom:12px">Export — track-paths.json</div>
+    <p style="margin:-4px 0 14px;color:var(--mut);font-size:13px;max-width:62ch">
+      The JSON is the finished line, sampled — the site draws it, but it cannot be turned back
+      into handles. <strong style="color:var(--ink);font-weight:600">Back up handles</strong> saves
+      the draggable points themselves, which live only in this browser.</p>
+    <div class="bar">
+      <button id="dl">Download JSON</button>
+      <button id="showjson">Show JSON</button>
+      <span class="spacer"></span>
+      <button id="backup">Back up handles</button>
+      <button id="restore">Restore handles</button>
+      <input id="restorefile" type="file" accept="application/json" hidden>
+    </div>
+    <textarea id="json" readonly hidden></textarea>
+    <div class="state ov" id="state">Starting up…</div>
+  </div>
+</div>
+
+<script>/*PAYLOAD*/</script>
+<script>
+(function () {
+  var VW = 620, VH = 540, PAD = 34, SAMPLES = 110
+  var idx = 0, edits = {}, undo = {}, previewOn = false, db = null, dirty = {}, timer = null
+  var svg = document.getElementById('svg'), stage = document.getElementById('stage')
+  var NS = 'http://www.w3.org/2000/svg'
+
+  // A track is a list of strokes, not one line: a layout with a junction has no
+  // single loop to write along, so it gets several — each open or closed, and
+  // each carrying the name independently.
+  function cloneStrokes (list) {
+    return list.map(function (st) {
+      return { pts: st.pts.map(function (p) { return p.slice() }), closed: st.closed !== false }
+    })
+  }
+  // Saves written before strokes existed carry a bare `pts` array.
+  function toStrokes (v) {
+    if (v && Array.isArray(v.strokes) && v.strokes.length) return cloneStrokes(v.strokes)
+    if (v && Array.isArray(v.pts)) return [{ pts: v.pts.map(function (p) { return p.slice() }), closed: true }]
+    return [{ pts: [], closed: true }]
+  }
+
+  SLUGS.forEach(function (s) {
+    edits[s] = { strokes: toStrokes(DATA[s]), done: false, active: 0, arrow: null }
+  })
+  var arrowMode = false
+
+  function cur () { return SLUGS[idx] }
+  function strokes () { return edits[cur()].strokes }
+  function activeIdx () {
+    var e = edits[cur()]
+    if (e.active >= e.strokes.length) e.active = e.strokes.length - 1
+    if (e.active < 0) e.active = 0
+    return e.active
+  }
+  function pts () { return strokes()[activeIdx()].pts }
+  function isClosed () { return strokes()[activeIdx()].closed !== false }
+  function anyPoints () {
+    return strokes().some(function (st) { return st.pts.length >= 2 })
+  }
+
+  // Interpolation through the handles, in the artwork's own pixel space so it
+  // can be drawn straight over the image.
+  //
+  // Two things a plain Catmull-Rom gets wrong here, both fixed:
+  //
+  // OVERSHOOT. Its tangent is (next - prev)/2, so where a far handle is
+  // followed by a near one the tangent dwarfs the segment it has to cross and
+  // the curve shoots past and doubles back — the spikes that appeared wherever
+  // a tight arc met a long straight. Centripetal parameterisation (alpha 0.5)
+  // scales the tangents by chord length and is provably free of those cusps.
+  //
+  // CORNERS. It also smooths through every handle, rounding a 90-degree turn
+  // and bowing a straight. So the tangent is zeroed where the turn is sharp,
+  // which puts a crease there and leaves everything else smooth.
+  var CORNER_DEG = 42
+  var ALPHA = 0.5
+
+  function curve (p, closed) {
+    if (!p || p.length < 2) return null
+    if (p.length === 2) return [p[0].slice(), p[1].slice()]
+    var n = p.length
+    var at = function (i) {
+      return closed === false
+        ? p[Math.max(0, Math.min(n - 1, i))]
+        : p[((i % n) + n) % n]
+    }
+    var knot = function (a, b) {
+      return Math.pow(Math.hypot(b[0] - a[0], b[1] - a[1]), ALPHA) || 1e-6
+    }
+    var isSharp = function (i) {
+      var prev = at(i - 1), cur = at(i), next = at(i + 1)
+      var ax = cur[0] - prev[0], ay = cur[1] - prev[1]
+      var bx = next[0] - cur[0], by = next[1] - cur[1]
+      var la = Math.hypot(ax, ay), lb = Math.hypot(bx, by)
+      if (la < 0.01 || lb < 0.01) return false
+      var cos = (ax * bx + ay * by) / (la * lb)
+      return Math.acos(Math.max(-1, Math.min(1, cos))) * 180 / Math.PI > CORNER_DEG
+    }
+
+    // Samples are handed out by segment LENGTH, not evenly per segment. Giving
+    // a long diagonal the same two samples as a five-unit stub left the curve
+    // between them undrawn, so any bulge landed as a single displaced point —
+    // the juts. Every segment still gets a floor of three.
+    var lens = [], totalLen = 0
+    for (var q = 0; q < (closed === false ? n - 1 : n); q++) {
+      var L = Math.hypot(at(q + 1)[0] - at(q)[0], at(q + 1)[1] - at(q)[1])
+      lens.push(L); totalLen += L
+    }
+    // Twelve samples per handle. Measured across all 98 layouts with handles
+    // deliberately thinned to be uneven: at 7 the curve still doubled back on
+    // 7 tracks, at 10 none did. Twelve leaves margin, and the file is fetched
+    // once and cached.
+    var budget = Math.max(SAMPLES, n * 12)
+
+    var out = []
+    var last = closed === false ? n - 1 : n
+    for (var i = 0; i < last; i++) {
+      var p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2)
+      var t01 = knot(p0, p1), t12 = knot(p1, p2), t23 = knot(p2, p3)
+      var m1 = [
+        (p2[0]-p1[0]) + t12 * ((p1[0]-p0[0])/t01 - (p2[0]-p0[0])/(t01+t12)),
+        (p2[1]-p1[1]) + t12 * ((p1[1]-p0[1])/t01 - (p2[1]-p0[1])/(t01+t12))
+      ]
+      var m2 = [
+        (p2[0]-p1[0]) + t12 * ((p3[0]-p2[0])/t23 - (p3[0]-p1[0])/(t12+t23)),
+        (p2[1]-p1[1]) + t12 * ((p3[1]-p2[1])/t23 - (p3[1]-p1[1])/(t12+t23))
+      ]
+      if (isSharp(i)) m1 = [0, 0]
+      if (isSharp(i + 1)) m2 = [0, 0]
+      var steps = Math.max(3, Math.round(budget * (lens[i] / (totalLen || 1))))
+      for (var k = 0; k < steps; k++) {
+        var t = k / steps, t2 = t*t, t3 = t2*t
+        var h00 = 2*t3 - 3*t2 + 1, h10 = t3 - 2*t2 + t
+        var h01 = -2*t3 + 3*t2,    h11 = t3 - t2
+        out.push([
+          h00*p1[0] + h10*m1[0] + h01*p2[0] + h11*m2[0],
+          h00*p1[1] + h10*m1[1] + h01*p2[1] + h11*m2[1]
+        ])
+      }
+    }
+    if (closed === false) out.push(p[n-1].slice())
+    return out
+  }
+
+  // The transform the export applies: fit the curve's bounding box into the
+  // 620x540 box the site's maps use. Returned separately so the preview can
+  // scale the type by the same factor without moving the drawing.
+  function fitOf (out) {
+    var xs = [], ys = []
+    out.forEach(function (q) { xs.push(q[0]); ys.push(q[1]) })
+    var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs)
+    var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys)
+    if (x1 - x0 < 4 || y1 - y0 < 4) return null
+    var sc = Math.min((VW - 2*PAD) / (x1 - x0), (VH - 2*PAD) / (y1 - y0))
+    return { sc: sc, ox: (VW - (x1-x0)*sc) / 2 - x0*sc, oy: (VH - (y1-y0)*sc) / 2 - y0*sc }
+  }
+
+  // Sampling densely enough to draw the curve honestly produces far more points
+  // than the shape needs on its straights. Douglas-Peucker drops the redundant
+  // ones: the tolerance is well under a pixel at the size these render, so the
+  // line is unchanged to the eye but the file is a third of the size.
+  var SIMPLIFY_TOL = 0.6
+
+  function simplify (P, tol) {
+    if (P.length < 3) return P
+    var keep = new Uint8Array(P.length)
+    keep[0] = keep[P.length - 1] = 1
+    var stack = [[0, P.length - 1]]
+    while (stack.length) {
+      var range = stack.pop(), first = range[0], last = range[1]
+      var ax = P[first][0], ay = P[first][1]
+      var bx = P[last][0], by = P[last][1]
+      var vx = bx - ax, vy = by - ay
+      var L = Math.hypot(vx, vy)
+      var worst = -1, wi = -1
+      for (var i = first + 1; i < last; i++) {
+        var d = L < 1e-9
+          ? Math.hypot(P[i][0] - ax, P[i][1] - ay)
+          : Math.abs((P[i][0] - ax) * vy - (P[i][1] - ay) * vx) / L
+        if (d > worst) { worst = d; wi = i }
+      }
+      if (worst > tol && wi > 0) {
+        keep[wi] = 1
+        stack.push([first, wi], [wi, last])
+      }
+    }
+    var out = []
+    for (var k = 0; k < P.length; k++) if (keep[k]) out.push(P[k])
+    return out
+  }
+
+  function poly (out, closed) {
+    return out.map(function (q, i) {
+      return (i ? 'L' : 'M') + Math.round(q[0]) + ',' + Math.round(q[1])
+    }).join('') + (closed === false ? '' : 'Z')
+  }
+
+  // Every stroke of a track is fitted with ONE transform, so they keep their
+  // relative positions in the exported frame.
+  function buildTrack (list) {
+    var curves = list.map(function (st) { return { c: curve(st.pts, st.closed), closed: st.closed !== false } })
+      .filter(function (x) { return x.c })
+    if (!curves.length) return null
+    var all = []
+    curves.forEach(function (x) { all = all.concat(x.c) })
+    var f = fitOf(all)
+    if (!f) return null
+    return curves.map(function (x) {
+      var mapped = x.c.map(function (q) {
+        return [Math.round(q[0]*f.sc + f.ox), Math.round(q[1]*f.sc + f.oy)]
+      })
+      var lean = simplify(mapped, SIMPLIFY_TOL)
+      return {
+        d: lean.map(function (q, i) {
+          return (i ? 'L' : 'M') + q[0] + ',' + q[1]
+        }).join('') + (x.closed ? 'Z' : ''),
+        closed: x.closed
+      }
+    })
+  }
+
+  function el (tag, attrs) {
+    var e = document.createElementNS(NS, tag)
+    for (var k in attrs) e.setAttribute(k, attrs[k])
+    return e
+  }
+
+  function draw () {
+    var d = DATA[cur()], list = strokes(), ai = activeIdx()
+    svg.setAttribute('viewBox', '0 0 ' + d.w + ' ' + d.h)
+    while (svg.firstChild) svg.removeChild(svg.firstChild)
+
+    if (previewOn) {
+      var built = buildTrack(list)
+      if (built) {
+        // Preview in the artwork's own coordinates, with the type scaled by the
+        // export factor so the proportions match what the site renders.
+        var allC = []
+        list.forEach(function (st) { var c = curve(st.pts, st.closed); if (c) allC = allC.concat(c) })
+        var f = fitOf(allC)
+        if (f) {
+          var pad = PAD / f.sc
+          svg.setAttribute('viewBox',
+            (-pad) + ' ' + (-pad) + ' ' + (d.w + 2*pad) + ' ' + (d.h + 2*pad))
+          // Shorter things to write when a stroke is too short for the full
+          // label — a spur does not need to repeat the track name.
+          var full = d.name.toUpperCase()
+          var parts = full.split('—').map(function (t) { return t.trim() }).filter(Boolean)
+          var ladder = [full]
+          if (parts.length > 1) { ladder.push(parts[parts.length - 1]); ladder.push(parts[0]) }
+          ladder = ladder.filter(function (v, i, a) { return v && a.indexOf(v) === i })
+            .map(function (v) { return v + ' · ' })
+          // Back to front, so line 1 sits above line 2 — matching the site.
+          list.map(function (st, i) { return { st: st, i: i } }).reverse().forEach(function (e) {
+            var st = e.st, i = e.i
+            var c = curve(st.pts, st.closed)
+            if (!c) return
+            var pd = poly(c, st.closed)
+            svg.appendChild(el('path', { d: pd, fill: 'none', stroke: 'var(--line)',
+              'stroke-width': 30 / f.sc, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }))
+            var id = 'ringpath' + i
+            svg.appendChild(el('path', { d: pd, id: id, fill: 'none', stroke: 'none' }))
+            // dominant-baseline centres the type ON the line; without it the
+            // baseline sits on the path and the glyphs ride above it.
+            var t = el('text', { 'font-family': 'Switzer, Arial, sans-serif',
+              'font-size': 18 / f.sc, 'font-weight': 800, fill: 'var(--ink)',
+              'dominant-baseline': 'middle' })
+            var tp = el('textPath', { href: '#' + id, startOffset: 0 })
+            var unit = ladder[0]
+            tp.textContent = unit
+            t.appendChild(tp)
+            svg.appendChild(t)
+            try {
+              var total = svg.querySelector('#' + id).getTotalLength()
+              var one = t.getComputedTextLength()
+              // Too short for the full label: try a shorter one, then a
+              // smaller face, before letting the spacing crush the letters.
+              if (total && one && one > total) {
+                // Shorter label, never a smaller face — mixed type sizes across
+                // one map read as a mistake. A line with no room for even the
+                // shortest label carries none; the ribbon still shows it.
+                var perChar = one / unit.length
+                var picked = ''
+                for (var li = 1; li < ladder.length; li++) {
+                  if (ladder[li].length * perChar <= total) { picked = ladder[li]; break }
+                }
+                unit = picked
+                tp.textContent = unit
+                one = t.getComputedTextLength()
+              }
+              if (!unit) { one = 0 }
+              if (total && one) {
+                // Whichever repeat count needs the least distortion to close
+                // the line — rounding up then squeezing crushes the letters.
+                var low = Math.max(1, Math.floor(total / one))
+                var cost = function (n) {
+                  return Math.abs((total - n * one) / Math.max(1, n * unit.length - 1))
+                }
+                var reps = cost(low + 1) < cost(low) ? low + 1 : low
+                tp.textContent = new Array(reps + 1).join(unit)
+                // Measure WITH the base tracking applied, then correct from
+                // there — measuring at zero and adding the base afterwards
+                // overshoots the path by exactly the base term.
+                var fs = parseFloat(t.getAttribute('font-size'))
+                var base = 0.01 * fs
+                t.setAttribute('letter-spacing', base)
+                var drawn = t.getComputedTextLength()
+                var chars = tp.textContent.length
+                if (drawn && chars > 1) {
+                  // Never crush below a readable minimum; a slight overrun clips.
+                  t.setAttribute('letter-spacing',
+                    Math.max(base + (total - drawn) / (chars - 1), -0.08 * fs))
+                }
+              }
+            } catch (e) {}
+          })
+          var a = edits[cur()].arrow
+          if (a) {
+            var ar = 26 / f.sc
+            svg.appendChild(el('polygon', {
+              points: ar + ',0 ' + (-ar*0.62) + ',' + (ar*0.68) + ' ' + (-ar*0.62) + ',' + (-ar*0.68),
+              fill: 'var(--acc)',
+              transform: 'translate(' + a.x + ' ' + a.y + ') rotate(' + arrowAngle() + ')'
+            }))
+          }
+        }
+      }
+      return
+    }
+
+    // Same back-to-front order, except the stroke being edited is drawn last so
+    // it is never hidden under another while you are working on it.
+    var order = list.map(function (st, i) { return { st: st, i: i } })
+      .reverse()
+      .filter(function (e) { return e.i !== ai })
+    order.push({ st: list[ai], i: ai })
+    order.forEach(function (e) {
+      if (!e.st || e.st.pts.length < 2) return
+      var active = e.i === ai
+      svg.appendChild(el('path', {
+        d: poly(e.st.pts, e.st.closed),
+        fill: 'none',
+        stroke: active ? 'var(--acc)' : 'var(--mut)',
+        'stroke-opacity': active ? 1 : 0.45,
+        'stroke-width': Math.max(2, d.w / 220),
+        'stroke-linejoin': 'round',
+        'stroke-linecap': 'round'
+      }))
+    })
+    // Only the active stroke shows handles, so a click never grabs the wrong line.
+    strokes()[ai].pts.forEach(function (q, i) {
+      var c = el('circle', { cx: q[0], cy: q[1], r: Math.max(3, d.w / 145),
+        fill: 'var(--bg)', stroke: 'var(--acc)', 'stroke-width': Math.max(1.5, d.w / 340) })
+      c.setAttribute('data-i', i)
+      c.style.cursor = 'grab'
+      svg.appendChild(c)
+    })
+    drawArrow(d)
+    // An open stroke marks its ends, so which way it runs is never a guess.
+    if (!isClosed() && strokes()[ai].pts.length) {
+      var ends = [strokes()[ai].pts[0], strokes()[ai].pts[strokes()[ai].pts.length - 1]]
+      ends.forEach(function (q) {
+        svg.appendChild(el('circle', { cx: q[0], cy: q[1], r: Math.max(5, d.w / 95),
+          fill: 'none', stroke: 'var(--acc)', 'stroke-width': Math.max(1, d.w / 500),
+          'stroke-dasharray': '3 3', 'pointer-events': 'none' }))
+      })
+    }
+  }
+
+  function drawArrow (d) {
+    var a = edits[cur()].arrow
+    if (!a) return
+    var r = Math.max(6, d.w / 42)
+    var g = el('polygon', {
+      points: r + ',0 ' + (-r*0.62) + ',' + (r*0.68) + ' ' + (-r*0.62) + ',' + (-r*0.68),
+      fill: 'var(--acc)',
+      transform: 'translate(' + a.x + ' ' + a.y + ') rotate(' + arrowAngle() + ')',
+      'pointer-events': 'none'
+    })
+    svg.appendChild(g)
+  }
+
+  function toLocal (ev) {
+    var r = stage.getBoundingClientRect(), d = DATA[cur()]
+    return [(ev.clientX - r.left) / r.width * d.w, (ev.clientY - r.top) / r.height * d.h]
+  }
+
+  function stack () {
+    var s = cur()
+    if (!undo[s]) undo[s] = []
+    return undo[s]
+  }
+  function snapshot () {
+    var st = stack()
+    st.push(JSON.stringify({ strokes: edits[cur()].strokes, arrow: edits[cur()].arrow }))
+    if (st.length > 80) st.shift()
+  }
+
+  function insertNear (pt) {
+    var p = pts()
+    if (p.length < 2) { p.push([Math.round(pt[0]), Math.round(pt[1])]); return }
+    // An open stroke has no closing segment, and a click past either end
+    // extends it rather than inserting in the middle — that is how you draw one.
+    if (!isClosed()) {
+      var dStart = Math.hypot(p[0][0]-pt[0], p[0][1]-pt[1])
+      var dEnd = Math.hypot(p[p.length-1][0]-pt[0], p[p.length-1][1]-pt[1])
+      var nearest = Infinity
+      for (var k = 0; k < p.length - 1; k++) {
+        var A = p[k], B = p[k+1]
+        var vx0 = B[0]-A[0], vy0 = B[1]-A[1], L = vx0*vx0 + vy0*vy0
+        var tt = L ? Math.max(0, Math.min(1, ((pt[0]-A[0])*vx0 + (pt[1]-A[1])*vy0) / L)) : 0
+        var ex = A[0] + vx0*tt - pt[0], ey = A[1] + vy0*tt - pt[1]
+        nearest = Math.min(nearest, Math.hypot(ex, ey))
+      }
+      if (dEnd < nearest) { p.push([Math.round(pt[0]), Math.round(pt[1])]); return }
+      if (dStart < nearest) { p.unshift([Math.round(pt[0]), Math.round(pt[1])]); return }
+    }
+    var best = 0, bestD = Infinity
+    var last = isClosed() ? p.length : p.length - 1
+    for (var i = 0; i < last; i++) {
+      var a = p[i], b = p[(i + 1) % p.length]
+      var vx = b[0]-a[0], vy = b[1]-a[1], len = vx*vx + vy*vy
+      var t = len ? Math.max(0, Math.min(1, ((pt[0]-a[0])*vx + (pt[1]-a[1])*vy) / len)) : 0
+      var dx = a[0] + vx*t - pt[0], dy = a[1] + vy*t - pt[1], dist = dx*dx + dy*dy
+      if (dist < bestD) { bestD = dist; best = i }
+    }
+    p.splice(best + 1, 0, [Math.round(pt[0]), Math.round(pt[1])])
+  }
+
+  // Race direction. Snapped to the nearest point on a line and pointed along
+  // it — the tangent is the only direction that makes sense on a track, and
+  // which of the two ways it runs is what Flip is for.
+  function placeArrow (pt) {
+    var best = null, prev = null, bestD = Infinity
+    strokes().forEach(function (st) {
+      var c = curve(st.pts, st.closed)
+      if (!c) return
+      for (var i = 0; i < c.length; i++) {
+        var dx = c[i][0] - pt[0], dy = c[i][1] - pt[1]
+        var d = dx*dx + dy*dy
+        if (d < bestD) { bestD = d; best = c[i]; prev = c[(i - 1 + c.length) % c.length] }
+      }
+    })
+    if (!best || !prev) return false
+    var a = edits[cur()].arrow
+    var flipped = a ? !!a.flipped : false
+    edits[cur()].arrow = {
+      x: Math.round(best[0]), y: Math.round(best[1]),
+      angle: Math.round(Math.atan2(best[1] - prev[1], best[0] - prev[0]) * 180 / Math.PI),
+      flipped: flipped
+    }
+    return true
+  }
+
+  function arrowAngle () {
+    var a = edits[cur()].arrow
+    if (!a) return 0
+    return a.angle + (a.flipped ? 180 : 0)
+  }
+
+  var dragI = -1
+  svg.addEventListener('pointerdown', function (ev) {
+    if (previewOn) return
+    if (arrowMode) {
+      snapshot()
+      if (placeArrow(toLocal(ev))) { changed(); setState('Arrow placed — Flip if it points the wrong way') }
+      return
+    }
+    var raw = ev.target.getAttribute && ev.target.getAttribute('data-i')
+    snapshot()
+    if (raw !== null && raw !== undefined) {
+      dragI = +raw
+      try { svg.setPointerCapture(ev.pointerId) } catch (e) {}
+    } else {
+      insertNear(toLocal(ev))
+      changed()
+    }
+  })
+  svg.addEventListener('pointermove', function (ev) {
+    if (dragI < 0) return
+    var l = toLocal(ev)
+    pts()[dragI] = [Math.round(l[0]), Math.round(l[1])]
+    draw()
+  })
+  svg.addEventListener('pointerup', function () { if (dragI >= 0) { dragI = -1; changed() } })
+  svg.addEventListener('pointercancel', function () { dragI = -1 })
+  svg.addEventListener('dblclick', function (ev) {
+    var raw = ev.target.getAttribute && ev.target.getAttribute('data-i')
+    if (raw === null || raw === undefined) return
+    if (pts().length <= (isClosed() ? 3 : 2)) return
+    snapshot()
+    pts().splice(+raw, 1)
+    changed()
+  })
+
+  function changed () { draw(); scheduleSave(cur()); paintUndo() }
+
+  function setBadge () {
+    var b = document.getElementById('tbadge'), e = edits[cur()]
+    // The fit score is how much of the auto-traced line actually lies on the
+    // ribbon. Above ~97% it is usually right; below that it needs a look. It
+    // cannot catch a line that takes the wrong route through a junction and
+    // stays on the ink, so a high score is not a guarantee.
+    var fit = DATA[cur()].fit
+    b.textContent = e.done ? 'Confirmed'
+      : (fit ? 'Auto-traced · ' + fit + '% on the ribbon' : 'Not traced')
+    b.className = 'badge ov' + (e.done ? ' done' : (fit && fit < 97 ? ' warn' : ''))
+    document.getElementById('done').textContent = e.done ? 'Unconfirm' : 'Mark confirmed'
+    var n = 0
+    SLUGS.forEach(function (s) { if (edits[s].done) n++ })
+    document.getElementById('ndone').textContent = n
+  }
+
+  function show () {
+    var s = cur()
+    document.getElementById('tname').textContent = DATA[s].name
+    document.getElementById('artimg').src = ART[s]
+    document.getElementById('prev').disabled = idx === 0
+    document.getElementById('next').disabled = idx === SLUGS.length - 1
+    setBadge(); draw(); paintStrip(); paintUndo(); paintLines()
+  }
+
+  function paintStrip () {
+    var strip = document.getElementById('strip')
+    if (!strip.childElementCount) {
+      SLUGS.forEach(function (s, i) {
+        var b = document.createElement('button')
+        b.className = 'chip'
+        b.title = DATA[s].name
+        var im = document.createElement('img')
+        im.src = ART[s]; im.alt = ''; im.loading = 'lazy'
+        b.appendChild(im)
+        b.addEventListener('click', function () { idx = i; show() })
+        strip.appendChild(b)
+      })
+    }
+    Array.prototype.forEach.call(strip.children, function (c, i) {
+      c.classList.toggle('cur', i === idx)
+      c.classList.toggle('done', edits[SLUGS[i]].done)
+    })
+  }
+
+  document.getElementById('prev').onclick = function () { if (idx > 0) { idx--; show() } }
+  document.getElementById('next').onclick = function () { if (idx < SLUGS.length - 1) { idx++; show() } }
+  function paintLines () {
+    var wrap = document.getElementById('lines'), list = strokes(), ai = activeIdx()
+    wrap.textContent = ''
+    list.forEach(function (st, i) {
+      var b = document.createElement('button')
+      b.type = 'button'
+      b.textContent = String(i + 1) + (st.closed === false ? '·' : '')
+      b.title = 'Line ' + (i+1) + (st.closed === false ? ' (open)' : ' (loop)')
+      if (i === ai) b.className = 'cur'
+      b.addEventListener('click', function () {
+        edits[cur()].active = i
+        draw(); paintLines()
+      })
+      wrap.appendChild(b)
+    })
+    document.getElementById('delline').disabled = list.length < 2
+    document.getElementById('loopmode').textContent = isClosed() ? 'Open loop' : 'Close loop'
+  }
+
+  document.getElementById('arrow').onclick = function () {
+    arrowMode = !arrowMode
+    this.classList.toggle('on', arrowMode)
+    setState(arrowMode ? 'Click the line where the arrow goes' : 'Arrow placement off')
+  }
+  document.getElementById('flip').onclick = function () {
+    var a = edits[cur()].arrow
+    if (!a) { setState('No arrow on this track yet'); return }
+    snapshot()
+    a.flipped = !a.flipped
+    changed()
+  }
+
+  document.getElementById('addline').onclick = function () {
+    snapshot()
+    // New lines start open: they exist for junction layouts, where the point is
+    // a stroke that does not close.
+    strokes().push({ pts: [], closed: false })
+    edits[cur()].active = strokes().length - 1
+    changed(); paintLines()
+  }
+  document.getElementById('delline').onclick = function () {
+    var list = strokes()
+    if (list.length < 2) return
+    snapshot()
+    list.splice(activeIdx(), 1)
+    edits[cur()].active = Math.max(0, activeIdx() - 1)
+    changed(); paintLines()
+  }
+  document.getElementById('loopmode').onclick = function () {
+    snapshot()
+    var st = strokes()[activeIdx()]
+    st.closed = st.closed === false
+    changed(); paintLines()
+  }
+
+  function paintUndo () {
+    document.getElementById('undo').disabled = !stack().length
+  }
+  document.getElementById('undo').onclick = function () {
+    var st = stack()
+    if (!st.length) return
+    var prevState = JSON.parse(st.pop())
+    edits[cur()].strokes = prevState.strokes
+    edits[cur()].arrow = prevState.arrow || null
+    if (edits[cur()].active >= edits[cur()].strokes.length) edits[cur()].active = 0
+    draw(); scheduleSave(cur()); paintUndo(); paintLines()
+  }
+  document.getElementById('reset').onclick = function () {
+    snapshot()
+    edits[cur()].strokes = toStrokes(DATA[cur()])
+    edits[cur()].active = 0
+    changed(); paintLines()
+  }
+  document.getElementById('clear').onclick = function () {
+    snapshot()
+    edits[cur()].strokes = [{ pts: [], closed: true }]
+    edits[cur()].active = 0
+    changed(); paintLines()
+  }
+  // --- copy / paste a line --------------------------------------------
+  // One clipboard, kept in localStorage so it survives a reload: copy on the
+  // track you have drawn, navigate, paste. Every forward/reverse pair in this
+  // game shares its geometry, so a straight copy is all a counterpart needs.
+  var CLIP = 'wrl-racing-clip'
+  var clip = null
+
+  function loadClip () {
+    try {
+      var raw = localStorage.getItem(CLIP)
+      if (!raw) return
+      var v = JSON.parse(raw)
+      if (v && v.from && (Array.isArray(v.strokes) || Array.isArray(v.pts))) {
+        clip = { from: v.from, strokes: toStrokes(v) }
+      }
+    } catch (e) {}
+  }
+
+  function paintClip () {
+    var b = document.getElementById('paste'), note = document.getElementById('clipnote')
+    b.disabled = !clip
+    b.title = clip ? 'Paste the line copied from ' + DATA[clip.from].name : 'Nothing copied yet'
+    note.hidden = !clip
+    if (clip) note.innerHTML = 'Clipboard — <b></b>'
+    if (clip) note.querySelector('b').textContent = DATA[clip.from].name
+  }
+
+  document.getElementById('copy').onclick = function () {
+    if (!anyPoints()) { setState('Nothing to copy — this track has no line yet'); return }
+    clip = { from: cur(), strokes: cloneStrokes(strokes()),
+             arrow: edits[cur()].arrow ? JSON.parse(JSON.stringify(edits[cur()].arrow)) : null }
+    try { localStorage.setItem(CLIP, JSON.stringify(clip)) } catch (e) {}
+    paintClip()
+    var n = clip.strokes.length
+    setState('Copied ' + DATA[cur()].name + (n > 1 ? ' (' + n + ' lines)' : ''))
+  }
+
+  document.getElementById('paste').onclick = function () {
+    if (!clip) return
+    if (clip.from === cur()) { setState('That line was copied from this track'); return }
+    snapshot()
+    edits[cur()].strokes = cloneStrokes(clip.strokes)
+    edits[cur()].arrow = clip.arrow ? JSON.parse(JSON.stringify(clip.arrow)) : null
+    edits[cur()].active = 0
+    changed(); setBadge(); paintLines()
+    setState('Pasted from ' + DATA[clip.from].name)
+  }
+
+  // Every forward/reverse pair shares its geometry, so a confirmed line is
+  // valid for its counterpart as-is. Skips counterparts already confirmed, so
+  // it never overwrites work you have signed off.
+  document.getElementById('fillrev').onclick = function () {
+    var filled = 0
+    SLUGS.forEach(function (s) {
+      var r = DATA[s].rev
+      if (!edits[s].done || !r || edits[r].done) return
+      if (!edits[s].strokes.some(function (st) { return st.pts.length >= 2 })) return
+      edits[r].strokes = cloneStrokes(edits[s].strokes)
+      // The counterpart runs the other way, so its arrow starts flipped.
+      edits[r].arrow = edits[s].arrow
+        ? Object.assign({}, edits[s].arrow, { flipped: !edits[s].arrow.flipped })
+        : null
+      edits[r].active = 0
+      edits[r].done = true
+      scheduleSave(r)
+      filled++
+    })
+    if (!filled) { setState('Nothing to fill — confirm a track with a reverse counterpart first'); return }
+    setBadge(); paintStrip(); draw()
+    setState('Filled in ' + filled + (filled === 1 ? ' reverse track' : ' reverse tracks'))
+  }
+
+  document.getElementById('preview').onclick = function () {
+    previewOn = !previewOn
+    this.classList.toggle('on', previewOn)
+    draw()
+  }
+  document.getElementById('done').onclick = function () {
+    edits[cur()].done = !edits[cur()].done
+    setBadge(); paintStrip(); scheduleSave(cur())
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.target.tagName === 'TEXTAREA') return
+    if (e.key === 'ArrowLeft' && idx > 0) { idx--; show() }
+    else if (e.key === 'ArrowRight' && idx < SLUGS.length - 1) { idx++; show() }
+    else if (e.key === 'z' || e.key === 'Z') document.getElementById('undo').click()
+    else if (e.key === 'Enter') document.getElementById('done').click()
+    else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+      if (!window.getSelection || String(window.getSelection()) === '') {
+        e.preventDefault(); document.getElementById('copy').click()
+      }
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+      e.preventDefault(); document.getElementById('paste').click()
+    }
+  })
+
+  function exportJson () {
+    var out = {}
+    SLUGS.forEach(function (s) {
+      var paths = buildTrack(edits[s].strokes)
+      if (!paths || !paths.length) return
+      // `d` mirrors the first closed loop so a reader that predates multi-line
+      // tracks still finds something to draw.
+      var first = paths.filter(function (x) { return x.closed })[0] || paths[0]
+      var allC = []
+      edits[s].strokes.forEach(function (st) {
+        var c = curve(st.pts, st.closed)
+        if (c) allC = allC.concat(c)
+      })
+      out[s] = { w: VW, h: VH, d: first.d, paths: paths }
+      var a = edits[s].arrow
+      if (a) {
+        var af = fitOf(allC)
+        if (af) out[s].arrow = {
+          x: Math.round(a.x * af.sc + af.ox),
+          y: Math.round(a.y * af.sc + af.oy),
+          angle: a.angle + (a.flipped ? 180 : 0)
+        }
+      }
+    })
+    return JSON.stringify(out)
+  }
+  document.getElementById('showjson').onclick = function () {
+    var t = document.getElementById('json')
+    t.hidden = !t.hidden
+    if (!t.hidden) { t.value = exportJson(); t.focus(); t.select() }
+  }
+
+  function setState (msg) { document.getElementById('state').textContent = msg }
+
+  // The exported paths cannot be turned back into handles — they are the curve
+  // after sampling. These carry the editable points in and out, so the work is
+  // not stranded in a single browser profile.
+  function handlesJson () {
+    var out = { format: 'wrl-racing-handles', version: 1, saved: new Date().toISOString(), tracks: {} }
+    SLUGS.forEach(function (s) {
+      var e = edits[s]
+      if (!e.ts) return
+      out.tracks[s] = { strokes: e.strokes, arrow: e.arrow, done: e.done, ts: e.ts }
+    })
+    return JSON.stringify(out)
+  }
+
+  function saveBlob (name, text) {
+    var blob = new Blob([text], { type: 'application/json' })
+    var url = URL.createObjectURL(blob)
+    var a = document.createElement('a')
+    a.href = url; a.download = name
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    setTimeout(function () { URL.revokeObjectURL(url) }, 2000)
+  }
+
+  document.getElementById('backup').onclick = function () {
+    var text = handlesJson()
+    var n = Object.keys(JSON.parse(text).tracks).length
+    if (!n) { setState('Nothing to back up yet'); return }
+    if (window.claude && window.claude.use) {
+      window.claude.use('downloads').then(function (dl) {
+        if (dl) dl.save({ filename: 'racing-line-handles.json', data: text })
+        else saveBlob('racing-line-handles.json', text)
+      }).catch(function () { saveBlob('racing-line-handles.json', text) })
+    } else {
+      saveBlob('racing-line-handles.json', text)
+    }
+    setState('Backed up ' + n + (n === 1 ? ' track' : ' tracks') + ' of handles')
+  }
+
+  document.getElementById('restore').onclick = function () {
+    document.getElementById('restorefile').click()
+  }
+  document.getElementById('restorefile').onchange = function (ev) {
+    var file = ev.target.files && ev.target.files[0]
+    if (!file) return
+    var reader = new FileReader()
+    reader.onload = function () {
+      var data
+      try { data = JSON.parse(String(reader.result)) } catch (e) { setState('That file is not JSON'); return }
+      var tracks = data && data.tracks
+      if (!tracks || typeof tracks !== 'object') { setState('No handles in that file'); return }
+      var n = 0
+      Object.keys(tracks).forEach(function (s) {
+        var v = tracks[s]
+        if (!edits[s] || !v) return
+        if (!Array.isArray(v.strokes) && !Array.isArray(v.pts)) return
+        edits[s].strokes = toStrokes(v)
+        edits[s].arrow = v.arrow || null
+        edits[s].done = !!v.done
+        edits[s].ts = v.ts || Date.now()
+        dirty[s] = true
+        n++
+      })
+      saveLocal()
+      if (db) flush()
+      show(); paintLines()
+      setState('Restored ' + n + (n === 1 ? ' track' : ' tracks') + ' from backup')
+    }
+    reader.readAsText(file)
+    ev.target.value = ''
+  }
+
+  // Local mirror first, server second. Every edit lands in localStorage
+  // immediately, so the work survives a reload with no network at all; the
+  // server copy is the one that syncs across devices and that Claude reads
+  // back. On load the newer timestamp per track wins.
+  var LS = 'wrl-racing-lines'
+  function plural (n) { return n === 1 ? ' track' : ' tracks' }
+  function saveLocal () {
+    var out = {}
+    SLUGS.forEach(function (s) {
+      var e = edits[s]
+      if (e.ts) out[s] = { strokes: e.strokes, arrow: e.arrow, done: e.done, ts: e.ts }
+    })
+    try { localStorage.setItem(LS, JSON.stringify(out)) } catch (e) {}
+  }
+  function loadLocal () {
+    var raw = null
+    try { raw = localStorage.getItem(LS) } catch (e) { return 0 }
+    if (!raw) return 0
+    var n = 0
+    try {
+      var saved = JSON.parse(raw)
+      Object.keys(saved).forEach(function (s) {
+        var v = saved[s]
+        if (!edits[s] || !v) return
+        if (!Array.isArray(v.strokes) && !Array.isArray(v.pts)) return
+        edits[s].strokes = toStrokes(v)
+        edits[s].arrow = v.arrow || null
+        edits[s].done = !!v.done
+        edits[s].ts = v.ts || 0
+        n++
+      })
+    } catch (e) { return 0 }
+    return n
+  }
+
+  function scheduleSave (slug) {
+    edits[slug].ts = Date.now()
+    dirty[slug] = true
+    saveLocal()
+    if (!db) { setState('Saved on this device · ' + new Date().toLocaleTimeString()); return }
+    clearTimeout(timer)
+    timer = setTimeout(flush, 700)
+  }
+  function flush () {
+    if (!db) return
+    var keys = Object.keys(dirty)
+    dirty = {}
+    if (!keys.length) return
+    setState('Saving…')
+    Promise.all(keys.map(function (s) {
+      return db.doc('paths/' + s).set({ strokes: edits[s].strokes, arrow: edits[s].arrow,
+        done: edits[s].done, ts: edits[s].ts })
+    })).then(function () {
+      setState('Saved · ' + new Date().toLocaleTimeString())
+    }).catch(function (e) {
+      // The local copy already holds it, so this is a sync failure, not data loss.
+      setState('Offline — saved on this device only (' + ((e && e.code) || 'no network') + ')')
+    })
+  }
+
+  var nLocal = loadLocal()
+  loadClip()
+  paintClip()
+  show()
+  setState(nLocal ? 'Restored ' + nLocal + plural(nLocal) + ' from this device' : 'Ready — edits save as you go')
+
+  if (window.claude && window.claude.use) {
+    window.claude.use('db').then(function (x) {
+      db = x
+      if (!db) { setState('Saving on this device only — export when you are done'); return }
+      return db.collection('paths').get().then(function (snap) {
+        var pulled = 0
+        snap.docs.forEach(function (doc) {
+          var v = doc.data()
+          if (!v || !edits[doc.id]) return
+          if (!Array.isArray(v.strokes) && !Array.isArray(v.pts)) return
+          // Newer wins, so an offline session's later edits are not overwritten.
+          if ((v.ts || 0) < (edits[doc.id].ts || 0)) return
+          edits[doc.id].strokes = toStrokes(v)
+          edits[doc.id].arrow = v.arrow || null
+          edits[doc.id].done = !!v.done
+          edits[doc.id].ts = v.ts || 0
+          pulled++
+        })
+        saveLocal()
+        setState(pulled ? 'Synced — ' + pulled + plural(pulled) + ' from the server' : 'Synced — edits save as you go')
+        show()
+        if (Object.keys(dirty).length) flush()
+      })
+    }).catch(function () { setState('Offline — saving on this device only') })
+
+    window.claude.use('downloads').then(function (dl) {
+      var b = document.getElementById('dl')
+      if (!dl) { b.disabled = true; b.title = 'Downloads unavailable here — use Show JSON'; return }
+      b.onclick = function () { dl.save({ filename: 'track-paths.json', data: exportJson() }) }
+    }).catch(function () {})
+  } else {
+    // Running locally: no claude.ai bridge, but a plain blob download works
+    // here (it is only the artifact sandbox that blocks one), so the export is
+    // still one click rather than a copy-paste out of the textarea.
+    var b = document.getElementById('dl')
+    b.onclick = function () {
+      var blob = new Blob([exportJson()], { type: 'application/json' })
+      var url = URL.createObjectURL(blob)
+      var a = document.createElement('a')
+      a.href = url
+      a.download = 'track-paths.json'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(function () { URL.revokeObjectURL(url) }, 2000)
+      setState('Downloaded track-paths.json')
+    }
+    setState(nLocal ? 'Local copy — restored ' + nLocal + plural(nLocal) + ' from this browser'
+                    : 'Local copy — edits save in this browser')
+  }
+})()
+</script>

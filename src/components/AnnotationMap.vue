@@ -16,23 +16,39 @@
       role="img"
       :aria-label="`${alt} layout`"
     >
-      <path
-        :d="ringPath.d"
-        fill="none"
-        class="stroke-brand-border dark:stroke-brand-border-dark"
-        stroke-width="30"
+      <!-- A layout with junctions has no single loop to write along, so it
+           arrives as several strokes — each open or closed, each carrying the
+           name on its own. -->
+      <template v-for="{ seg, i } in drawOrder" :key="i">
+        <path
+          :d="seg.d"
+          fill="none"
+          class="stroke-brand-border dark:stroke-brand-border-dark"
+          stroke-width="30"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path :id="`${pathId}-${i}`" :ref="el => setSegRef(el, i)" :d="seg.d" fill="none" stroke="none" />
+        <text
+          :ref="el => setTextRef(el, i)"
+          font-family="Switzer, Helvetica, Arial, sans-serif"
+          font-size="18"
+          font-weight="800"
+          :letter-spacing="tracking[i] ?? BASE_TRACKING"
+          dominant-baseline="middle"
+          class="fill-brand-text dark:fill-brand-text-dark"
+        >
+          <textPath :href="`#${pathId}-${i}`" startOffset="0">{{ ringText(i) }}</textPath>
+        </text>
+      </template>
+
+      <!-- Race direction, read off the arrow in the source artwork. -->
+      <polygon
+        v-if="ringPath.arrow"
+        :points="ARROW_SHAPE"
+        :transform="`translate(${ringPath.arrow.x} ${ringPath.arrow.y}) rotate(${ringPath.arrow.angle})`"
+        class="fill-brand-accent dark:fill-brand-accent-dark"
       />
-      <path :id="pathId" ref="ringPathEl" :d="ringPath.d" fill="none" stroke="none" />
-      <text
-        ref="ringTextEl"
-        font-family="Switzer, Helvetica, Arial, sans-serif"
-        font-size="18"
-        font-weight="800"
-        letter-spacing="0.01em"
-        class="fill-brand-text dark:fill-brand-text-dark"
-      >
-        <textPath :href="`#${pathId}`" startOffset="0">{{ ringText }}</textPath>
-      </text>
     </svg>
 
     <img
@@ -111,6 +127,15 @@ import { loadTrackPaths, getTrackPath } from '../utils/trackPath.js'
 
 let uid = 0
 
+// The ring is set in an 18px face; tracking is quoted in the same user units.
+const BASE_FONT = 18
+const BASE_TRACKING = 0.18
+// A stroke too short for even one pass of the name gets a smaller face rather
+// than crushed letter-spacing. Below this it would be unreadable anyway, so the
+// tail is allowed to run off the end instead.
+// Direction marker, drawn pointing along +x and rotated into place.
+const ARROW_SHAPE = '20,0 -10,13 -10,-13'
+
 export default {
   name: 'AnnotationMap',
   props: {
@@ -128,8 +153,15 @@ export default {
   data() {
     return {
       ringPath: null,
-      reps: 1,
-      pathId: `ring-${++uid}`
+      // One entry per stroke — a junction layout carries several.
+      reps: [],
+      tracking: [],
+      units: [],
+      segEls: [],
+      textEls: [],
+      pathId: `ring-${++uid}`,
+      BASE_TRACKING,
+      ARROW_SHAPE
     }
   },
   computed: {
@@ -137,8 +169,26 @@ export default {
       const label = (this.ringLabel || this.alt || 'Track').toUpperCase()
       return `${label} · `
     },
-    ringText() {
-      return this.ringUnit.repeat(this.reps)
+    // Painted back to front: SVG draws in document order, so emitting the last
+    // stroke first leaves line 1 on top of line 2, and so on down.
+    drawOrder() {
+      if (!this.ringPath) return []
+      return this.ringPath.paths
+        .map((seg, i) => ({ seg, i }))
+        .reverse()
+    },
+    // Shorter things to write when a stroke has no room for the full label.
+    // A spur off the main loop does not need to repeat the track name — the
+    // loop beside it already carries it — so the variation alone reads fine.
+    unitLadder() {
+      const full = (this.ringLabel || this.alt || 'Track').toUpperCase()
+      const parts = full.split('—').map(t => t.trim()).filter(Boolean)
+      const out = [full]
+      if (parts.length > 1) {
+        out.push(parts[parts.length - 1])
+        out.push(parts[0])
+      }
+      return out.filter((v, i, a) => v && a.indexOf(v) === i).map(v => `${v} · `)
     }
   },
   watch: {
@@ -146,29 +196,120 @@ export default {
     variationSlug() { this.resolvePath() },
     ringUnit() { this.$nextTick(this.fitRing) }
   },
+  beforeUpdate() {
+    this.segEls = []
+    this.textEls = []
+  },
   async mounted() {
     await loadTrackPaths()
     this.resolvePath()
   },
   methods: {
+    setSegRef(el, i) { if (el) this.segEls[i] = el },
+    setTextRef(el, i) { if (el) this.textEls[i] = el },
+    // One repeat count per stroke; the template asks for these before fitRing
+    // has measured anything, so a missing entry means "one pass".
+    unitFor(i) {
+      return this.units[i] ?? this.ringUnit
+    },
+    ringText(i) {
+      return this.unitFor(i).repeat(this.reps[i] ?? 1)
+    },
     resolvePath() {
-      this.ringPath = getTrackPath(this.trackSlug, this.variationSlug)
-      this.reps = 1
+      const found = getTrackPath(this.trackSlug, this.variationSlug)
+      // Older data carries a single `d`; newer carries `paths`. Normalise here
+      // so the template only ever deals with a list.
+      this.ringPath = found
+        ? { ...found, paths: found.paths?.length ? found.paths : (found.d ? [{ d: found.d, closed: true }] : []) }
+        : null
+      if (this.ringPath && !this.ringPath.paths.length) this.ringPath = null
+      const n = this.ringPath ? this.ringPath.paths.length : 0
+      this.reps = new Array(n).fill(1)
+      this.tracking = new Array(n).fill(BASE_TRACKING)
+      this.units = new Array(n).fill(this.ringUnit)
+      this.segEls = []
+      this.textEls = []
       if (this.ringPath) this.$nextTick(this.fitRing)
     },
-    // Repeat the name until it closes the loop without lapping over its own
-    // start: measure one pass against the real path length rather than guessing
-    // from character count, which is wrong by a factor of several.
+    // Fit the name to each stroke.
+    //
+    // Runs as explicit passes because getComputedTextLength() reports the text
+    // WITH its current size and spacing — measuring while a previous fit is
+    // applied reads back the wrong width. Pass 0 resets to the base face and
+    // full label; the middle passes pick a label and size that fit; the last
+    // settles the repeat count and letter-spacing. The pass counter is what
+    // stops the reset and the re-measure chasing each other.
     fitRing() {
-      const path = this.$refs.ringPathEl
-      const text = this.$refs.ringTextEl
-      if (!path || !text || typeof path.getTotalLength !== 'function') return
-      const total = path.getTotalLength()
-      const drawn = text.getComputedTextLength()
-      if (!total || !drawn) return
-      const perRep = drawn / this.reps
-      if (perRep <= 0) return
-      this.reps = Math.max(1, Math.floor(total / perRep))
+      if (!this.ringPath) return
+      const n = this.ringPath.paths.length
+      this.reps = new Array(n).fill(1)
+      this.tracking = new Array(n).fill(BASE_TRACKING)
+      this.units = new Array(n).fill(this.ringUnit)
+      this.$nextTick(() => this.fitPass(0))
+    },
+    fitPass(pass) {
+      if (!this.ringPath) return
+      const reps = this.reps.slice()
+      const units = this.units.slice()
+      let shrank = false
+
+      this.ringPath.paths.forEach((seg, i) => {
+        const path = this.segEls[i]
+        const text = this.textEls[i]
+        if (!path || !text || typeof path.getTotalLength !== 'function') return
+        const total = path.getTotalLength()
+        const drawn = text.getComputedTextLength()
+        if (!total || !drawn) return
+        const perRep = drawn / (this.reps[i] || 1)
+        if (perRep <= 0) return
+
+        if (perRep > total && pass < 2) {
+          // A spur too short for the full label gets a shorter one. The face
+          // never changes size — mixed type sizes across one map read as a
+          // mistake — so a line with no room for even the shortest label
+          // carries no text at all. The ribbon and the arrow still show it.
+          const perChar = perRep / this.unitFor(i).length
+          const fits = this.unitLadder.find(u => u.length * perChar <= total)
+          if (fits && fits !== this.unitFor(i)) {
+            units[i] = fits
+            reps[i] = 1
+            shrank = true
+            return
+          }
+          if (this.unitFor(i) !== '') { units[i] = ''; shrank = true }
+          reps[i] = 1
+          return
+        }
+
+        // Whichever repeat count needs the least distortion to close the line.
+        const low = Math.max(1, Math.floor(total / perRep))
+        const chars = this.unitFor(i).length
+        const cost = k => Math.abs((total - k * perRep) / Math.max(1, k * chars - 1))
+        reps[i] = cost(low + 1) < cost(low) ? low + 1 : low
+      })
+
+      this.reps = reps
+      this.units = units
+      // A shorter label may now fit several times, so measure again before
+      // settling; otherwise go straight to spacing.
+      this.$nextTick(() => (shrank ? this.fitPass(pass + 1) : this.applyTracking()))
+    },
+    applyTracking() {
+      if (!this.ringPath) return
+      const tracking = this.tracking.slice()
+      this.ringPath.paths.forEach((seg, i) => {
+        const path = this.segEls[i]
+        const text = this.textEls[i]
+        if (!path || !text || typeof path.getTotalLength !== 'function') return
+        const total = path.getTotalLength()
+        const filled = text.getComputedTextLength()
+        const chars = this.ringText(i).length
+        if (!filled || chars < 2) return
+        const want = BASE_TRACKING + (total - filled) / (chars - 1)
+        // Never crush below a readable minimum; a slight overrun clips instead.
+        tracking[i] = Math.max(want, -0.08 * BASE_FONT)
+      })
+      this.tracking = tracking
     },
     onContainerClick(event) {
       if (!this.editMode) return

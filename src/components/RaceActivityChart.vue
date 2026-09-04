@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+  <div class="rule-top pt-5">
     <div class="flex items-center justify-between mb-4">
-      <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark">Race Activity</div>
+      <div class="ov text-brand-muted dark:text-brand-muted-dark">Race activity</div>
       <div class="flex gap-1">
         <button
           v-for="tab in tabs"

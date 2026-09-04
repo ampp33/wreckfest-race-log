@@ -1,10 +1,10 @@
 <template>
   <div
     v-if="hasData"
-    class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 mb-6"
+    class="rule-top pt-5 mb-10"
   >
-    <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark mb-2">
-      Lap Times Over Time
+    <div class="ov text-brand-muted dark:text-brand-muted-dark mb-4">
+      Lap times over time
     </div>
     <div class="relative h-64">
       <canvas ref="canvas"></canvas>

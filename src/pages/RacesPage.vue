@@ -1,7 +1,7 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
-      Your <em class="signal">races</em>
+      Races
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10">
       <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
