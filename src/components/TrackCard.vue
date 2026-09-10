@@ -1,13 +1,13 @@
 <template>
   <router-link
     :to="firstVariationLink"
-    class="block group border-t-2 border-brand-strong dark:border-brand-strong-dark pt-3.5 text-brand-text dark:text-brand-text-dark"
+    class="block group text-brand-text dark:text-brand-text-dark"
   >
-    <div class="aspect-video bg-brand-surface dark:bg-brand-surface-dark overflow-hidden flex items-center justify-center">
+    <div class="aspect-video bg-brand-surface dark:bg-brand-surface-dark overflow-hidden">
       <img
         :src="resolvedImage"
         :alt="track.name"
-        class="w-[78%] h-auto object-contain map-art"
+        class="w-full h-full object-cover grayscale"
         loading="lazy"
       />
     </div>
@@ -62,8 +62,6 @@ export default {
       return `/track/${this.track.slug}/${first.slug}`
     },
     resolvedImage() {
-      const first = (this.track.track_variations || [])[0]
-      if (first) return `/track-variation-images/${this.track.slug}--${first.slug}.png`
       return trackImageUrl(this.track.slug)
     }
   }

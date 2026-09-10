@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { authStore, initAuthStore } from '../stores/authStore.js'
 
 import HomePage from '../pages/HomePage.vue'
-import TelemetryPage from '../pages/TelemetryPage.vue'
+import PluginPage from '../pages/PluginPage.vue'
 import TrackListPage from '../pages/TrackListPage.vue'
 import TrackDetailPage from '../pages/TrackDetailPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
@@ -17,7 +17,7 @@ import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
 const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { public: true } },
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
-  { path: '/telemetry', name: 'telemetry', component: TelemetryPage, meta: { public: true } },
+  { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/tracks', name: 'tracks', component: TrackListPage },
   {
     path: '/track/:trackSlug/:variationSlug',

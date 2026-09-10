@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-6 py-10">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
       <div>
         <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
@@ -35,7 +35,7 @@
     </p>
     <div
       v-else
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12"
+      class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-12"
     >
       <TrackCard v-for="track in filteredTracks" :key="track.id" :track="track" />
     </div>

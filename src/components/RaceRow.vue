@@ -208,17 +208,19 @@
   </tr>
 
   <tr v-if="layout === 'table' && !editing && expanded">
-    <td colspan="11" class="px-0 py-3 bg-brand-surface dark:bg-brand-surface-dark">
-      <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
+    <td colspan="11" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
+      <div class="ov ov-lg text-brand-accent dark:text-brand-accent-dark">Notes</div>
       <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
 
+      <div v-if="hasLapTimes || hasRoster" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
+
       <template v-if="hasLapTimes">
-        <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
+        <div class="mt-3 ov ov-lg text-brand-accent dark:text-brand-accent-dark">Lap times</div>
         <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
       </template>
 
       <template v-if="hasRoster">
-        <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Roster</div>
+        <div class="mt-3 ov ov-lg text-brand-accent dark:text-brand-accent-dark">Roster</div>
         <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
       </template>
     </td>

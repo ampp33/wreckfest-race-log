@@ -259,6 +259,14 @@ export default {
       this.$nextTick(() => this.$refs.vehicleInput && this.$refs.vehicleInput.focus())
     }
     this.autoExpand()
+    // Escape is bound at the document level rather than on the form, because
+    // when editing an existing race (autofocus: false) nothing has focus when
+    // the form mounts — the "Edit" button that had it is gone — so a keydown
+    // on the form itself would never see the first Escape press.
+    document.addEventListener('keydown', this.onDocumentKeydown)
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onDocumentKeydown)
   },
   methods: {
     formatMsToTime,
@@ -267,12 +275,13 @@ export default {
       this.sliders.splice(i, 1, pos)
       this.form.tuning = slidersToTuning(this.sliders)
     },
-    onFormKeydown(event) {
+    onDocumentKeydown(event) {
       if (event.key === 'Escape') {
         event.preventDefault()
         this.$emit('cancel')
-        return
       }
+    },
+    onFormKeydown(event) {
       // Enter submits form unless we're inside the textarea (use Ctrl+Enter
       // there). This matches the spec's "fast input" rule.
       if (event.key === 'Enter') {

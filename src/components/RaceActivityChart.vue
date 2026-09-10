@@ -52,12 +52,15 @@ export default {
   name: 'RaceActivityChart',
   props: {
     hourlyCounts: { type: Array, default: () => new Array(24).fill(0) },
-    dailyCounts: { type: Object, default: () => ({}) }
+    dailyCounts: { type: Object, default: () => ({}) },
+    // Which tab is selected on mount — e.g. the homepage demo opens on
+    // 'year' so it reads as races-per-month without requiring a click.
+    initialTab: { type: String, default: 'week' }
   },
   data() {
     return {
       chart: null,
-      activeTab: 'week',
+      activeTab: this.initialTab,
       tabs: [
         { key: 'day', label: 'Day' },
         { key: 'week', label: 'Week' },

@@ -1,6 +1,6 @@
 <template>
   <nav class="bg-brand-bg dark:bg-brand-bg-dark border-b border-brand-border dark:border-brand-border-dark">
-    <div class="max-w-6xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
       <router-link to="/tracks" class="flex items-baseline gap-2.5 shrink-0">
         <span class="font-display font-black tracking-tightest leading-none text-[17px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
         <span class="ov text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
@@ -87,7 +87,7 @@
 
     <!-- Mobile menu: a red slab, full bleed, squared off. -->
     <div v-if="mobileMenuOpen" class="sm:hidden bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
-      <div class="max-w-6xl mx-auto px-6 py-2">
+      <div class="max-w-7xl mx-auto px-6 py-2">
         <router-link
           v-for="item in navItems"
           :key="item.to"
@@ -160,7 +160,7 @@ export default {
         { to: '/races', label: 'Races' },
         { to: '/stats', label: 'Stats' },
         { to: '/settings/api-keys', label: 'API keys' },
-        { to: '/telemetry', label: 'Telemetry' }
+        { to: '/plugin', label: 'Plugin' }
       ],
       adminItems: [
         { to: '/admin/diagnostics', label: 'Diagnostics' },

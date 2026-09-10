@@ -3,7 +3,7 @@
        set huge and cropped by the bottom edge — the one place the grid is
        deliberately ignored. -->
   <footer class="relative mt-24 overflow-hidden bg-brand-slab text-[#F5F4F0] border-t-2 border-brand-accent dark:border-brand-accent-dark">
-    <div class="max-w-6xl mx-auto px-6 pt-10">
+    <div class="max-w-7xl mx-auto px-6 pt-10">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-8">
         <div v-for="col in columns" :key="col.title">
           <div class="ov text-brand-accent-dark mb-3">{{ col.title }}</div>
