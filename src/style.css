@@ -62,9 +62,19 @@ table th {
 }
 
 /* Disable layout-shifting transitions while still letting Tailwind's
- * `transition` utilities work where intentionally applied. */
+ * `transition` utilities work where intentionally applied.
+ *
+ * `transition-duration` alone leaves `transition-property` at its default of
+ * `all`, which quietly puts every element's width/height/position under a
+ * transition too — visible as a brief resize "pop" on load whenever the
+ * page's height changes right after first paint (auth state resolving, web
+ * fonts swapping in) toggles the scrollbar and shifts body width. Scoping to
+ * Tailwind's own default transition properties keeps the speed-up without
+ * catching layout properties. */
 * {
   transition-duration: 100ms;
+  transition-property: color, background-color, border-color, text-decoration-color,
+    fill, stroke, opacity, box-shadow, filter, backdrop-filter;
 }
 
 ::selection {

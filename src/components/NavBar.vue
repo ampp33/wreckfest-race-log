@@ -2,8 +2,8 @@
   <nav class="bg-brand-bg dark:bg-brand-bg-dark border-b border-brand-border dark:border-brand-border-dark">
     <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
       <router-link to="/tracks" class="flex items-baseline gap-2.5 shrink-0">
-        <span class="font-display font-black tracking-tightest leading-none text-[17px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
-        <span class="ov text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
+        <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
+        <span class="ov-lg text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
       </router-link>
 
       <!-- Desktop nav -->

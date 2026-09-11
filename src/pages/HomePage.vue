@@ -5,8 +5,8 @@
     <header class="border-b border-brand-border dark:border-brand-border-dark">
       <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
         <span class="flex items-baseline gap-2.5">
-          <span class="font-display font-black tracking-tightest leading-none text-[17px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
-          <span class="ov hidden sm:inline whitespace-nowrap text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
+          <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
+          <span class="ov-lg hidden sm:inline whitespace-nowrap text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
         </span>
         <div class="flex items-center gap-2">
           <button
@@ -41,28 +41,79 @@
             <span class="outline-ink inline-block">close — or not.</span>
           </h1>
           <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8 mb-9">
-            A personal race log archive for Wreckfest. One target time per track variation,
-            every run you have logged against it, and the distance in between.
+            A personal race log for Wreckfest, powered by <b>two tools</b>: the
+            <b>Telemetry plugin</b> that automatically reads race results from the
+            game and posts them to <b>this site</b>, so you can track your progress and watch your progress towards becoming a better racer.
           </p>
           <div class="flex flex-wrap gap-3">
             <router-link
-              to="/login"
-              class="min-h-[56px] px-9 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white font-bold text-[15px] tracking-tightest hover:opacity-85"
-            >Start logging your races</router-link>
-            <router-link
               to="/plugin"
+              class="min-h-[56px] px-9 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white font-bold text-[15px] tracking-tightest hover:opacity-85"
+              >Setup Automatic Race Tracking</router-link>
+              <router-link
+              to="/login"
               class="min-h-[56px] px-9 inline-flex items-center border border-brand-strong dark:border-brand-strong-dark text-brand-text dark:text-brand-text-dark font-bold text-[15px] tracking-tightest hover:border-brand-accent dark:hover:border-brand-accent-dark"
-            >Setup Automatic Race Tracking</router-link>
+            >Start logging your races</router-link>
           </div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark mt-4">Free · your data exports whole</div>
         </div>
       </section>
 
-      <!-- PROOF: the product itself, not a claim about it. -->
+      <!-- PAIR: both halves, named and linked, before either is shown alone.
+           The mockup this page started from predates the telemetry tool, which
+           used to live as a bolted-on section near the bottom — moved up front
+           because the log and the plugin aren't really two products. -->
       <section class="relative z-10 max-w-7xl mx-auto px-6 mt-8 sm:mt-10">
         <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-brand-border dark:border-brand-border-dark pb-3 mb-6">
+          <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+            One <span class="outline-ink">system</span>, two halves.
+          </h2>
+          <span class="ov text-brand-muted dark:text-brand-muted-dark">Fig. — How it fits together</span>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-x-8 gap-y-10">
+          <div>
+            <div class="outline-acc font-display font-black leading-[0.78] text-[96px] -ml-1.5 -mt-2">01</div>
+            <h3 class="font-body font-bold text-[19px] tracking-tightest leading-tight text-brand-text dark:text-brand-text-dark mt-3 mb-3">
+              Telemetry reads the race.
+            </h3>
+            <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mb-5">
+              The Telemetry plugin runs alongside Wreckfest and automatically reads
+              results straight out of the game's memory, then automatically posts them
+              to your log the moment the race ends. No mods, no manual entry.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <router-link
+                to="/plugin"
+                class="ov min-h-[44px] px-5 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85"
+              >Setup guide</router-link>
+              <a
+                href="https://github.com/ampp33/wreckfest-telemetry"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="ov min-h-[44px] px-5 inline-flex items-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
+              >View on GitHub</a>
+            </div>
+          </div>
+          <div>
+            <div class="outline-acc font-display font-black leading-[0.78] text-[96px] -ml-1.5 -mt-2">02</div>
+            <h3 class="font-body font-bold text-[19px] tracking-tightest leading-tight text-brand-text dark:text-brand-text-dark mt-3 mb-3">
+              The log tracks the gap.
+            </h3>
+            <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark">
+              Every race that lands — typed in or posted by the plugin — is checked against the
+              target time you set for that track variation: lap splits charted, personal bests
+              rolled up, the trend visible across every run you've logged. That's everything below.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROOF: the product itself, not a claim about it. -->
+      <section class="relative z-10 max-w-7xl mx-auto px-6 mt-16 sm:mt-20">
+        <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 border-b border-brand-border dark:border-brand-border-dark pb-3 mb-6">
           <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark flex items-baseline flex-wrap gap-x-3.5">
-            <span>This is the <span class="outline-ink">whole</span> product.</span>
+            <span><span class="outline-ink">Analyze</span> your races.</span>
           </h2>
           <span class="ov text-brand-muted dark:text-brand-muted-dark">Fig. — Races, newest first</span>
         </div>
@@ -136,8 +187,8 @@
         </div>
 
         <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark max-w-xl mt-5">
-          Your data, sorted newest first, listed and charted — expand a row (▸) for its full lap splits,
-          tuning notes and race roster.  <template v-if="!loadingCount && raceCount">
+          Your data — typed in or posted straight from Telemetry — sorted newest first, listed and
+          charted — expand a row (▸) for its full lap splits, tuning notes and race roster.  <template v-if="!loadingCount && raceCount">
             <span class="ml-1 text-brand-text dark:text-brand-text-dark">{{ raceCount.toLocaleString() }} races logged across every account so far.</span>
           </template>
         </p>
@@ -250,48 +301,15 @@
         </div>
       </section>
 
-      <!-- DOUBTS. Dense small type as counterweight to the hero. -->
+      <!-- DOUBTS. -->
       <section class="relative z-10 max-w-7xl mx-auto px-6 mt-9 sm:mt-12">
         <div class="rule-top pt-7 grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
           <div v-for="item in doubts" :key="item.n">
             <div class="outline-acc font-display font-black leading-[0.78] text-[96px] -ml-1.5 -mt-2">{{ item.n }}</div>
-            <h3 class="font-body font-bold text-[15px] tracking-tightest leading-tight text-brand-text dark:text-brand-text-dark mt-3 mb-2.5">
+            <h3 class="font-body font-bold text-[19px] tracking-tightest leading-tight text-brand-text dark:text-brand-text-dark mt-3 mb-3">
               {{ item.q }}
             </h3>
-            <p class="font-body text-[13px] leading-relaxed text-brand-muted dark:text-brand-muted-dark">{{ item.a }}</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Auto-logging. Not in the original artboard: the telemetry tool is a
-           real feature the mockup predates. Kept off the red so the sign-up
-           slab below stays the only one. -->
-      <section class="relative z-10 max-w-7xl mx-auto px-6 mt-9 sm:mt-12">
-        <div class="rule-top pt-7 grid lg:grid-cols-12 gap-x-8 gap-y-6 items-start">
-          <div class="lg:col-span-5">
-            <div class="ov text-brand-muted dark:text-brand-muted-dark">Or don't type at all</div>
-            <h2 class="font-display font-black tracking-tightest leading-[0.9] text-display-sm text-brand-text dark:text-brand-text-dark mt-3.5">
-              Wreckfest<br />Telemetry.
-            </h2>
-          </div>
-          <div class="lg:col-span-7">
-            <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark max-w-xl">
-              Run it alongside the game on Linux under Proton and it reads your race results straight
-              out of Wreckfest's memory — no mods, no plugins — then posts them to your log the moment
-              a race ends. Every field on this page fills itself in.
-            </p>
-            <div class="flex flex-wrap gap-2 mt-7">
-              <router-link
-                to="/telemetry"
-                class="ov min-h-[44px] px-6 inline-flex items-center border border-brand-strong dark:border-brand-strong-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
-              >Setup guide</router-link>
-              <a
-                href="https://github.com/ampp33/wreckfest-telemetry"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="ov min-h-[44px] px-6 inline-flex items-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
-              >View on GitHub</a>
-            </div>
+            <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark">{{ item.a }}</p>
           </div>
         </div>
       </section>
@@ -302,14 +320,20 @@
           <div>
             <h2 class="font-display font-black tracking-tightest leading-none text-display-sm">Start with one lap.</h2>
             <p class="font-body text-[15px] leading-relaxed text-white/85 max-w-lg mt-4">
-              Log the run you did last night. The archive is only worth anything once there is a
-              second row to compare it to.
+              Log the run you did last night — by hand, or let Telemetry post it for you. The
+              archive is only worth anything once there is a second row to compare it to.
             </p>
           </div>
-          <router-link
-            to="/login"
-            class="min-h-[56px] px-9 inline-flex items-center self-start lg:self-auto shrink-0 bg-white text-brand-accent font-bold text-[15px] tracking-tightest hover:opacity-90"
-          >Start your log</router-link>
+          <div class="flex flex-wrap gap-3 self-start lg:self-auto shrink-0">
+            <router-link
+              to="/login"
+              class="min-h-[56px] px-9 inline-flex items-center bg-white text-brand-accent font-bold text-[15px] tracking-tightest hover:opacity-90"
+            >Start your log</router-link>
+            <router-link
+              to="/plugin"
+              class="min-h-[56px] px-9 inline-flex items-center border border-white/50 text-white font-bold text-[15px] tracking-tightest hover:border-white"
+            >Setup Telemetry</router-link>
+          </div>
         </div>
       </section>
     </main>
@@ -419,7 +443,7 @@ export default {
         {
           n: '01',
           q: 'Do I have to type all this in by hand?',
-          a: 'A race is one row. Press Q anywhere and the quick-add opens focused on the lap time — track, variation and vehicle carry over from your last entry, so a session of eight runs is eight lap times and a tab key. If you would rather not type at all, issue yourself an API key and post races in from whatever you already have running.'
+          a: 'A race is one row. Press Q anywhere and the quick-add opens focused on the lap time — track, variation and vehicle carry over from your last entry, so a session of eight runs is eight lap times and a tab key. If you would rather not type at all, run the Telemetry plugin alongside the game — it reads and posts each race automatically the moment it ends — or issue yourself an API key and post from whatever else you have running.'
         },
         {
           n: '02',
