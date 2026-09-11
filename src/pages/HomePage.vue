@@ -1,27 +1,6 @@
 <template>
   <div class="bg-brand-bg dark:bg-brand-bg-dark">
-    <!-- The marketing page carries its own header: a visitor here isn't signed
-         in, so App.vue's NavBar hasn't mounted. -->
-    <header class="border-b border-brand-border dark:border-brand-border-dark">
-      <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
-        <span class="flex items-baseline gap-2.5">
-          <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
-          <span class="ov-lg hidden sm:inline whitespace-nowrap text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
-        </span>
-        <div class="flex items-center gap-2">
-          <button
-            type="button"
-            class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
-            @click="onToggleDark"
-            :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-          >{{ prefs.darkMode ? 'Light' : 'Dark' }}</button>
-          <router-link
-            to="/login"
-            class="ov min-h-[44px] px-5 flex items-center whitespace-nowrap bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85"
-          >Sign in</router-link>
-        </div>
-      </div>
-    </header>
+    <PublicHeader />
 
     <main>
       <!-- HERO. The W is cropped by two edges and sits behind the headline —
@@ -41,9 +20,9 @@
             <span class="outline-ink inline-block">close — or not.</span>
           </h1>
           <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8 mb-9">
-            A personal race log for Wreckfest, powered by <b>two tools</b>: the
-            <b>Telemetry plugin</b> that automatically reads race results from the
-            game and posts them to <b>this site</b>, so you can track your progress and watch your progress towards becoming a better racer.
+            A personal race log for Wreckfest, powered by <b>two tools</b>: a
+            <b>Telemetry plugin</b> that automatically records race results from the
+            game and posts them to <b>this site</b>, so you can track your progress towards becoming a better racer.
           </p>
           <div class="flex flex-wrap gap-3">
             <router-link
@@ -341,12 +320,12 @@
 </template>
 
 <script>
-import { prefsStore } from '../stores/prefsStore.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { piInfo } from '../utils/piInfo.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
 import RaceResultsRoster from '../components/RaceResultsRoster.vue'
 import RaceActivityChart from '../components/RaceActivityChart.vue'
+import PublicHeader from '../components/PublicHeader.vue'
 
 // Builds a dailyCounts object (the shape RaceActivityChart/getStats produce)
 // relative to *today*, not a fixed date, so the "year" tab keeps showing a
@@ -376,10 +355,9 @@ function buildDemoDailyCounts() {
 
 export default {
   name: 'HomePage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceActivityChart },
+  components: { LapSplitsChart, RaceResultsRoster, RaceActivityChart, PublicHeader },
   data() {
     return {
-      prefs: prefsStore,
       raceCount: 0,
       loadingCount: true,
       // The figure under "This is the whole product" — a static sample of the
@@ -473,10 +451,7 @@ export default {
     }
   },
   methods: {
-    piInfo,
-    onToggleDark() {
-      this.prefs.darkMode = !this.prefs.darkMode
-    }
+    piInfo
   }
 }
 </script>

@@ -1,19 +1,19 @@
 <template>
+  <PublicHeader />
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       Wreckfest <em class="signal">Telemetry</em> Plugin
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-3.5 mb-6 max-w-xl">
+    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-3.5 mb-2 max-w-xl">
       An auto-loading ASI plugin that reads your Wreckfest race results live, straight out of the
       game's own memory, and logs each completed race to this site automatically.
-      <br>
-      <i>Works on Windows and Linux (Steam + Proton).</i>
     </p>
+    <div class="ov text-brand-muted dark:text-brand-muted-dark mb-6">Works on Windows and Linux (Steam + Proton)</div>
 
     <!-- Setup -->
     <section class="rule-top pt-5">
       <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-5">
-        Installation <em class="signal">Instructions</em>
+        Installation <em class="signal">instructions</em>
       </h2>
       <ol class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark space-y-4 list-decimal list-inside">
         <li>
@@ -45,11 +45,22 @@
         </li>
       </ol>
     </section>
+    <a
+      href="https://github.com/ampp33/wreckfest-telemetry-asi"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="ov min-h-[44px] mt-4 px-6 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85 mb-12"
+    >
+      View Code on GitHub
+    </a>
   </div>
 </template>
 
 <script>
+import PublicHeader from '../components/PublicHeader.vue'
+
 export default {
-  name: 'TelemetryPage'
+  name: 'TelemetryPage',
+  components: { PublicHeader }
 }
 </script>
