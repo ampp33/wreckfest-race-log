@@ -31,6 +31,7 @@ const routes = [
   { path: '/admin/users', name: 'admin-users', component: UserRolesPage, meta: { requiresAdmin: true } },
   { path: '/admin/api-keys', name: 'admin-api-keys', component: AdminApiKeysPage, meta: { requiresAdmin: true } },
   { path: '/admin/feedback', name: 'admin-feedback', component: AdminFeedbackPage, meta: { requiresAdmin: true } },
+
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 

@@ -78,7 +78,11 @@ table th {
 }
 
 ::selection {
-  background-color: rgba(196, 30, 30, 0.3);
+  background-color: rgba(59, 59, 57, 0.35);
+}
+
+.dark ::selection {
+  background-color: rgba(180, 178, 169, 0.3);
 }
 
 /* The signal word in a heading. Grid Break knocks it out to an outline instead
@@ -112,13 +116,13 @@ em.signal {
  * nothing to paint since the fill is transparent — fall back to a solid fill
  * so the word stays legible instead of vanishing under the highlight. */
 .outline-ink::selection {
-  color: theme('colors.brand.accent.DEFAULT');
-  -webkit-text-fill-color: theme('colors.brand.accent.DEFAULT');
+  color: theme('colors.brand.secondary.DEFAULT');
+  -webkit-text-fill-color: theme('colors.brand.secondary.DEFAULT');
 }
 
 .dark .outline-ink::selection {
-  color: theme('colors.brand.accent.dark');
-  -webkit-text-fill-color: theme('colors.brand.accent.dark');
+  color: theme('colors.brand.secondary.dark');
+  -webkit-text-fill-color: theme('colors.brand.secondary.dark');
 }
 
 .outline-acc {

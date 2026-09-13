@@ -8,6 +8,10 @@
         <span class="ov-lg hidden sm:inline whitespace-nowrap text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
       </span>
       <div class="flex items-center gap-2">
+        <router-link
+          to="/plugin"
+          class="ov min-h-[44px] px-4 hidden sm:inline-flex items-center whitespace-nowrap text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+        >Install Telemetry</router-link>
         <button
           type="button"
           class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
