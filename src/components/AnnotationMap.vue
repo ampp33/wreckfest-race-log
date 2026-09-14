@@ -106,16 +106,33 @@
       </template>
     </div>
 
-    <!-- Turn markers, positioned by normalized percentage coordinates -->
+    <!-- Turn markers, positioned by normalized percentage coordinates.
+         Draggable in edit mode only — pointerdown starts the drag and
+         captures the pointer to this marker (setPointerCapture below), so
+         every subsequent pointermove/pointerup keeps targeting it no
+         matter where the cursor actually is by release time. That capture
+         is also what keeps the container's own @click ("click map to add a
+         turn") from firing after a drag: the browser dispatches the
+         synthesized click at the capturing element, which stops it here
+         via .stop, same as an ordinary marker click. touch-none stops the
+         browser starting a scroll gesture on touch before JS sees the
+         pointerdown. -->
     <div
       v-for="ann in annotations"
       :key="ann.id"
-      class="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white cursor-pointer tabular"
-      :class="ann.id === selectedId
-        ? 'bg-brand-text dark:bg-brand-text-dark text-brand-bg dark:text-brand-bg-dark scale-110'
-        : 'bg-brand-accent dark:bg-brand-accent-dark hover:scale-105'"
+      class="absolute -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white tabular touch-none"
+      :class="[
+        ann.id === selectedId
+          ? 'bg-brand-text dark:bg-brand-text-dark text-brand-bg dark:text-brand-bg-dark scale-110'
+          : 'bg-brand-accent dark:bg-brand-accent-dark hover:scale-105',
+        editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+      ]"
       :style="{ left: ann.x + '%', top: ann.y + '%' }"
       @click.stop="$emit('select', ann.id)"
+      @pointerdown.stop="onMarkerPointerDown($event, ann)"
+      @pointermove.stop="onMarkerPointerMove($event, ann)"
+      @pointerup.stop="onMarkerPointerUp($event, ann)"
+      @pointercancel.stop="onMarkerPointerUp($event, ann)"
     >
       {{ ann.number }}
     </div>
@@ -149,7 +166,7 @@ export default {
     // What gets written round the line. Defaults to the variation's own name.
     ringLabel: { type: String, default: '' }
   },
-  emits: ['toggle-edit', 'add-annotation', 'select', 'save', 'discard'],
+  emits: ['toggle-edit', 'add-annotation', 'select', 'update', 'save', 'discard'],
   data() {
     return {
       ringPath: null,
@@ -161,7 +178,11 @@ export default {
       textEls: [],
       pathId: `ring-${++uid}`,
       BASE_TRACKING,
-      ARROW_SHAPE
+      ARROW_SHAPE,
+      // id of the annotation currently being dragged, or null. Only ever
+      // one at a time — pointer capture (see the marker's pointerdown
+      // handler) makes concurrent drags a non-issue in practice.
+      draggingId: null
     }
   },
   computed: {
@@ -323,6 +344,34 @@ export default {
       const x = ((event.clientX - rect.left) / rect.width) * 100
       const y = ((event.clientY - rect.top) / rect.height) * 100
       this.$emit('add-annotation', { x, y })
+    },
+    // Shared with onContainerClick's own math, but clamped rather than
+    // bailing outside the image — a drag that runs the cursor past the
+    // map's edge should pin the marker to that edge, not ignore the move.
+    percentFromEvent(event) {
+      const rect = this.$refs.mapImg.getBoundingClientRect()
+      const x = ((event.clientX - rect.left) / rect.width) * 100
+      const y = ((event.clientY - rect.top) / rect.height) * 100
+      return { x: Math.min(100, Math.max(0, x)), y: Math.min(100, Math.max(0, y)) }
+    },
+    onMarkerPointerDown(event, ann) {
+      if (!this.editMode) return
+      event.preventDefault()
+      event.currentTarget.setPointerCapture(event.pointerId)
+      this.draggingId = ann.id
+    },
+    onMarkerPointerMove(event, ann) {
+      if (this.draggingId !== ann.id || !this.$refs.mapImg) return
+      const { x, y } = this.percentFromEvent(event)
+      this.$emit('update', { id: ann.id, field: 'x', value: x })
+      this.$emit('update', { id: ann.id, field: 'y', value: y })
+    },
+    onMarkerPointerUp(event, ann) {
+      if (this.draggingId !== ann.id) return
+      this.draggingId = null
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
     }
   }
 }

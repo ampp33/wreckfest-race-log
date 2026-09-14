@@ -2,7 +2,7 @@
   <PublicHeader />
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
-      Wreckfest <em class="signal">Telemetry</em> Plugin
+      Wreckfest <span class="outline-ink">Telemetry</span> Plugin
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-3.5 mb-2 max-w-xl">
       An auto-loading ASI plugin that reads your Wreckfest race results live, straight out of the
@@ -13,7 +13,7 @@
     <!-- Setup -->
     <section class="rule-top pt-5">
       <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-5">
-        Installation <em class="signal">instructions</em>
+        Installation <span class="outline-ink">instructions</span>
       </h2>
       <ol class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark space-y-4 list-decimal list-inside">
         <li>
@@ -33,7 +33,7 @@
           and replace the placeholder text with it (one line, nothing else).
         </li>
         <li>
-          <strong class="text-brand-text dark:text-brand-text-dark">Steam + Proton only:</strong>
+          <strong class="text-brand-text dark:text-brand-text-dark">Steam + Linux (Proton) only:</strong>
           add
           <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">WINEDLLOVERRIDES="version=n,b" %command%</code>
           to Wreckfest's launch options in Steam, so Wine loads the real proxy DLL instead of its

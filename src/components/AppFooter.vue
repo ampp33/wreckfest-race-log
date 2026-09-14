@@ -67,8 +67,7 @@ export default {
           { label: 'Import JSON' }
         ] },
         { title: 'Auto-logging', links: [
-          { label: 'Setup guide', to: '/plugin' },
-          { label: 'Tool on GitHub', href: 'https://github.com/ampp33/wreckfest-telemetry' }
+          { label: 'Setup guide', to: '/plugin' }
         ] }
       ]
     }

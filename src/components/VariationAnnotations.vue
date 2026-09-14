@@ -37,6 +37,7 @@
             @toggle-edit="startEdit"
             @add-annotation="addAnnotation"
             @select="toggleSelect"
+            @update="updateAnnotation"
             @save="saveAnnotations"
             @discard="discardEdit"
           />
