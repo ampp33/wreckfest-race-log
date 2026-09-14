@@ -51,6 +51,116 @@ body {
   font-feature-settings: 'kern' 1;
 }
 
+/* The homepage hero's Swiss-punk car watermark (Rocket RX, driving up the
+ * left edge of the page, wheels mirrored to point right into the copy
+ * block, which is itself shifted right in HomePage.vue's hero section to
+ * give it room) — a plain background-image, not markup there and not a
+ * `::before` pseudo-element (an earlier version used one, for unrelated
+ * reasons lost once that draft was abandoned — solved more simply below,
+ * so the whole thing really is just background-image/-position/-size).
+ * The same image is used in both color schemes — an inverted dark variant
+ * was tried and looked worse, so dark mode only swaps the base color
+ * below, not the car itself.
+ *
+ * It's on #app (the Vue mount div), not <body> as first drafted, and that
+ * swap is load-bearing, not a style choice: per the CSS spec, a
+ * background set on <body> (or <html>) gets *propagated up to the page's
+ * root "canvas" layer* rather than painted as a normal element box — and
+ * this project's headless-Chromium-without-GPU test sandbox turned out
+ * unable to composite/capture that canvas layer at all, for anything,
+ * confirmed with the simplest possible case (a bare CSS gradient, no
+ * image, no transform) on both <body> and <html> alike, despite
+ * getComputedStyle reporting it correctly applied both times. #app is an
+ * ordinary element that every real page element (header, hero, footer,
+ * everything) renders inside of, so a background on it behaves exactly
+ * like a body background would for every purpose that matters here — it's
+ * just also actually capturable, which is how this got verified at all.
+ *
+ * The color+image pair below is a full replacement for HomePage.vue's own
+ * root-div background (bg-brand-bg / dark:bg-brand-bg-dark, removed from
+ * that div): a background set on #app paints *behind* every one of #app's
+ * own child elements, including that root div — if it had kept its own
+ * opaque fill, it would sit in front of and completely hide #app's
+ * background-image, no matter how the image itself were positioned. #app
+ * now provides that base color directly (values copied from
+ * tailwind.config.js's brand.bg, so this doesn't quietly drift out of
+ * sync with the token if that palette ever changes) so nothing opaque
+ * intervenes.
+ *
+ * The image itself is pre-rotated and pre-mirrored (rocket_rx_up_mirrored.webp,
+ * generated once with PIL's FLIP_LEFT_RIGHT rather than a runtime
+ * `transform: scaleX(-1)`) as a build-time asset — baked ahead of time
+ * rather than transformed/filtered at runtime, because a
+ * `transform: rotate()` on any raster layer (an <img>, or a
+ * background-image on a plain div — tried both) *also* silently failed to
+ * paint in that same sandbox, confirmed by un-rotated content painting
+ * fine in the same setup. Baking every transform into the asset removes
+ * any runtime transform/filter from the equation entirely.
+ *
+ * .webp rather than .png: this asset is a large image shown at up to 25vw
+ * wide on every homepage load, and the original PNG export was 1.76MB for
+ * one 725x2170 image — re-encoding losslessly only got that down to
+ * 1.1MB (PNG's own recompression saved almost nothing, ~1%, so the size
+ * was inherent to the pixel data, not a missed optimization pass). A
+ * quality-85 WebP is 213KB — visually indistinguishable at the sizes this
+ * ever renders at (it's a background watermark, not an examined image) —
+ * for an ~88% reduction. WebP still supports the alpha channel this image
+ * needs (transparent background around the car) and every browser this
+ * project targets supports it, so no PNG fallback is kept.
+ *
+ * Scoped to the homepage only: HomePage.vue toggles `has-hero-car-bg` on
+ * #app from its own mounted/beforeUnmount (the hero section used to be its
+ * own HeroIntro.vue component doing this same toggle; folded into
+ * HomePage.vue directly once the hero's design settled). A plain sitewide
+ * rule here would keep showing it, mispositioned, behind every other page
+ * too. */
+#app.has-hero-car-bg {
+  background-color: #EFEFED;
+}
+
+.dark #app.has-hero-car-bg {
+  background-color: #0A0A0A;
+}
+
+/* App.vue's own root element (`.app-shell`) is a direct child of #app and
+ * is itself opaque (bg-brand-bg / dark:bg-brand-bg-dark, min-h-screen) —
+ * without this override it paints over #app's entire box, fully hiding the
+ * background-image above no matter how that image is positioned. Made
+ * transparent only while the hero background is active so #app's own
+ * color+image show through; the #app id gives this enough specificity to
+ * beat the plain `.bg-brand-bg`/`.dark .dark\:bg-brand-bg-dark` utility
+ * classes without needing `!important`. */
+#app.has-hero-car-bg > .app-shell {
+  background-color: transparent;
+}
+
+/* The image itself (not the base color above) is hidden below the sm
+ * breakpoint (640px), matching the header/nav's own min-h-[72px]/
+ * sm:min-h-[88px] split — no room beside the headline at phone widths for
+ * a graphic this size without crowding the text.
+ *
+ * The `top 88px` in background-position clears the header's own height at
+ * this breakpoint exactly (PublicHeader/NavBar are 88px tall here) — a
+ * vw-based offset doesn't work for this because vw grows with viewport
+ * width while the header's height is fixed, so any header-height-minus-Nvw
+ * value still goes negative (bleeding back into the header) at
+ * wide-enough viewports; confirmed this by rendering it and finding the
+ * car overlapping "Sign in" before landing on a fixed px value here.
+ *
+ * Anchored `left` (was `right`) now that the car runs up the left edge —
+ * the mirrored asset puts its wheels on the right side of the image, i.e.
+ * facing inward toward the copy block, which the hero section in
+ * HomePage.vue shifts right by a matching amount so the two don't
+ * collide. */
+@media (min-width: 640px) {
+  #app.has-hero-car-bg {
+    background-image: url('/images/rocket_rx_up_mirrored.webp');
+    background-repeat: no-repeat;
+    background-position: left -3vw top 88px;
+    background-size: 25vw auto;
+  }
+}
+
 /* Switzer ships tabular figures by default, so lap times line up digit for
  * digit without pulling in a mono. This just makes the intent explicit where
  * a column of times has to stay aligned. */

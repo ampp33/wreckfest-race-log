@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
+  <div class="app-shell min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
     <NavBar v-if="auth.isAuthenticated && !isLoginRoute" />
     <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
 
@@ -13,7 +13,7 @@
       <router-view v-else />
     </main>
 
-    <AppFooter v-if="!isLoginRoute" />
+    <AppFooter v-if="!isLoginRoute && !isHomeRoute" />
 
     <QuickAddModal v-if="auth.isAuthenticated" />
     <TrackSearchModal v-if="auth.isAuthenticated" />
@@ -49,6 +49,9 @@ export default {
   computed: {
     isLoginRoute() {
       return this.$route && this.$route.name === 'login'
+    },
+    isHomeRoute() {
+      return this.$route && this.$route.name === 'home'
     }
   },
   mounted() {

@@ -1,13 +1,56 @@
 <template>
-  <div class="bg-brand-bg dark:bg-brand-bg-dark">
+  <div>
     <PublicHeader />
-    <HeroIntro />
+
+    <!-- HERO — inlined here rather than its own component now that the
+         design (car watermark + gutter) is settled; it used to be a
+         separate HeroIntro.vue while that was still being worked out. Its
+         mounted/beforeUnmount toggling #app's has-hero-car-bg class moved
+         to this component's own script for the same reason (see there).
+
+         sm:pl-[22vw] (replacing the plain sm:px-10 left side) makes room
+         for the car watermark running up the left edge (see style.css) —
+         sized to clear its ~22vw visible width (25vw background-size, -3vw
+         bled off the left edge), so the wheels point at empty space rather
+         than the text. Only kicks in at the same sm breakpoint the car
+         itself appears at; below that the car is hidden and this container
+         falls back to the plain centered px-6 gutter. This 22vw is the
+         page's one shared body-copy left edge at sm+ — the "Everything, on
+         record."/"How to get started." sections and the numbered timeline
+         below all key off this same value (see their own comments) so
+         every section's text lands on one consistent line regardless of
+         viewport width, car-clearance or not.
+
+         sm:pr-[22vw] mirrors that same value on the right, in place of a
+         plain sm:pr-10 — purely a visual-balance move, not a repositioning
+         one: the text's own left edge doesn't move (sm:pl-[22vw] is
+         untouched), this just gives the right side a matching margin so
+         the block reads as a centered column instead of one huge gutter on
+         the left and a bare 40px on the right. -->
+    <section>
+      <div class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
+        <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
+          Track every race.<br><span class="outline-ink">Sharpen your skills.</span>
+        </h1>
+        <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
+          <b>Wreckfest Race Log</b> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <router-link to="/plugin" class="font-bold hover:underline">Telemetry plugin</router-link>,
+          or manually log them yourself here — then use the site to watch your stats improve, take notes
+          track by track, and work toward mastering the game.
+        </p>
+        <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-4">
+          <i>I built this site because I wanted a pretty and simple way to log my races and take notes, and I hope it helps you as much as it's helped me.</i> — Ampp33
+        </p>
+      </div>
+    </section>
 
     <main>
-      <!-- WHY TWO TOOLS — full width, matching HeroIntro's own max-w-7xl
-           container above it, rather than the narrower column the timeline
-           below deliberately uses. -->
-      <section class="max-w-7xl mx-auto px-6 sm:px-10 pt-4 pb-10">
+      <!-- WHY TWO TOOLS — its sm:pl-[22vw]/sm:pr-[22vw] pair matches the
+           hero section's own above (see style.css and its own comment on
+           why the right side mirrors the left) — the hero car watermark's
+           bleed runs the full height of this section too (747px hero + up
+           to 1436px of car vs. this section's own ~560px), so its heading
+           and copy need the same clearance, not just the hero's. -->
+      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
           Everything, on <span class="outline-ink">record</span>.
         </h1>
@@ -39,38 +82,37 @@
         </div>
       </section>
 
-      <!-- TIMELINE: race -> logged (two parallel paths) -> compared -> improved.
-           Same max-w-7xl as the section above now — the per-step prose and
-           the capture-method cards stay capped at max-w-3xl internally
-           below so short sentences and two cards don't stretch into a
-           sparse, oversized row; the gap tiles and races table are free to
-           use the extra room.
+      <!-- HOW TO GET STARTED + TIMELINE: one section now (previously two
+           separate <section>s, the heading with its own outer padding and
+           the timeline with a different one) — that split is exactly how
+           the two drifted out of alignment with each other across this
+           conversation. One shared px-6/sm:pl-[22vw]/sm:pr-[22vw] here
+           (matching the "Everything, on record." section above) means
+           there's only one place left to change if this needs to move
+           again.
 
-           Two separate elements on purpose: the outer one only sets the
-           page's responsive outer margin (px-6/sm:px-14/lg:px-20, matching
-           the section above), the inner one only sets the circle gutter —
-           a single, fixed, non-responsive pl-10 that never changes size.
-           Putting both jobs on one element (px-* AND pl-* together) is what
-           caused the actual bug: they both set padding-left, so which one
-           wins depends on their order in Tailwind's *compiled* stylesheet,
-           not on anything visible here — and that ordering doesn't
-           necessarily stay stable across breakpoints, which is exactly why
-           the line and circles could drift apart as the window resized.
-           With the gutter fixed and unresponsive, the circles and line are
-           positioned off it with fixed offsets (left-5 / -left-9) that hold
-           at every width, full stop. -->
-      <!-- Own section, padded to match the "Everything, on record." intro
-           above (px-6 sm:px-10) — the timeline section right after it uses a
-           wider px-6 sm:px-14 lg:px-20 (see comment above), which would pull
-           this heading out of alignment with the one above it if it lived
-           there instead. -->
-      <section class="max-w-7xl mx-auto px-6 sm:px-10 pb-6">
-        <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
+           The heading sits flush against this section's own edge; the
+           timeline below it is indented further in by its own inner
+           pl-10 wrapper, which only sets the circle gutter — a single,
+           fixed, non-responsive value that never changes size, so the
+           heading and the step text (h2/p/link) do NOT currently share a
+           left edge (the steps sit pl-10 to the right of the heading, with
+           the numbered circles hanging further left again, off that same
+           pl-10 wrapper). Putting the section's own margin AND the circle
+           gutter on one element is what caused an actual bug once: they'd
+           both set padding-left, so which one won depended on their order
+           in Tailwind's *compiled* stylesheet, not on anything visible
+           here — and that ordering doesn't necessarily stay stable across
+           breakpoints, which is exactly why the line and circles could
+           drift apart as the window resized. Keeping the gutter on its own
+           dedicated wrapper, fixed and unresponsive, is what lets the
+           circles and line hold their fixed offsets (left-5 / -left-9) at
+           every width, full stop. -->
+      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+        <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
           How to get <span class="outline-ink">started</span>.
         </h1>
-      </section>
 
-      <section class="max-w-7xl mx-auto px-6 sm:px-14 lg:px-20">
         <div class="relative pl-10">
           <div class="absolute left-5 top-2 bottom-2 w-0.5 bg-brand-border dark:bg-brand-border-dark"></div>
 
@@ -125,12 +167,12 @@
 
       <!-- CTA — max-w-7xl matches the rest of the page; the original
            production homepage's own CTA band used this same width. -->
-      <section class="max-w-7xl mx-auto px-6 sm:px-10 mt-16 mb-16">
+      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
         <div class="bg-brand-accent dark:bg-brand-accent-dark text-white p-9 text-center">
           <h2 class="font-display font-black tracking-tightest leading-none text-display-sm mb-5">What are you waiting for?</h2>
           <div class="flex flex-wrap justify-center gap-3">
-            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</router-link>
             <router-link to="/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px]">Create an Account</router-link>
+            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</router-link>
           </div>
         </div>
       </section>
@@ -140,14 +182,27 @@
 
 <script>
 import PublicHeader from '../components/PublicHeader.vue'
-import HeroIntro from '../components/HeroIntro.vue'
 import HomeGapTiles from '../components/HomeGapTiles.vue'
 import HomeRacesTable from '../components/HomeRacesTable.vue'
 import HomeStatsPreview from '../components/HomeStatsPreview.vue'
 
 export default {
   name: 'HomePage',
-  components: { PublicHeader, HeroIntro, HomeGapTiles, HomeRacesTable, HomeStatsPreview },
+  components: { PublicHeader, HomeGapTiles, HomeRacesTable, HomeStatsPreview },
+  // The car watermark itself is a background-image on #app, the Vue mount
+  // div (see style.css for why #app rather than <body>) — toggled here via
+  // mounted/beforeUnmount rather than living in the hero section's own
+  // markup above, since a background this large needs to bleed past that
+  // section's own box (and did, back when it lived inside it — see git
+  // history on this file, and on the old HeroIntro.vue this hero section
+  // used to be its own component, for the CSS-transform approach that got
+  // abandoned) rather than being clipped to it.
+  mounted() {
+    document.getElementById('app').classList.add('has-hero-car-bg')
+  },
+  beforeUnmount() {
+    document.getElementById('app').classList.remove('has-hero-car-bg')
+  },
   data() {
     return {
       // A real snapshot pulled directly from this app's own production
