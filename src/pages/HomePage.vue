@@ -63,9 +63,9 @@
 
           <div>
             <h2 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Notes and Annotations</h2>
-            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Forgot your brake points? Where hazards are? Or how to take tricky turns? <i>Not anymore.</i></p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Forgot your brake points? Where hazards are? Or how to take tricky turns?  Not anymore.</p>
             <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Keep notes on every track, every variation, and even add annotations to track maps.</p>
-            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Keep track of what works, what doesn't, shortcuts, and everything in between.</p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Jot down what works, what doesn't, shortcuts, and everything in between.</p>
           </div>
 
           <div>
