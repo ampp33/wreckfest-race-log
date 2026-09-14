@@ -6,7 +6,7 @@
       class="w-full flex items-center justify-between py-3 min-h-[44px] text-left"
       @click="collapsed = !collapsed"
     >
-      <span class="ov text-brand-text dark:text-brand-text-dark">Layout &amp; turn markers</span>
+      <span class="ov text-brand-text dark:text-brand-text-dark">Track Map & Annotations</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="w-4 h-4 text-brand-muted dark:text-brand-muted-dark transition-transform"

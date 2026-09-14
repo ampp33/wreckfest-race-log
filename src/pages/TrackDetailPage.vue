@@ -13,7 +13,7 @@
         v-if="track"
         :src="trackImage"
         :alt="track.name"
-        class="w-full h-28 sm:h-40 object-cover border border-brand-border dark:border-brand-border-dark mb-8 cursor-pointer hover:opacity-90 transition-opacity"
+        class="w-full h-28 sm:h-40 object-cover border border-brand-border dark:border-brand-border-dark mb-4 cursor-pointer grayscale hover:opacity-90 transition-opacity"
         @click="openImageModal"
       />
 
@@ -29,7 +29,7 @@
               v-for="v in track.track_variations"
               :key="v.id"
               :to="`/track/${track.slug}/${v.slug}`"
-              class="flex items-center gap-2 min-h-[44px] pl-1 pr-4 text-xs border"
+              class="flex items-center gap-2 min-h-[44px] px-4 text-xs border"
               :class="v.id === currentVariation.id
                 ? 'bg-brand-accent dark:bg-brand-accent-dark text-white border-brand-accent dark:border-brand-accent-dark'
                 : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
