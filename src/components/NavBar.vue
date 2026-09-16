@@ -17,6 +17,30 @@
           :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': item.to === '/tracks' && isTrackListRoute }"
         >{{ item.label }}</router-link>
 
+        <div class="relative group">
+          <button
+            type="button"
+            class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTelemetryRoute }"
+          >
+            Telemetry
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-px" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
+            <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
+              <router-link
+                v-for="item in telemetryItems"
+                :key="item.to"
+                :to="item.to"
+                class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+              >{{ item.label }}</router-link>
+            </div>
+          </div>
+        </div>
+
         <div v-if="auth.isAdmin" class="relative group">
           <button
             type="button"
@@ -98,6 +122,16 @@
           @click="mobileMenuOpen = false"
         >{{ item.label }}</router-link>
 
+        <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
+        <router-link
+          v-for="item in telemetryItems"
+          :key="item.to"
+          :to="item.to"
+          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+          active-class="font-bold"
+          @click="mobileMenuOpen = false"
+        >{{ item.label }}</router-link>
+
         <template v-if="auth.isAdmin">
           <div class="ov text-white/70 pt-4 pb-2">Admin</div>
           <router-link
@@ -158,9 +192,11 @@ export default {
       navItems: [
         { to: '/tracks', label: 'Tracks' },
         { to: '/races', label: 'Races' },
-        { to: '/stats', label: 'Stats' },
-        { to: '/settings/api-keys', label: 'API keys' },
-        { to: '/plugin', label: 'Plugin' }
+        { to: '/stats', label: 'Stats' }
+      ],
+      telemetryItems: [
+        { to: '/plugin', label: 'Instructions' },
+        { to: '/settings/api-keys', label: 'API keys' }
       ],
       adminItems: [
         { to: '/admin/diagnostics', label: 'Diagnostics' },
@@ -176,6 +212,9 @@ export default {
     },
     isAdminRoute() {
       return this.$route.path.startsWith('/admin')
+    },
+    isTelemetryRoute() {
+      return this.telemetryItems.some(item => item.to === this.$route.path)
     }
   },
   watch: {
