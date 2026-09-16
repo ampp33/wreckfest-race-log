@@ -30,7 +30,7 @@
     <section>
       <div class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
-          Track every race.<br><span class="outline-ink">Sharpen your skills.</span>
+          Track every race.<br><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
         </h1>
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
           <b>Wreckfest Race Log</b> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <router-link to="/plugin" class="font-bold hover:underline">Telemetry plugin</router-link>,
@@ -52,7 +52,7 @@
            and copy need the same clearance, not just the hero's. -->
       <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
-          Everything, on <span class="outline-ink">record</span>.
+          Everything, on <em class="font-heading font-normal tracking-normal signal">record</em>.
         </h1>
         <div class="mt-5 max-w-3xl space-y-3">
           <div>
@@ -110,7 +110,7 @@
            every width, full stop. -->
       <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
-          How to get <span class="outline-ink">started</span>.
+          <em class="font-heading font-normal tracking-normal signal">How</em> to get started.
         </h1>
 
         <div class="relative pl-10">
@@ -168,10 +168,14 @@
       <!-- CTA — max-w-7xl matches the rest of the page; the original
            production homepage's own CTA band used this same width. -->
       <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
-        <div class="bg-brand-accent dark:bg-brand-accent-dark text-white p-9 text-center">
-          <h2 class="font-display font-black tracking-tightest leading-none text-display-sm mb-5">What are you waiting for?</h2>
-          <div class="flex flex-wrap justify-center gap-3">
-            <router-link to="/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px]">Create an Account</router-link>
+        <div class="relative bg-brand-accent dark:bg-brand-accent-dark text-center overflow-hidden py-[clamp(28px,8cqw,80px)] [container-type:inline-size]">
+          <h2
+            aria-hidden="true"
+            class="absolute inset-0 flex flex-col items-center justify-center font-heading font-normal tracking-normal leading-none text-white text-[clamp(40px,15cqw,130px)] px-2 select-none pointer-events-none"
+          ><span>What are you</span><span>waiting for?</span></h2>
+          <div class="relative flex flex-wrap justify-center gap-3">
+            <span class="sr-only">What are you waiting for?</span>
+            <router-link to="/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px] bg-brand-accent dark:bg-brand-accent-dark">Create an Account</router-link>
             <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</router-link>
           </div>
         </div>
