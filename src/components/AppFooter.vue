@@ -127,7 +127,7 @@ export default {
           { label: 'Export JSON', action: 'export' },
           { label: 'Import JSON', action: 'import' }
         ] },
-        { title: 'Auto-logging', links: [
+        { title: 'Telemetry Plugin', links: [
           { label: 'Setup guide', to: '/plugin' }
         ] }
       ]

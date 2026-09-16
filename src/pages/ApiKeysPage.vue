@@ -4,7 +4,7 @@
       API <em class="signal">Keys</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
-      Generate keys for the Wreckfest sidecar app so it can auto-submit race results on your behalf.
+      Generate keys for the Telemetry plugin so it can auto-submit race results on your behalf.
     </p>
 
     <!-- New key reveal banner -->

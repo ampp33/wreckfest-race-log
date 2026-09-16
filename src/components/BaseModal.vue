@@ -11,7 +11,7 @@
       :aria-labelledby="titleId"
     >
       <div class="flex items-center justify-between mb-4">
-        <h2 :id="titleId" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+        <h2 :id="titleId" class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
           <slot name="title" />
         </h2>
         <button

@@ -2,7 +2,7 @@
   <PublicHeader />
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
-      Wreckfest <em class="signal">Telemetry</em> Plugin
+      Wreckfest <em class="signal ml-2">Telemetry</em> Plugin
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-3.5 mb-2 max-w-xl">
       An auto-loading ASI plugin that reads your Wreckfest race results live, straight out of the

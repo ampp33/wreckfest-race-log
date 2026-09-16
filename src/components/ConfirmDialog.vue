@@ -12,7 +12,7 @@
       :aria-labelledby="titleId"
       :aria-describedby="message ? descId : undefined"
     >
-      <h2 :id="titleId" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-2">
+      <h2 :id="titleId" class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-2">
         {{ title }}
       </h2>
       <p v-if="message" :id="descId" class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-5">
