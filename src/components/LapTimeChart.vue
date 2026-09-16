@@ -12,7 +12,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { computed, watch, nextTick, ref, onMounted } from 'vue'
 import {
   Chart,
   LineController,
@@ -24,8 +25,10 @@ import {
   Legend,
   Filler
 } from 'chart.js'
-import { markRaw } from 'vue'
 import { prefsStore } from '../stores/prefsStore.js'
+import { useChart } from '../composables/useChart.js'
+import { getChartTheme } from '../utils/chartTheme.js'
+import { formatMsCompact } from '../utils/timeFormat.js'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, Filler)
 
@@ -40,227 +43,186 @@ const PALETTE = [
   '#666666', // dark gray
 ]
 
-function formatMs(ms) {
-  if (ms == null) return ''
-  const totalSec = ms / 1000
-  const minutes = Math.floor(totalSec / 60)
-  const secs = (totalSec % 60).toFixed(3).padStart(6, '0')
-  return minutes > 0 ? `${minutes}:${secs}` : secs
-}
+const props = defineProps({
+  races: { type: Array, default: () => [] },
+  vehicles: { type: Array, default: () => [] }
+})
 
-export default {
-  name: 'LapTimeChart',
-  props: {
-    races: { type: Array, default: () => [] },
-    vehicles: { type: Array, default: () => [] }
-  },
-  data() {
-    return { chart: null }
-  },
-  computed: {
-    isDark() {
-      return prefsStore.darkMode
-    },
-    chartData() {
-      const byVehicle = {}
-      const byDate = {}
-      for (const race of this.races) {
-        if (!race.lap_time_ms || !race.vehicle_id) continue
-        const day = race.datetime.substring(0, 10)
-        if (!byVehicle[race.vehicle_id]) byVehicle[race.vehicle_id] = {}
-        const cur = byVehicle[race.vehicle_id][day]
-        if (cur == null || race.lap_time_ms < cur) {
-          byVehicle[race.vehicle_id][day] = race.lap_time_ms
-        }
-        if (byDate[day] == null || race.lap_time_ms < byDate[day]) {
-          byDate[day] = race.lap_time_ms
-        }
-      }
+const canvas = ref(null)
+const { render } = useChart(canvas)
 
-      const vehicleIds = Object.keys(byVehicle)
-      if (!vehicleIds.length) return null
+const isDark = computed(() => prefsStore.darkMode)
 
-      const dateSet = new Set()
-      for (const vid of vehicleIds) {
-        for (const d of Object.keys(byVehicle[vid])) dateSet.add(d)
-      }
-      const sortedDates = [...dateSet].sort()
-      const labels = sortedDates.map(d => {
-        const [year, month, day] = d.split('-').map(Number)
-        return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-          month: 'short',
-          day: 'numeric'
-        })
-      })
-
-      const vehicleById = Object.fromEntries(this.vehicles.map(v => [v.id, v]))
-      const datasets = vehicleIds.map((vid, i) => {
-        const color = PALETTE[i % PALETTE.length]
-        return {
-          label: vehicleById[vid]?.name ?? 'Unknown',
-          data: sortedDates.map(d => byVehicle[vid][d] ?? null),
-          borderColor: color,
-          backgroundColor: color + '18',
-          borderWidth: 2.5,
-          pointRadius: 4,
-          pointHoverRadius: 7,
-          pointBackgroundColor: color,
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          tension: 0.35,
-          fill: false,
-          spanGaps: true
-        }
-      })
-
-      datasets.push({
-        label: 'Fastest Lap',
-        data: sortedDates.map(d => byDate[d] ?? null),
-        borderColor: '#000000',
-        backgroundColor: '#00000018',
-        borderWidth: 2.5,
-        pointRadius: 4,
-        pointHoverRadius: 7,
-        pointBackgroundColor: '#000000',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        tension: 0.35,
-        fill: false,
-        spanGaps: true
-      })
-
-      return { labels, datasets }
-    },
-    hasData() {
-      return this.chartData !== null
+const chartData = computed(() => {
+  const byVehicle = {}
+  const byDate = {}
+  for (const race of props.races) {
+    if (!race.lap_time_ms || !race.vehicle_id) continue
+    const day = race.datetime.substring(0, 10)
+    if (!byVehicle[race.vehicle_id]) byVehicle[race.vehicle_id] = {}
+    const cur = byVehicle[race.vehicle_id][day]
+    if (cur == null || race.lap_time_ms < cur) {
+      byVehicle[race.vehicle_id][day] = race.lap_time_ms
     }
-  },
-  watch: {
-    chartData: {
-      handler() {
-        this.$nextTick(() => this.renderChart())
-      }
-    },
-    isDark() {
-      this.$nextTick(() => this.renderChart())
-    }
-  },
-  mounted() {
-    this.renderChart()
-  },
-  beforeUnmount() {
-    this.destroyChart()
-  },
-  methods: {
-    destroyChart() {
-      if (this.chart) {
-        this.chart.destroy()
-        this.chart = null
-      }
-    },
-    renderChart() {
-      this.destroyChart()
-      if (!this.chartData || !this.$refs.canvas) return
-
-      const dark = this.isDark
-      const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
-      const surfaceColor = dark ? '#222220' : '#EFEFED'
-
-      const inlineLabels = {
-        id: 'inlineLabels',
-        afterDatasetsDraw(chart) {
-          const { ctx, chartArea } = chart
-          ctx.save()
-          ctx.font = '500 11px system-ui, sans-serif'
-          ctx.textAlign = 'left'
-          ctx.textBaseline = 'middle'
-          ctx.lineJoin = 'round'
-          ctx.strokeStyle = surfaceColor
-          ctx.lineWidth = 3
-
-          const entries = []
-          chart.data.datasets.forEach((dataset, i) => {
-            const meta = chart.getDatasetMeta(i)
-            if (meta.hidden) return
-            let lastPoint = null
-            for (let j = meta.data.length - 1; j >= 0; j--) {
-              if (meta.data[j] && !meta.data[j].skip) { lastPoint = meta.data[j]; break }
-            }
-            if (!lastPoint) return
-            entries.push({ label: dataset.label, color: dataset.borderColor, x: lastPoint.x, y: lastPoint.y })
-          })
-
-          // Push overlapping labels apart vertically so they stay readable.
-          entries.sort((a, b) => a.y - b.y)
-          const minGap = 14
-          for (let i = 1; i < entries.length; i++) {
-            if (entries[i].y - entries[i - 1].y < minGap) {
-              entries[i].y = entries[i - 1].y + minGap
-            }
-          }
-          const overflow = entries.length ? entries[entries.length - 1].y - chartArea.bottom : 0
-          if (overflow > 0) {
-            for (const entry of entries) entry.y -= overflow
-          }
-
-          entries.forEach(entry => {
-            ctx.strokeText(entry.label, entry.x + 8, entry.y)
-            ctx.fillStyle = entry.color
-            ctx.fillText(entry.label, entry.x + 8, entry.y)
-          })
-
-          ctx.restore()
-        }
-      }
-
-      this.chart = markRaw(new Chart(this.$refs.canvas, {
-        type: 'line',
-        data: this.chartData,
-        plugins: [inlineLabels],
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          layout: { padding: { right: 90 } },
-          interaction: { mode: 'nearest', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: dark ? '#222220' : '#fff',
-              borderColor: dark ? '#383836' : '#C8C6BF',
-              borderWidth: 1,
-              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
-              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
-              padding: 10,
-              cornerRadius: 8,
-              callbacks: {
-                label: ctx => {
-                  const ms = ctx.parsed.y
-                  if (ms == null) return ''
-                  return `  ${ctx.dataset.label}: ${formatMs(ms)}`
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: gridColor, drawBorder: false },
-              border: { display: false },
-              ticks: { color: tickColor, font: { size: 11 }, maxRotation: 45 }
-            },
-            y: {
-              grid: { color: gridColor, drawBorder: false },
-              border: { display: false },
-              ticks: {
-                color: tickColor,
-                font: { size: 11 },
-                callback: ms => formatMs(ms)
-              }
-            }
-          }
-        }
-      }))
+    if (byDate[day] == null || race.lap_time_ms < byDate[day]) {
+      byDate[day] = race.lap_time_ms
     }
   }
+
+  const vehicleIds = Object.keys(byVehicle)
+  if (!vehicleIds.length) return null
+
+  const dateSet = new Set()
+  for (const vid of vehicleIds) {
+    for (const d of Object.keys(byVehicle[vid])) dateSet.add(d)
+  }
+  const sortedDates = [...dateSet].sort()
+  const labels = sortedDates.map(d => {
+    const [year, month, day] = d.split('-').map(Number)
+    return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric'
+    })
+  })
+
+  const vehicleById = Object.fromEntries(props.vehicles.map(v => [v.id, v]))
+  const datasets = vehicleIds.map((vid, i) => {
+    const color = PALETTE[i % PALETTE.length]
+    return {
+      label: vehicleById[vid]?.name ?? 'Unknown',
+      data: sortedDates.map(d => byVehicle[vid][d] ?? null),
+      borderColor: color,
+      backgroundColor: color + '18',
+      borderWidth: 2.5,
+      pointRadius: 4,
+      pointHoverRadius: 7,
+      pointBackgroundColor: color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      tension: 0.35,
+      fill: false,
+      spanGaps: true
+    }
+  })
+
+  datasets.push({
+    label: 'Fastest Lap',
+    data: sortedDates.map(d => byDate[d] ?? null),
+    borderColor: '#000000',
+    backgroundColor: '#00000018',
+    borderWidth: 2.5,
+    pointRadius: 4,
+    pointHoverRadius: 7,
+    pointBackgroundColor: '#000000',
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    tension: 0.35,
+    fill: false,
+    spanGaps: true
+  })
+
+  return { labels, datasets }
+})
+
+const hasData = computed(() => chartData.value !== null)
+
+function renderChart() {
+  if (!chartData.value || !canvas.value) return
+
+  const dark = isDark.value
+  const theme = getChartTheme(dark)
+  const surfaceColor = dark ? '#222220' : '#EFEFED'
+
+  const inlineLabels = {
+    id: 'inlineLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea } = chart
+      ctx.save()
+      ctx.font = '500 11px system-ui, sans-serif'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'middle'
+      ctx.lineJoin = 'round'
+      ctx.strokeStyle = surfaceColor
+      ctx.lineWidth = 3
+
+      const entries = []
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i)
+        if (meta.hidden) return
+        let lastPoint = null
+        for (let j = meta.data.length - 1; j >= 0; j--) {
+          if (meta.data[j] && !meta.data[j].skip) { lastPoint = meta.data[j]; break }
+        }
+        if (!lastPoint) return
+        entries.push({ label: dataset.label, color: dataset.borderColor, x: lastPoint.x, y: lastPoint.y })
+      })
+
+      // Push overlapping labels apart vertically so they stay readable.
+      entries.sort((a, b) => a.y - b.y)
+      const minGap = 14
+      for (let i = 1; i < entries.length; i++) {
+        if (entries[i].y - entries[i - 1].y < minGap) {
+          entries[i].y = entries[i - 1].y + minGap
+        }
+      }
+      const overflow = entries.length ? entries[entries.length - 1].y - chartArea.bottom : 0
+      if (overflow > 0) {
+        for (const entry of entries) entry.y -= overflow
+      }
+
+      entries.forEach(entry => {
+        ctx.strokeText(entry.label, entry.x + 8, entry.y)
+        ctx.fillStyle = entry.color
+        ctx.fillText(entry.label, entry.x + 8, entry.y)
+      })
+
+      ctx.restore()
+    }
+  }
+
+  render({
+    type: 'line',
+    data: chartData.value,
+    plugins: [inlineLabels],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 90 } },
+      interaction: { mode: 'nearest', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...theme.tooltip,
+          callbacks: {
+            label: ctx => {
+              const ms = ctx.parsed.y
+              if (ms == null) return ''
+              return `  ${ctx.dataset.label}: ${formatMsCompact(ms)}`
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: theme.gridColor, drawBorder: false },
+          border: { display: false },
+          ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45 }
+        },
+        y: {
+          grid: { color: theme.gridColor, drawBorder: false },
+          border: { display: false },
+          ticks: {
+            color: theme.tickColor,
+            font: { size: 11 },
+            callback: ms => formatMsCompact(ms)
+          }
+        }
+      }
+    }
+  })
 }
+
+watch(chartData, () => nextTick(renderChart))
+watch(isDark, () => nextTick(renderChart))
+onMounted(renderChart)
 </script>

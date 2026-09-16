@@ -92,7 +92,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import {
   Chart,
   LineController,
@@ -103,128 +104,106 @@ import {
   Tooltip,
   Filler
 } from 'chart.js'
-import { markRaw } from 'vue'
 import { prefsStore } from '../stores/prefsStore.js'
 import { getDiagnostics, getUserGrowth } from '../services/adminService.js'
+import { formatDateTime as formatDate } from '../utils/dateFormat.js'
+import { useChart } from '../composables/useChart.js'
+import { getChartTheme } from '../utils/chartTheme.js'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler)
 
-export default {
-  name: 'DiagnosticsPage',
-  data() {
-    return {
-      loading: true,
-      error: null,
-      data: { total_users: 0, top_users: [] },
-      growthData: [],
-      chart: null
-    }
-  },
-  computed: {
-    isDark() {
-      return prefsStore.darkMode
-    }
-  },
-  watch: {
-    isDark() {
-      this.$nextTick(() => this.renderChart())
-    }
-  },
-  async created() {
-    try {
-      ;[this.data, this.growthData] = await Promise.all([getDiagnostics(), getUserGrowth()])
-    } catch (err) {
-      this.error = err.message || 'Failed to load diagnostics'
-    } finally {
-      this.loading = false
-    }
-  },
-  mounted() {
-    if (!this.loading) this.renderChart()
-  },
-  updated() {
-    if (!this.loading && !this.chart) this.renderChart()
-  },
-  beforeUnmount() {
-    this.chart?.destroy()
-  },
-  methods: {
-    formatDate(iso) {
-      if (!iso) return '—'
-      return new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+const loading = ref(true)
+const error = ref(null)
+const data = ref({ total_users: 0, top_users: [] })
+const growthData = ref([])
+
+const growthCanvas = ref(null)
+const { render } = useChart(growthCanvas)
+
+const isDark = computed(() => prefsStore.darkMode)
+
+function renderChart() {
+  if (!growthCanvas.value || !growthData.value.length) return
+
+  const dark = isDark.value
+  const theme = getChartTheme(dark)
+  const color = dark ? '#E5332F' : '#C41E1E'
+
+  const labels = growthData.value.map(row =>
+    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  )
+  const counts = growthData.value.map(row => Number(row.user_count))
+
+  render({
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Total users',
+        data: counts,
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2.5,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true
+      }]
     },
-    renderChart() {
-      if (!this.$refs.growthCanvas || !this.growthData.length) return
-      this.chart?.destroy()
-
-      const dark = this.isDark
-      const color = dark ? '#E5332F' : '#C41E1E'
-      const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
-
-      const labels = this.growthData.map(row =>
-        new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-      )
-      const counts = this.growthData.map(row => Number(row.user_count))
-
-      this.chart = markRaw(new Chart(this.$refs.growthCanvas, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Total users',
-            data: counts,
-            borderColor: color,
-            backgroundColor: color + '22',
-            borderWidth: 2.5,
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            pointBackgroundColor: color,
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            tension: 0.35,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: dark ? '#222220' : '#fff',
-              borderColor: dark ? '#383836' : '#C8C6BF',
-              borderWidth: 1,
-              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
-              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
-              padding: 10,
-              cornerRadius: 8,
-              callbacks: {
-                label: ctx => `  ${ctx.parsed.y} users`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { color: gridColor },
-              border: { display: false },
-              ticks: { color: tickColor, font: { size: 11 }, maxRotation: 45, maxTicksLimit: 10 }
-            },
-            y: {
-              grid: { color: gridColor },
-              border: { display: false },
-              beginAtZero: true,
-              ticks: {
-                color: tickColor,
-                font: { size: 11 },
-                precision: 0
-              }
-            }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...theme.tooltip,
+          callbacks: {
+            label: ctx => `  ${ctx.parsed.y} users`
           }
         }
-      }))
+      },
+      scales: {
+        x: {
+          grid: { color: theme.gridColor },
+          border: { display: false },
+          ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: theme.gridColor },
+          border: { display: false },
+          beginAtZero: true,
+          ticks: {
+            color: theme.tickColor,
+            font: { size: 11 },
+            precision: 0
+          }
+        }
+      }
     }
-  }
+  })
 }
+
+watch(isDark, () => nextTick(renderChart))
+// The chart's canvas only enters the DOM once `loading` flips false (see the
+// template's v-else), so the first render is triggered from here rather than
+// onMounted, which would run before that.
+watch(loading, (isLoading) => {
+  if (!isLoading) nextTick(renderChart)
+})
+
+onMounted(async () => {
+  try {
+    const [diagnostics, growth] = await Promise.all([getDiagnostics(), getUserGrowth()])
+    data.value = diagnostics
+    growthData.value = growth
+  } catch (err) {
+    error.value = err.message || 'Failed to load diagnostics'
+  } finally {
+    loading.value = false
+  }
+})
 </script>

@@ -23,7 +23,6 @@
           <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
             <em class="signal">{{ track.name }}</em>
           </h1>
-          <!-- <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p> -->
           <div class="flex flex-wrap gap-2 mt-3">
             <router-link
               v-for="v in track.track_variations"
@@ -236,7 +235,9 @@
   </Teleport>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
@@ -253,230 +254,209 @@ import { quickAddStore, setOnRaceSaved, clearOnRaceSaved, openQuickAdd } from '.
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
+import { useEventListener } from '../composables/useEventListener.js'
 
-export default {
-  name: 'TrackDetailPage',
-  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations },
-  data() {
-    return {
-      loading: true,
-      track: null,
-      currentVariation: null,
-      vehicles: [],
-      races: [],
-      goal: null,
-      goalInputMs: null,
-      annotations: [],
-      quickAddStore,
-      showImageModal: false,
-      notesEditMode: false,
-      notesInput: ''
+const route = useRoute()
+
+const loading = ref(true)
+const track = ref(null)
+const currentVariation = ref(null)
+const vehicles = ref([])
+const races = ref([])
+const goal = ref(null)
+const goalInputMs = ref(null)
+const annotations = ref([])
+const showImageModal = ref(false)
+const notesEditMode = ref(false)
+const notesInput = ref('')
+const notesTextarea = ref(null)
+
+// Non-reactive: just tracks whether *this page* was the one that opened the
+// quick-add modal, so its "saved" callback below only refreshes races when
+// closing a modal it opened itself (not one opened from somewhere else).
+let quickAddOpenedHere = false
+
+const trackImage = computed(() => track.value ? trackImageUrl(track.value.slug) : '')
+const goalLapTimeMs = computed(() => goal.value ? goal.value.goal_lap_time_ms : null)
+const personalBestMs = computed(() => {
+  const valid = races.value.map(r => r.lap_time_ms).filter(v => v != null)
+  if (!valid.length) return null
+  return Math.min(...valid)
+})
+const pbDisplay = computed(() => personalBestMs.value != null ? formatMsToTime(personalBestMs.value) : '—')
+const gapMs = computed(() => {
+  if (personalBestMs.value == null || goalLapTimeMs.value == null) return null
+  return personalBestMs.value - goalLapTimeMs.value
+})
+const gapDisplay = computed(() => gapMs.value == null ? '—' : formatDelta(gapMs.value))
+const trackNotes = computed(() => goal.value ? (goal.value.notes || '') : '')
+const trackNotesHtml = computed(() => trackNotes.value ? DOMPurify.sanitize(marked.parse(trackNotes.value)) : '')
+const variationMapImage = computed(() => (
+  track.value && currentVariation.value
+    ? variationImageUrl(track.value.slug, currentVariation.value.slug)
+    : ''
+))
+
+async function loadRaces() {
+  races.value = await getRacesByVariation(currentVariation.value.id)
+}
+async function loadGoal() {
+  goal.value = await getGoalForVariation(currentVariation.value.id)
+  goalInputMs.value = goal.value ? goal.value.goal_lap_time_ms : null
+}
+async function loadAnnotations() {
+  annotations.value = await getAnnotationsForVariation(currentVariation.value.id)
+}
+async function loadAll() {
+  loading.value = true
+  const slug = route.params.trackSlug
+  const variationSlug = route.params.variationSlug
+  try {
+    const [trackData, vehicleList] = await Promise.all([
+      getTrackBySlug(slug),
+      getVehicles()
+    ])
+    track.value = trackData
+    vehicles.value = vehicleList
+    currentVariation.value = findVariation(trackData, variationSlug)
+    if (!currentVariation.value) {
+      pushToast('Variation not found', 'error')
+      return
     }
-  },
-  computed: {
-    trackImage() {
-      return this.track ? trackImageUrl(this.track.slug) : ''
-    },
-    goalLapTimeMs() {
-      return this.goal ? this.goal.goal_lap_time_ms : null
-    },
-    personalBestMs() {
-      const valid = this.races
-        .map(r => r.lap_time_ms)
-        .filter(v => v != null)
-      if (!valid.length) return null
-      return Math.min(...valid)
-    },
-    pbDisplay() {
-      return this.personalBestMs != null ? formatMsToTime(this.personalBestMs) : '—'
-    },
-    gapMs() {
-      if (this.personalBestMs == null || this.goalLapTimeMs == null) return null
-      return this.personalBestMs - this.goalLapTimeMs
-    },
-    gapDisplay() {
-      if (this.gapMs == null) return '—'
-      return formatDelta(this.gapMs)
-    },
-    trackNotes() {
-      return this.goal ? (this.goal.notes || '') : ''
-    },
-    trackNotesHtml() {
-      if (!this.trackNotes) return ''
-      return DOMPurify.sanitize(marked.parse(this.trackNotes))
-    },
-    variationMapImage() {
-      return this.track && this.currentVariation
-        ? variationImageUrl(this.track.slug, this.currentVariation.slug)
-        : ''
-    }
-  },
-  watch: {
-    '$route.params': {
-      handler() {
-        this.loadAll()
-      },
-      immediate: false
-    },
-    'quickAddStore.open'(isOpen) {
-      if (!isOpen && this._quickAddOpenedHere) {
-        this._quickAddOpenedHere = false
-        this.loadRaces()
-      }
-    }
-  },
-  async mounted() {
-    setOnRaceSaved((variationId) => {
-      if (variationId === this.currentVariation?.id) this.loadRaces()
-    })
-    await this.loadAll()
-    this._escHandler = (e) => { if (e.key === 'Escape') this.closeImageModal() }
-    document.addEventListener('keydown', this._escHandler)
-    this._addRaceHandler = this.onAddRaceKeydown.bind(this)
-    document.addEventListener('keydown', this._addRaceHandler)
-  },
-  beforeUnmount() {
-    document.removeEventListener('keydown', this._escHandler)
-    document.removeEventListener('keydown', this._addRaceHandler)
-  },
-  unmounted() {
-    quickAddStore.currentPageVariationId = null
-    clearOnRaceSaved()
-  },
-  methods: {
-    variationImageUrl,
-    async loadAll() {
-      this.loading = true
-      const slug = this.$route.params.trackSlug
-      const variationSlug = this.$route.params.variationSlug
-      try {
-        const [track, vehicles] = await Promise.all([
-          getTrackBySlug(slug),
-          getVehicles()
-        ])
-        this.track = track
-        this.vehicles = vehicles
-        this.currentVariation = findVariation(track, variationSlug)
-        if (!this.currentVariation) {
-          pushToast('Variation not found', 'error')
-          return
-        }
-        quickAddStore.currentPageVariationId = this.currentVariation.id
-        await Promise.all([this.loadRaces(), this.loadGoal(), this.loadAnnotations()])
-      } catch (err) {
-        pushToast(err.message || 'Failed to load track', 'error')
-      } finally {
-        this.loading = false
-      }
-    },
-    async loadRaces() {
-      this.races = await getRacesByVariation(this.currentVariation.id)
-    },
-    async loadGoal() {
-      this.goal = await getGoalForVariation(this.currentVariation.id)
-      this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
-    },
-    async loadAnnotations() {
-      this.annotations = await getAnnotationsForVariation(this.currentVariation.id)
-    },
-    onAddRaceKeydown(event) {
-      if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (this.isTypingTarget(event.target)) return
-      if (event.key !== 'a' && event.key !== 'A') return
-      if (this.quickAddStore.open || this.showImageModal) return
-      if (!this.currentVariation) return
-      event.preventDefault()
-      this.onAddRow()
-    },
-    isTypingTarget(el) {
-      if (!el) return false
-      const tag = (el.tagName || '').toLowerCase()
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
-      if (el.isContentEditable) return true
-      return false
-    },
-    openImageModal() {
-      this.showImageModal = true
-    },
-    closeImageModal() {
-      this.showImageModal = false
-    },
-    startEditNotes() {
-      this.notesInput = this.trackNotes
-      this.notesEditMode = true
-      this.$nextTick(() => this.$refs.notesTextarea?.focus())
-    },
-    cancelEditNotes() {
-      this.notesEditMode = false
-    },
-    async saveNotes() {
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.goal = await upsertGoal({
-          variationId: this.currentVariation.id,
-          goalLapTimeMs: this.goalLapTimeMs,
-          notes: this.notesInput,
-          userId
-        })
-        this.notesEditMode = false
-        pushToast('Notes saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save notes', 'error')
-      }
-    },
-    async onSaveAnnotations(annotations) {
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.annotations = await saveAnnotations({
-          variationId: this.currentVariation.id,
-          annotations,
-          userId
-        })
-        pushToast('Annotations saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save annotations', 'error')
-      }
-    },
-    onAddRow() {
-      this._quickAddOpenedHere = true
-      openQuickAdd(this.currentVariation.id)
-    },
-    async onUpdateRace({ id, patch }) {
-      try {
-        const updated = await updateRace(id, patch)
-        const idx = this.races.findIndex(r => r.id === id)
-        if (idx !== -1) this.races.splice(idx, 1, updated)
-        pushToast('Race updated', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to update race', 'error')
-      }
-    },
-    async onDeleteRace(id) {
-      try {
-        await deleteRace(id)
-        this.races = this.races.filter(r => r.id !== id)
-        pushToast('Race deleted', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to delete race', 'error')
-      }
-    },
-    async onSaveGoal() {
-      const ms = this.goalInputMs
-      if (!ms) return
-      if (this.goal && this.goal.goal_lap_time_ms === ms) return
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.goal = await upsertGoal({
-          variationId: this.currentVariation.id,
-          goalLapTimeMs: ms,
-          notes: this.trackNotes,
-          userId
-        })
-        pushToast('Goal saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save goal', 'error')
-      }
-    }
+    quickAddStore.currentPageVariationId = currentVariation.value.id
+    await Promise.all([loadRaces(), loadGoal(), loadAnnotations()])
+  } catch (err) {
+    pushToast(err.message || 'Failed to load track', 'error')
+  } finally {
+    loading.value = false
   }
 }
+
+function isTypingTarget(el) {
+  if (!el) return false
+  const tag = (el.tagName || '').toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+  if (el.isContentEditable) return true
+  return false
+}
+
+function onAddRow() {
+  quickAddOpenedHere = true
+  openQuickAdd(currentVariation.value.id)
+}
+
+function onAddRaceKeydown(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+  if (isTypingTarget(event.target)) return
+  if (event.key !== 'a' && event.key !== 'A') return
+  if (quickAddStore.open || showImageModal.value) return
+  if (!currentVariation.value) return
+  event.preventDefault()
+  onAddRow()
+}
+
+function openImageModal() {
+  showImageModal.value = true
+}
+function closeImageModal() {
+  showImageModal.value = false
+}
+
+function startEditNotes() {
+  notesInput.value = trackNotes.value
+  notesEditMode.value = true
+  nextTick(() => notesTextarea.value?.focus())
+}
+function cancelEditNotes() {
+  notesEditMode.value = false
+}
+async function saveNotes() {
+  try {
+    const userId = authStore.user && authStore.user.id
+    goal.value = await upsertGoal({
+      variationId: currentVariation.value.id,
+      goalLapTimeMs: goalLapTimeMs.value,
+      notes: notesInput.value,
+      userId
+    })
+    notesEditMode.value = false
+    pushToast('Notes saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save notes', 'error')
+  }
+}
+
+async function onSaveAnnotations(newAnnotations) {
+  try {
+    const userId = authStore.user && authStore.user.id
+    annotations.value = await saveAnnotations({
+      variationId: currentVariation.value.id,
+      annotations: newAnnotations,
+      userId
+    })
+    pushToast('Annotations saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save annotations', 'error')
+  }
+}
+
+async function onUpdateRace({ id, patch }) {
+  try {
+    const updated = await updateRace(id, patch)
+    const idx = races.value.findIndex(r => r.id === id)
+    if (idx !== -1) races.value.splice(idx, 1, updated)
+    pushToast('Race updated', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to update race', 'error')
+  }
+}
+async function onDeleteRace(id) {
+  try {
+    await deleteRace(id)
+    races.value = races.value.filter(r => r.id !== id)
+    pushToast('Race deleted', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to delete race', 'error')
+  }
+}
+async function onSaveGoal() {
+  const ms = goalInputMs.value
+  if (!ms) return
+  if (goal.value && goal.value.goal_lap_time_ms === ms) return
+  try {
+    const userId = authStore.user && authStore.user.id
+    goal.value = await upsertGoal({
+      variationId: currentVariation.value.id,
+      goalLapTimeMs: ms,
+      notes: trackNotes.value,
+      userId
+    })
+    pushToast('Goal saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save goal', 'error')
+  }
+}
+
+watch(() => route.params, loadAll)
+watch(() => quickAddStore.open, (isOpen) => {
+  if (!isOpen && quickAddOpenedHere) {
+    quickAddOpenedHere = false
+    loadRaces()
+  }
+})
+
+useEventListener(document, 'keydown', (e) => { if (e.key === 'Escape') closeImageModal() })
+useEventListener(document, 'keydown', onAddRaceKeydown)
+
+onMounted(() => {
+  setOnRaceSaved((variationId) => {
+    if (variationId === currentVariation.value?.id) loadRaces()
+  })
+  loadAll()
+})
+
+onUnmounted(() => {
+  quickAddStore.currentPageVariationId = null
+  clearOnRaceSaved()
+})
 </script>

@@ -7,59 +7,20 @@
           <div class="font-bold text-brand-text dark:text-brand-text-dark truncate">{{ vehicleName }}</div>
           <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formattedDate }}</div>
         </div>
-        <div class="inline-flex items-center gap-1 shrink-0">
-          <button
-            v-if="race.notes || hasLapTimes || hasRoster"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            :title="expanded ? 'Collapse' : 'Expand'"
-            @click="toggleExpanded"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-4 h-4"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              aria-hidden="true"
-            >
-              <path d="M4 10h12" />
-              <path v-if="!expanded" d="M10 4v12" />
-            </svg>
-          </button>
-          <button
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            title="Edit"
-            @click="editing = true"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-            </svg>
-          </button>
-          <button
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            title="Delete"
-            @click="onDelete"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </button>
-        </div>
+        <RaceRowActions
+          :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
+          :expanded="expanded"
+          @toggle-expand="toggleExpanded"
+          @edit="editing = true"
+          @delete="onDelete"
+        />
       </div>
 
       <!-- Same fields, in the same order, as the desktop table columns. -->
       <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
-          <div>
-            <template v-if="race.performance_index != null">
-              <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-              <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
-            </template>
-            <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
-          </div>
+          <div><PerformanceIndexBadge :value="race.performance_index" /></div>
         </div>
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
@@ -97,17 +58,13 @@
       </div>
 
       <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
-        <div class="text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
-
-        <template v-if="hasLapTimes">
-          <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Lap times</div>
-          <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
-        </template>
-
-        <template v-if="hasRoster">
-          <div class="mt-3 ov text-brand-muted dark:text-brand-muted-dark">Roster</div>
-          <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
-        </template>
+        <RaceExpandedDetails
+          :notes="race.notes || ''"
+          notes-fallback="No notes"
+          :show-notes-heading="false"
+          :lap-times="race.lap_times_ms"
+          :roster="race.results_roster"
+        />
       </div>
     </template>
 
@@ -133,11 +90,7 @@
       </td>
       <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
       <td class="py-2 pr-3 whitespace-nowrap">
-        <template v-if="race.performance_index != null">
-          <span class="font-extrabold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-          <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ race.performance_index }}</span>
-        </template>
-        <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
+        <PerformanceIndexBadge :value="race.performance_index" />
       </td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
       <td class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
@@ -152,46 +105,13 @@
         <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '—' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
-        <div class="inline-flex items-center gap-1">
-          <button
-            v-if="race.notes || hasLapTimes || hasRoster"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            :title="expanded ? 'Collapse' : 'Expand'"
-            @click.stop="toggleExpanded"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-4 h-4"
-              viewBox="0 0 20 20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              aria-hidden="true"
-            >
-              <path d="M4 10h12" />
-              <path v-if="!expanded" d="M10 4v12" />
-            </svg>
-          </button>
-          <button
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            title="Edit"
-            @click.stop="editing = true"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-            </svg>
-          </button>
-          <button
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            title="Delete"
-            @click.stop="onDelete"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-            </svg>
-          </button>
-        </div>
+        <RaceRowActions
+          :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
+          :expanded="expanded"
+          @toggle-expand="toggleExpanded"
+          @edit="editing = true"
+          @delete="onDelete"
+        />
       </td>
     </template>
 
@@ -209,20 +129,14 @@
 
   <tr v-if="layout === 'table' && !editing && expanded">
     <td colspan="11" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
-      <div class="ov ov-lg text-brand-accent dark:text-brand-accent-dark">Notes</div>
-      <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes || 'No notes' }}</div>
-
-      <div v-if="hasLapTimes || hasRoster" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
-
-      <template v-if="hasLapTimes">
-        <div class="mt-3 ov ov-lg text-brand-accent dark:text-brand-accent-dark">Lap times</div>
-        <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
-      </template>
-
-      <template v-if="hasRoster">
-        <div class="mt-3 ov ov-lg text-brand-accent dark:text-brand-accent-dark">Roster</div>
-        <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
-      </template>
+      <RaceExpandedDetails
+        :notes="race.notes || ''"
+        notes-fallback="No notes"
+        accent
+        divider
+        :lap-times="race.lap_times_ms"
+        :roster="race.results_roster"
+      />
     </td>
   </tr>
 
@@ -238,11 +152,11 @@
 
 <script>
 import RaceForm from './RaceForm.vue'
-import LapSplitsChart from './LapSplitsChart.vue'
-import RaceResultsRoster from './RaceResultsRoster.vue'
 import ConfirmDialog from './ConfirmDialog.vue'
+import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
+import RaceRowActions from './RaceRowActions.vue'
+import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
-import { piInfo } from '../utils/piInfo.js'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -252,7 +166,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, LapSplitsChart, RaceResultsRoster, ConfirmDialog },
+  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -335,7 +249,6 @@ export default {
     }
   },
   methods: {
-    piInfo,
     async onSave(payload) {
       this.saving = true
       try {

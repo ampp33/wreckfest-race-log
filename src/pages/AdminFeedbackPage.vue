@@ -41,6 +41,7 @@
 
 <script>
 import { getAllFeedback } from '../services/adminService.js'
+import { formatDateTime } from '../utils/dateFormat.js'
 
 export default {
   name: 'AdminFeedbackPage',
@@ -61,9 +62,7 @@ export default {
     }
   },
   methods: {
-    formatDate(iso) {
-      return new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    }
+    formatDate: formatDateTime
   }
 }
 </script>

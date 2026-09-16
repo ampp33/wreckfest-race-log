@@ -12,7 +12,7 @@
      holds even if a row's content (font, expanded panel) makes it taller
      or shorter than expected. -->
 <template>
-  <div class="relative overflow-x-auto" :style="fadeHeight ? { maxHeight: fadeHeight + 'px', overflowY: 'hidden' } : null">
+  <div ref="wrapper" class="relative overflow-x-auto" :style="fadeHeight ? { maxHeight: fadeHeight + 'px', overflowY: 'hidden' } : null">
     <table class="w-full min-w-[720px] border-collapse">
       <thead>
         <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
@@ -30,15 +30,14 @@
       <tbody class="border-b border-brand-border dark:border-brand-border-dark">
         <template v-for="(row, i) in rows" :key="row.id">
           <tr class="border-t border-brand-border dark:border-brand-border-dark" :data-row-index="i">
-            <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(row.datetime) }}</td>
+            <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatCompactDate(row.datetime) }}</td>
             <td class="px-3.5 py-2 text-[13px] whitespace-nowrap">
               <span class="font-semibold text-brand-text dark:text-brand-text-dark">{{ row.track }}</span>
               <span class="text-brand-muted dark:text-brand-muted-dark"> — {{ row.variation }}</span>
             </td>
             <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ row.vehicle }}</td>
             <td class="px-3.5 py-2 text-[13px] whitespace-nowrap">
-              <span class="font-extrabold" :style="{ color: piInfo(row.performance_index).color }">{{ piInfo(row.performance_index).cls }}</span>
-              <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ row.performance_index }}</span>
+              <PerformanceIndexBadge :value="row.performance_index" />
             </td>
             <td class="px-3.5 py-2 text-right text-[13px] tabular" :class="Number(row.place) <= 3 ? 'font-bold' : ''">{{ row.place }}</td>
             <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">{{ row.lap_count }}</td>
@@ -52,10 +51,7 @@
                 :aria-label="expanded === i ? 'Collapse row' : 'Expand row'"
                 @click="expanded = expanded === i ? null : i"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                  <path d="M4 10h12" />
-                  <path v-if="expanded !== i" d="M10 4v12" />
-                </svg>
+                <span class="w-4 h-4 inline-block" v-html="expanded === i ? collapseIcon : expandIcon"></span>
               </button>
             </td>
           </tr>
@@ -78,7 +74,7 @@
     </table>
 
     <!-- Fades the tail of the visible area into the page background, right
-         where fade-after-index says to stop — see measureFade(). Purely
+         where fade-after-index says to stop — see useMeasuredFade. Purely
          decorative (aria-hidden, pointer-events-none): the rows underneath
          are still real rows, just clipped by the wrapper's max-height. -->
     <div
@@ -89,61 +85,36 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, watch, nextTick } from 'vue'
 import LapSplitsChart from './LapSplitsChart.vue'
 import RaceResultsRoster from './RaceResultsRoster.vue'
+import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import { formatMsToTime } from '../utils/timeFormat.js'
-import { piInfo } from '../utils/piInfo.js'
+import { formatCompactDate } from '../utils/dateFormat.js'
+import { useMeasuredFade } from '../composables/useMeasuredFade.js'
+import expandIcon from '../assets/icons/expand.svg?raw'
+import collapseIcon from '../assets/icons/collapse.svg?raw'
 
-export default {
-  name: 'HomeRacesTable',
-  components: { LapSplitsChart, RaceResultsRoster },
-  props: {
-    rows: { type: Array, required: true },
-    // Row index expanded by default (null = all collapsed).
-    initialExpanded: { type: Number, default: null },
-    // Clip the table just past this row index and fade into the page
-    // background — implies more rows below without a fixed guessed pixel
-    // height (see measureFade). null = show everything, no fade.
-    fadeAfterIndex: { type: Number, default: null }
-  },
-  data() {
-    return { expanded: this.initialExpanded, fadeHeight: null }
-  },
-  watch: {
-    // Expanding/collapsing a row above the fade line shifts everything
-    // below it — remeasure so the cutoff still lands after the right row.
-    expanded() {
-      this.$nextTick(this.measureFade)
-    }
-  },
-  mounted() {
-    this.measureFade()
-    window.addEventListener('resize', this.measureFade)
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.measureFade)
-  },
-  methods: {
-    piInfo,
-    formatMsToTime,
-    formatDate(iso) {
-      return new Date(iso).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: '2-digit' })
-    },
-    measureFade() {
-      if (this.fadeAfterIndex == null) return
-      const wrapper = this.$el
-      const targetRow = wrapper.querySelector(`[data-row-index="${this.fadeAfterIndex}"]`)
-      if (!targetRow) return
-      // Both rects are viewport-relative and read at the same instant, so
-      // their difference is the real content height from the wrapper's top
-      // to the target row's bottom — tracks actual rendered layout
-      // (font metrics, an expanded panel shifting rows down, etc.) instead
-      // of a guessed fixed pixel value that could clip mid-row.
-      const wrapperTop = wrapper.getBoundingClientRect().top
-      const rowBottom = targetRow.getBoundingClientRect().bottom
-      this.fadeHeight = Math.ceil(rowBottom - wrapperTop)
-    }
-  }
-}
+const props = defineProps({
+  rows: { type: Array, required: true },
+  // Row index expanded by default (null = all collapsed).
+  initialExpanded: { type: Number, default: null },
+  // Clip the table just past this row index and fade into the page
+  // background — implies more rows below without a fixed guessed pixel
+  // height (see useMeasuredFade). null = show everything, no fade.
+  fadeAfterIndex: { type: Number, default: null }
+})
+
+const expanded = ref(props.initialExpanded)
+const wrapper = ref(null)
+
+const { fadeHeight, measure } = useMeasuredFade(
+  () => wrapper.value,
+  () => props.fadeAfterIndex == null ? null : wrapper.value?.querySelector(`[data-row-index="${props.fadeAfterIndex}"]`)
+)
+
+// Expanding/collapsing a row above the fade line shifts everything below
+// it — remeasure so the cutoff still lands after the right row.
+watch(expanded, () => nextTick(measure))
 </script>

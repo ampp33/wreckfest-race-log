@@ -130,6 +130,7 @@
 <script>
 import { getApiKeys, createApiKey, deleteApiKey } from '../services/apiKeyService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { formatDate } from '../utils/dateFormat.js'
 
 export default {
   name: 'ApiKeysPage',
@@ -195,9 +196,7 @@ export default {
         // fallback: the input is already selectable
       }
     },
-    formatDate(iso) {
-      return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-    }
+    formatDate
   }
 }
 </script>

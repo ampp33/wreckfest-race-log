@@ -42,3 +42,13 @@ export function formatDelta(ms) {
   const sign = ms > 0 ? '+' : ms < 0 ? '-' : ''
   return sign + formatMsToTime(Math.abs(ms))
 }
+
+// Compact chart-axis form: omits the minutes part entirely when it's zero
+// (e.g. "35.207" instead of "0:35.207"), unlike formatMsToTime above.
+export function formatMsCompact(ms) {
+  if (ms == null) return ''
+  const totalSec = ms / 1000
+  const minutes = Math.floor(totalSec / 60)
+  const secs = (totalSec % 60).toFixed(3).padStart(6, '0')
+  return minutes > 0 ? `${minutes}:${secs}` : secs
+}

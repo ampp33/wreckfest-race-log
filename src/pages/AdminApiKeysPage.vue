@@ -91,6 +91,7 @@
 <script>
 import { getAllApiKeys, adminDeleteApiKey } from '../services/adminService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { formatDateTime } from '../utils/dateFormat.js'
 
 export default {
   name: 'AdminApiKeysPage',
@@ -112,9 +113,7 @@ export default {
     }
   },
   methods: {
-    formatDate(iso) {
-      return new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    },
+    formatDate: formatDateTime,
     async onDelete(id) {
       this.confirmDeleteId = null
       try {
