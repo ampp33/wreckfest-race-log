@@ -38,7 +38,7 @@
 
     <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
       <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
-        Biggest <em class="signal">improvements</em> (oldest → newest lap)
+        Biggest <em class="signal">improvements</em> (oldest -> newest lap)
       </h2>
       <!-- Same technique as HomeRacesTable's fade-after-index: measure the
            real bottom edge of the cutoff row and clip there, rather than a

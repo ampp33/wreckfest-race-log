@@ -35,6 +35,13 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Hey November';
+  src: url('/fonts/HeyNovember-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
@@ -199,7 +206,6 @@ table th {
  * of italicising it — the accent is the counter, not the colour. */
 em.signal {
   font-style: normal;
-  font-weight: 900;
   color: theme('colors.brand.accent.DEFAULT');
 }
 

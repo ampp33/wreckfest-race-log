@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-10">
-    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       <em class="signal">Diagnostics</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Site-wide activity overview.</p>
@@ -17,8 +17,8 @@
 
       <!-- User growth chart -->
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
-          User <em class="signal">growth</em> — last 30 days
+        <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+          User <em class="signal">growth</em> - last 30 days
         </h2>
         <div class="relative h-56">
           <canvas ref="growthCanvas"></canvas>
@@ -27,7 +27,7 @@
 
       <!-- Top users table -->
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+        <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
           Top 5 users by <em class="signal">activity</em>
         </h2>
         <p v-if="!data.top_users || !data.top_users.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
@@ -158,7 +158,7 @@ export default {
       this.chart?.destroy()
 
       const dark = this.isDark
-      const color = '#0ea5e9'
+      const color = dark ? '#E5332F' : '#C41E1E'
       const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
       const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
 

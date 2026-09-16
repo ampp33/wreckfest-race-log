@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-10">
-    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       <em class="signal">Feedback</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10 max-w-xl">

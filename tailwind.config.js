@@ -26,6 +26,7 @@ export default {
       fontFamily: {
         display: ['Switzer', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
         body:    ['Switzer', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
+        heading: ['"Hey November"', 'Switzer', '"Helvetica Neue"', 'Helvetica', 'Arial', 'sans-serif'],
       },
       fontSize: {
         // Grid Break sets headings tight and heavy; the ramp is the design's.

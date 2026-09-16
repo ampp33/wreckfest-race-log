@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center px-6">
     <div class="rule-top w-full max-w-md pt-6">
       <div class="ov text-brand-accent dark:text-brand-accent-dark mb-4">Wreckfest Race Log</div>
-      <h1 class="font-display font-black tracking-tightest leading-[0.86] text-display-sm text-brand-text dark:text-brand-text-dark mb-4">
+      <h1 class="font-heading font-normal tracking-normal leading-[0.86] text-display-sm text-brand-text dark:text-brand-text-dark mb-4">
         {{ mode === 'signin' ? 'Sign in' : 'Create an account' }}
       </h1>
       <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mb-8">

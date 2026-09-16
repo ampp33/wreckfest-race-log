@@ -20,7 +20,7 @@
       <!-- Track header row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div class="min-w-0 flex-1">
-          <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+          <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
             <em class="signal">{{ track.name }}</em>
           </h1>
           <!-- <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p> -->
@@ -143,7 +143,7 @@
 
       <div>
         <div class="flex items-end justify-between border-b-2 border-brand-strong dark:border-brand-strong-dark pb-2.5 mb-1">
-          <h2 class="font-display font-black tracking-tightest leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
             Logged races
           </h2>
           <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ races.length }} at this variation</span>

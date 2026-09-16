@@ -13,7 +13,7 @@
     </div>
 
     <div class="flex items-baseline justify-between gap-3 mt-3.5 min-w-0">
-      <h3 class="font-display font-black tracking-tightest leading-[0.95] text-[26px] group-hover:text-brand-accent dark:group-hover:text-brand-accent-dark">
+      <h3 class="font-heading font-normal tracking-normal leading-[0.95] text-[26px] group-hover:text-brand-accent dark:group-hover:text-brand-accent-dark">
         {{ track.name }}
       </h3>
       <span class="ov tabular text-brand-muted dark:text-brand-muted-dark whitespace-nowrap shrink-0">

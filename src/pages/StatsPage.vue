@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-10">
-    <h1 class="font-display font-black tracking-tightest leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       Stats
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
@@ -51,7 +51,7 @@
       />
 
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+        <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
           Goal <em class="signal">progress</em>
         </h2>
         <p v-if="!stats.goalProgress.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
@@ -96,8 +96,8 @@
       </div>
 
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
-          Biggest <em class="signal">improvements</em> (oldest → newest lap)
+        <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+          Biggest <em class="signal">improvements</em> (oldest -> newest lap)
         </h2>
         <p v-if="!stats.biggestImprovements.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
           No improvement data yet — log more laps on the same variation.
