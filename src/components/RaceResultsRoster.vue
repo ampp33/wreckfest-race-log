@@ -2,14 +2,14 @@
   <div v-if="rows.length" class="overflow-x-auto">
     <table class="w-full text-sm border-collapse">
       <thead>
-        <tr class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">
-          <th class="py-1 pr-3 text-left font-medium">Pos</th>
-          <th class="py-1 pr-3 text-left font-medium">Name</th>
-          <th class="py-1 pr-3 text-left font-medium">Car</th>
-          <th class="py-1 pr-3 text-left font-medium">Class</th>
-          <th class="py-1 pr-3 text-right font-medium">Best lap</th>
-          <th class="py-1 pr-3 text-right font-medium">Total</th>
-          <th class="py-1 pr-3 text-right font-medium">Laps</th>
+        <tr class="ov text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+          <th class="py-2 pr-3 text-left font-medium">Pos</th>
+          <th class="py-2 pr-3 text-left font-medium">Name</th>
+          <th class="py-2 pr-3 text-left font-medium">Car</th>
+          <th class="py-2 pr-3 text-left font-medium">Class</th>
+          <th class="py-2 pr-3 text-right font-medium">Best lap</th>
+          <th class="py-2 pr-3 text-right font-medium">Total</th>
+          <th class="py-2 pr-3 text-right font-medium">Laps</th>
         </tr>
       </thead>
       <tbody>
@@ -18,22 +18,22 @@
           :key="i"
           class="border-t border-brand-border dark:border-brand-border-dark"
         >
-          <td class="py-1 pr-3 font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ row.position ?? '—' }}</td>
-          <td class="py-1 pr-3 text-brand-text dark:text-brand-text-dark truncate max-w-[16ch]">{{ row.name || '—' }}</td>
-          <td class="py-1 pr-3 text-brand-secondary dark:text-brand-secondary-dark truncate max-w-[16ch]">{{ row.car || '—' }}</td>
-          <td class="py-1 pr-3 whitespace-nowrap">
+          <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ row.position ?? '—' }}</td>
+          <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark truncate max-w-[16ch]">{{ row.name || '—' }}</td>
+          <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark truncate max-w-[16ch]">{{ row.car || '—' }}</td>
+          <td class="py-1.5 pr-3 whitespace-nowrap">
             <template v-if="row.class">
-              <span class="font-bold" :style="{ color: classColor(row.class) }">{{ classLetter(row.class) }}</span>
-              {{ classRest(row.class) }}
+              <span class="font-extrabold" :style="{ color: classColor(row.class) }">{{ classLetter(row.class) }}</span>
+              <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">{{ classRest(row.class) }}</span>
             </template>
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </td>
           <td
-            class="py-1 pr-3 text-right font-mono"
-            :class="isFastestLap(row) ? 'text-brand-accent font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
+            class="py-1.5 pr-3 text-right tabular"
+            :class="isFastestLap(row) ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
           >{{ formatTime(row.best_lap_ms) }}</td>
-          <td class="py-1 pr-3 text-right font-mono text-brand-secondary dark:text-brand-secondary-dark">{{ formatTime(row.total_time_ms) }}</td>
-          <td class="py-1 pr-3 text-right font-mono whitespace-nowrap" :class="row.dnf ? 'text-red-500' : 'text-brand-secondary dark:text-brand-secondary-dark'">
+          <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTime(row.total_time_ms) }}</td>
+          <td class="py-1.5 pr-3 text-right tabular whitespace-nowrap" :class="row.dnf ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-muted dark:text-brand-muted-dark'">
             {{ row.dnf ? 'DNF' : (row.laps_completed ?? '—') }}
           </td>
         </tr>

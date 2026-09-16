@@ -1,6 +1,8 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { authStore, initAuthStore } from '../stores/authStore.js'
 
+import HomePage from '../pages/HomePage.vue'
+import PluginPage from '../pages/PluginPage.vue'
 import TrackListPage from '../pages/TrackListPage.vue'
 import TrackDetailPage from '../pages/TrackDetailPage.vue'
 import StatsPage from '../pages/StatsPage.vue'
@@ -13,8 +15,10 @@ import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
 import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
 
 const routes = [
+  { path: '/', name: 'home', component: HomePage, meta: { public: true } },
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
-  { path: '/', name: 'tracks', component: TrackListPage },
+  { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
+  { path: '/tracks', name: 'tracks', component: TrackListPage },
   {
     path: '/track/:trackSlug/:variationSlug',
     name: 'track-detail',
@@ -27,6 +31,7 @@ const routes = [
   { path: '/admin/users', name: 'admin-users', component: UserRolesPage, meta: { requiresAdmin: true } },
   { path: '/admin/api-keys', name: 'admin-api-keys', component: AdminApiKeysPage, meta: { requiresAdmin: true } },
   { path: '/admin/feedback', name: 'admin-feedback', component: AdminFeedbackPage, meta: { requiresAdmin: true } },
+
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
@@ -38,7 +43,14 @@ export const router = createRouter({
 
 router.beforeEach(async to => {
   await initAuthStore()
-  if (to.meta.public) return true
+  if (to.meta.public) {
+    // Signed-in visitors don't need the marketing page — send them
+    // straight into the app instead of showing it every time they hit "/".
+    if (to.name === 'home' && authStore.isAuthenticated) {
+      return { name: 'tracks' }
+    }
+    return true
+  }
   if (!authStore.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }

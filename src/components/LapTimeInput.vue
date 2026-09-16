@@ -1,8 +1,8 @@
 <template>
   <div
-    class="flex items-center rounded border px-2 py-2 gap-px cursor-text w-full bg-brand-bg dark:bg-brand-surface-dark"
+    class="flex items-center min-h-[44px] border px-2 gap-px cursor-text w-full bg-brand-bg dark:bg-brand-surface-dark"
     :class="focused
-      ? 'border-brand-accent ring-1 ring-brand-accent'
+      ? 'border-brand-accent dark:border-brand-accent-dark'
       : 'border-brand-border dark:border-brand-border-dark'"
     @click.self="focusActive"
   >

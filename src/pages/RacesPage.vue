@@ -1,36 +1,41 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
-      Your <em class="signal">races</em>
+  <div class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+      Races
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">All of your logged races, newest first.</p>
+    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10">
+      <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
+    </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
-    <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
+    <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else>
       <!-- Controls row -->
-      <div class="flex items-center justify-between mb-3 gap-4 flex-wrap">
-        <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+      <div class="flex items-end justify-between mb-6 gap-4 flex-wrap">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">
           {{ total }} race{{ total === 1 ? '' : 's' }}
         </div>
-        <div class="flex items-center gap-2 text-sm font-body">
-          <label class="text-brand-muted dark:text-brand-muted-dark">Per page</label>
-          <select
-            v-model="pageSize"
-            class="border border-brand-border dark:border-brand-border-dark rounded px-2 py-1 bg-brand-bg dark:bg-brand-surface-dark text-sm"
-            @change="currentPage = 1"
-          >
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-            <option :value="100">100</option>
-          </select>
+        <div class="flex items-center gap-3">
+          <span class="ov text-brand-muted dark:text-brand-muted-dark">Per page</span>
+          <div class="flex">
+            <button
+              v-for="size in [25, 50, 100]"
+              :key="size"
+              type="button"
+              class="tabular min-h-[44px] min-w-[52px] border text-sm font-semibold -ml-px first:ml-0"
+              :class="pageSize === size
+                ? 'bg-brand-strong dark:bg-brand-strong-dark border-brand-strong dark:border-brand-strong-dark text-brand-bg dark:text-brand-bg-dark'
+                : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
+              @click="pageSize = size; currentPage = 1"
+            >{{ size }}</button>
+          </div>
         </div>
       </div>
 
       <p v-if="total === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
 
-      <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
+      <div v-else>
         <!-- Card layout (mobile) -->
         <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
           <div v-for="race in pageRows" :key="race.id" class="p-3">
@@ -40,104 +45,52 @@
                   <router-link
                     v-if="race.trackSlug && race.variationSlug"
                     :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                    class="font-bold text-brand-accent hover:underline truncate block"
+                    class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
                   >
                     {{ race.trackName }}
                     <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
                   </router-link>
                   <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
-                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formatDate(race.datetime) }}</div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formatDateTime(race.datetime) }}</div>
                 </div>
-                <div class="inline-flex items-center gap-1 shrink-0">
-                  <button
-                    v-if="race.notes || hasLapTimes(race) || hasRoster(race)"
-                    class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                    :title="expanded[race.id] ? 'Collapse' : 'Expand'"
-                    @click="toggleExpanded(race.id)"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="w-4 h-4"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M4 10h12" />
-                      <path v-if="!expanded[race.id]" d="M10 4v12" />
-                    </svg>
-                  </button>
-                  <button
-                    class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                    title="Edit"
-                    @click="editing[race.id] = true"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                    </svg>
-                  </button>
-                  <button
-                    class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                    title="Delete"
-                    @click="onDelete(race)"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
+                <RaceRowActions
+                  :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
+                  :expanded="!!expanded[race.id]"
+                  @toggle-expand="toggleExpanded(race.id)"
+                  @edit="editing[race.id] = true"
+                  @delete="onDelete(race)"
+                />
               </div>
 
               <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Vehicle</div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Vehicle</div>
                   <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
                 </div>
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
-                  <div>
-                    <template v-if="race.performance_index != null">
-                      <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-                      {{ race.performance_index }}
-                    </template>
-                    <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
-                  </div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
+                  <div><PerformanceIndexBadge :value="race.performance_index" /></div>
                 </div>
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Place</div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
                   <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
                 </div>
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Laps</div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Laps</div>
                   <div class="tabular-nums">{{ lapCount(race) }}</div>
                 </div>
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap time</div>
-                  <div class="font-mono tabular-nums">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Lap time</div>
+                  <div class="tabular">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
                 </div>
                 <div>
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Total time</div>
-                  <div class="font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Total time</div>
+                  <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
                 </div>
               </div>
 
-              <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-2 bg-brand-bg dark:bg-brand-bg-dark">
-                <template v-if="race.notes">
-                  <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
-                  <div class="mt-1 font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes }}</div>
-                </template>
-
-                <template v-if="hasLapTimes(race)">
-                  <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
-                  <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
-                </template>
-
-                <template v-if="hasRoster(race)">
-                  <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Roster</div>
-                  <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
-                </template>
+              <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+                <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
               </div>
             </template>
 
@@ -157,98 +110,61 @@
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-                <th class="px-4 py-2 font-medium">Date</th>
-                <th class="px-4 py-2 font-medium">Track / Variation</th>
-                <th class="px-4 py-2 font-medium">Vehicle</th>
-                <th class="px-4 py-2 font-medium">Class (PI)</th>
-                <th class="px-4 py-2 font-medium text-right">Place</th>
-                <th class="px-4 py-2 font-medium text-right">Laps</th>
-                <th class="px-4 py-2 font-medium text-right">Lap time</th>
-                <th class="px-4 py-2 font-medium text-right">Total time</th>
-                <th class="px-4 py-2 font-medium text-right">Actions</th>
+              <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+                <th class="px-3.5 pb-2.5 font-medium">Date</th>
+                <th class="px-3.5 pb-2.5 font-medium">Track / Variation</th>
+                <th class="px-3.5 pb-2.5 font-medium">Vehicle</th>
+                <th class="px-3.5 pb-2.5 font-medium">Class (PI)</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Place</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+            <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
               <template v-for="race in pageRows" :key="race.id">
-                <tr v-if="!editing[race.id]" class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30">
-                  <td class="px-4 py-2 whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">
-                    {{ formatDate(race.datetime) }}
+                <tr v-if="!editing[race.id]" class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
+                  <td class="px-3.5 py-2 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
+                    {{ formatDateTime(race.datetime) }}
                   </td>
-                  <td class="px-4 py-2">
+                  <td class="px-3.5 py-2">
                     <router-link
                       v-if="race.trackSlug && race.variationSlug"
                       :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                      class="text-brand-accent hover:underline"
+                      class="font-semibold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
                     >
                       {{ race.trackName }}
                       <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
                     </router-link>
                     <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
                   </td>
-                  <td class="px-4 py-2 text-brand-secondary dark:text-brand-secondary-dark">
+                  <td class="px-3.5 py-2 text-brand-secondary dark:text-brand-secondary-dark">
                     {{ race.vehicleName }}
                   </td>
-                  <td class="px-4 py-2 whitespace-nowrap">
-                    <template v-if="race.performance_index != null">
-                      <span class="font-bold" :style="{ color: piInfo(race.performance_index).color }">{{ piInfo(race.performance_index).cls }}</span>
-                      {{ race.performance_index }}
-                    </template>
-                    <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
+                  <td class="px-3.5 py-2 whitespace-nowrap">
+                    <PerformanceIndexBadge :value="race.performance_index" />
                   </td>
-                  <td class="px-4 py-2 text-right tabular-nums">
+                  <td class="px-3.5 py-2 text-right tabular-nums">
                     {{ race.place != null ? race.place : '—' }}
                   </td>
-                  <td class="px-4 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
+                  <td class="px-3.5 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
                     {{ lapCount(race) }}
                   </td>
-                  <td class="px-4 py-2 text-right font-mono tabular-nums">
+                  <td class="px-3.5 py-2 text-right tabular">
                     {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
                   </td>
-                  <td class="px-4 py-2 text-right font-mono tabular-nums text-brand-muted dark:text-brand-muted-dark">
+                  <td class="px-3.5 py-2 text-right tabular text-brand-muted dark:text-brand-muted-dark">
                     {{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}
                   </td>
-                  <td class="px-4 py-2 text-right whitespace-nowrap">
-                    <div class="inline-flex items-center gap-1">
-                      <button
-                        v-if="race.notes || hasLapTimes(race) || hasRoster(race)"
-                        class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                        :title="expanded[race.id] ? 'Collapse' : 'Expand'"
-                        @click="toggleExpanded(race.id)"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-4 h-4"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M4 10h12" />
-                          <path v-if="!expanded[race.id]" d="M10 4v12" />
-                        </svg>
-                      </button>
-                      <button
-                        class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                        title="Edit"
-                        @click="editing[race.id] = true"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                        </svg>
-                      </button>
-                      <button
-                        class="p-1 rounded text-brand-muted dark:text-brand-muted-dark hover:text-red-600 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                        title="Delete"
-                        @click="onDelete(race)"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                          <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
+                  <td class="px-3.5 py-2 text-right whitespace-nowrap">
+                    <RaceRowActions
+                      :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
+                      :expanded="!!expanded[race.id]"
+                      @toggle-expand="toggleExpanded(race.id)"
+                      @edit="editing[race.id] = true"
+                      @delete="onDelete(race)"
+                    />
                   </td>
                 </tr>
                 <tr v-else>
@@ -264,21 +180,8 @@
                   </td>
                 </tr>
                 <tr v-if="!editing[race.id] && expanded[race.id]">
-                  <td colspan="9" class="px-4 py-2 bg-brand-bg dark:bg-brand-bg-dark">
-                    <template v-if="race.notes">
-                      <div class="text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Notes</div>
-                      <div class="mt-1 font-mono text-sm whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ race.notes }}</div>
-                    </template>
-
-                    <template v-if="hasLapTimes(race)">
-                      <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Lap times</div>
-                      <LapSplitsChart :lap-times="race.lap_times_ms" class="mt-1" />
-                    </template>
-
-                    <template v-if="hasRoster(race)">
-                      <div class="mt-3 text-[10px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">Roster</div>
-                      <RaceResultsRoster :roster="race.results_roster" class="mt-1" />
-                    </template>
+                  <td colspan="9" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+                    <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
                   </td>
                 </tr>
               </template>
@@ -288,22 +191,32 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="flex items-center justify-center gap-6 mt-4 text-sm">
-        <button
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded border border-brand-border dark:border-brand-border-dark disabled:opacity-40 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-          @click="currentPage--"
-        >
-          ← Prev
-        </button>
-        <span class="text-brand-muted dark:text-brand-muted-dark">Page {{ currentPage }} of {{ totalPages }}</span>
-        <button
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded border border-brand-border dark:border-brand-border-dark disabled:opacity-40 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-          @click="currentPage++"
-        >
-          Next →
-        </button>
+      <div class="flex items-center justify-between gap-4 mt-5 flex-wrap">
+        <span class="ov tabular text-brand-muted dark:text-brand-muted-dark">
+          Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
+        </span>
+        <div v-if="totalPages > 1" class="flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            :disabled="currentPage === 1"
+            class="min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-[13px] text-brand-muted dark:text-brand-muted-dark disabled:opacity-40 hover:border-brand-accent"
+            @click="currentPage--"
+          >Prev</button>
+          <button
+            v-for="p in pageWindow"
+            :key="p"
+            type="button"
+            class="tabular min-h-[44px] min-w-[44px] border text-[13px] font-semibold"
+            :class="p === currentPage
+              ? 'bg-brand-strong dark:bg-brand-strong-dark border-brand-strong dark:border-brand-strong-dark text-brand-bg dark:text-brand-bg-dark'
+              : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button
+            :disabled="currentPage === totalPages"
+            class="min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-[13px] text-brand-muted dark:text-brand-muted-dark disabled:opacity-40 hover:border-brand-accent"
+            @click="currentPage++"
+          >Next</button>
+        </div>
       </div>
     </div>
 
@@ -323,12 +236,15 @@ import { getAllRaces, updateRace, deleteRace } from '../services/raceService.js'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
-import { piInfo } from '../utils/piInfo.js'
+import { formatDateTime } from '../utils/dateFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
 import RaceResultsRoster from '../components/RaceResultsRoster.vue'
 import RaceForm from '../components/RaceForm.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
+import RaceRowActions from '../components/RaceRowActions.vue'
+import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -338,7 +254,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails },
   data() {
     return {
       loading: true,
@@ -363,6 +279,23 @@ export default {
     pageRows() {
       const start = (this.currentPage - 1) * this.pageSize
       return this.rows.slice(start, start + this.pageSize)
+    },
+    rangeStart() {
+      return this.total === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
+    },
+    rangeEnd() {
+      return Math.min(this.total, this.currentPage * this.pageSize)
+    },
+    // At most five numbered buttons, kept centred on the current page and
+    // clamped so the window never runs off either end of the range.
+    pageWindow() {
+      const span = 5
+      let first = Math.max(1, this.currentPage - Math.floor(span / 2))
+      const last = Math.min(this.totalPages, first + span - 1)
+      first = Math.max(1, last - span + 1)
+      const out = []
+      for (let p = first; p <= last; p++) out.push(p)
+      return out
     }
   },
   async mounted() {
@@ -407,7 +340,7 @@ export default {
     }
   },
   methods: {
-    piInfo,
+    formatDateTime,
     formatMs(ms) {
       return formatMsToTime(ms)
     },
@@ -425,15 +358,6 @@ export default {
     },
     toggleExpanded(id) {
       this.expanded[id] = !this.expanded[id]
-    },
-    formatDate(iso) {
-      return new Date(iso).toLocaleString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
     },
     editDefaultsFor(race) {
       return {

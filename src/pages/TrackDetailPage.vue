@@ -1,10 +1,10 @@
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-6 pb-24">
+  <div class="max-w-7xl mx-auto px-6 py-10">
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <div v-else-if="!track">
       <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Track not found.</p>
-      <router-link to="/" class="text-brand-accent text-sm hover:underline">← Back to tracks</router-link>
+      <router-link to="/tracks" class="text-brand-accent text-sm hover:underline">← Back to tracks</router-link>
     </div>
 
     <div v-else>
@@ -13,32 +13,31 @@
         v-if="track"
         :src="trackImage"
         :alt="track.name"
-        class="w-full h-40 sm:h-56 object-cover rounded border border-brand-border dark:border-brand-border-dark mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+        class="w-full h-28 sm:h-40 object-cover border border-brand-border dark:border-brand-border-dark mb-4 cursor-pointer grayscale hover:opacity-90 transition-opacity"
         @click="openImageModal"
       />
 
       <!-- Track header row -->
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div class="min-w-0 flex-1">
-          <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+          <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
             <em class="signal">{{ track.name }}</em>
           </h1>
-          <!-- <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mt-1">{{ currentVariation && currentVariation.name }}</p> -->
           <div class="flex flex-wrap gap-2 mt-3">
             <router-link
               v-for="v in track.track_variations"
               :key="v.id"
               :to="`/track/${track.slug}/${v.slug}`"
-              class="flex items-center gap-2 pl-1 pr-3 py-1 text-xs rounded border"
+              class="flex items-center gap-2 min-h-[44px] px-4 text-xs border"
               :class="v.id === currentVariation.id
-                ? 'bg-brand-accent text-white border-brand-accent'
-                : 'border-brand-border dark:border-brand-border-dark hover:border-brand-accent'"
+                ? 'bg-brand-accent dark:bg-brand-accent-dark text-white border-brand-accent dark:border-brand-accent-dark'
+                : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
             >
               <img
                 :src="variationImageUrl(track.slug, v.slug)"
                 alt=""
                 aria-hidden="true"
-                class="w-8 h-6 object-contain bg-black rounded"
+                class="w-8 h-6 object-contain map-art"
                 loading="lazy"
               />
               <span>{{ v.name }}</span>
@@ -49,16 +48,16 @@
         <div class="flex gap-2 w-full sm:w-auto sm:self-start shrink-0">
           <button
             type="button"
-            class="flex-1 sm:flex-none font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity"
+            class="flex-1 sm:flex-none min-h-[44px] font-display font-bold text-[13px] bg-brand-accent dark:bg-brand-accent-dark text-white px-6 hover:opacity-85 active:opacity-70 transition-opacity"
             @click="onAddRow"
           >
-            + Add Race
+            + Add race
           </button>
         </div>
       </div>
 
       <!-- Track Notes -->
-      <div class="mb-4 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
+      <div class="mb-8 rule-top pt-4">
         <div v-if="!notesEditMode" class="flex items-start gap-2">
           <div
             v-if="trackNotesHtml"
@@ -108,33 +107,46 @@
         v-if="currentVariation"
         :image-url="variationMapImage"
         :alt="currentVariation.name"
+        :track-slug="track.slug"
+        :variation-slug="currentVariation.slug"
+        :ring-label="`${track.name} — ${currentVariation.name}`"
         :annotations="annotations"
         @save="onSaveAnnotations"
       />
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-        <div class="col-span-2 sm:col-span-1 bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
-          <div class="flex items-center gap-2 mt-1">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ pbDisplay }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
+          <div class="mt-2">
             <LapTimeInput v-model="goalInputMs" @blur="onSaveGoal" />
           </div>
         </div>
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Personal best</div>
-          <div class="font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark mt-1">{{ pbDisplay }}</div>
+        <div class="pt-3 border-t-2 border-brand-accent dark:border-brand-accent-dark">
+          <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular mt-2"
+               :class="gapMs != null && gapMs <= 0 ? 'text-brand-good dark:text-brand-good-dark' : 'text-brand-accent dark:text-brand-accent-dark'">
+            {{ gapDisplay }}
+          </div>
         </div>
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-3">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races</div>
-          <div class="font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark mt-1">{{ races.length }}</div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ races.length }}</div>
         </div>
       </div>
 
       <LapTimeChart :races="races" :vehicles="vehicles" />
 
-      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark">
-        <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark px-3 pt-3 pb-2">
-          Logged <em class="signal">races</em>
-        </h2>
+      <div>
+        <div class="flex items-end justify-between border-b-2 border-brand-strong dark:border-brand-strong-dark pb-2.5 mb-1">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+            Logged races
+          </h2>
+          <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ races.length }} at this variation</span>
+        </div>
 
         <!-- Card layout (mobile) -->
         <div class="sm:hidden">
@@ -157,9 +169,9 @@
         <!-- Table layout (desktop) -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="bg-brand-bg dark:bg-brand-bg-dark text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">
+            <thead class="text-left ov text-brand-muted dark:text-brand-muted-dark">
               <tr>
-                <th class="py-2 pl-3 pr-3">When</th>
+                <th class="py-2.5 pl-0 pr-3">When</th>
                 <th class="py-2 pr-3">Vehicle</th>
                 <th class="py-2 pr-3">Class (PI)</th>
                 <th class="py-2 pr-3 text-center">Tune</th>
@@ -223,7 +235,9 @@
   </Teleport>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
@@ -237,225 +251,212 @@ import DOMPurify from 'dompurify'
 import { authStore } from '../stores/authStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import { quickAddStore, setOnRaceSaved, clearOnRaceSaved, openQuickAdd } from '../stores/quickAddStore.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
+import { useEventListener } from '../composables/useEventListener.js'
 
-export default {
-  name: 'TrackDetailPage',
-  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations },
-  data() {
-    return {
-      loading: true,
-      track: null,
-      currentVariation: null,
-      vehicles: [],
-      races: [],
-      goal: null,
-      goalInputMs: null,
-      annotations: [],
-      quickAddStore,
-      showImageModal: false,
-      notesEditMode: false,
-      notesInput: ''
+const route = useRoute()
+
+const loading = ref(true)
+const track = ref(null)
+const currentVariation = ref(null)
+const vehicles = ref([])
+const races = ref([])
+const goal = ref(null)
+const goalInputMs = ref(null)
+const annotations = ref([])
+const showImageModal = ref(false)
+const notesEditMode = ref(false)
+const notesInput = ref('')
+const notesTextarea = ref(null)
+
+// Non-reactive: just tracks whether *this page* was the one that opened the
+// quick-add modal, so its "saved" callback below only refreshes races when
+// closing a modal it opened itself (not one opened from somewhere else).
+let quickAddOpenedHere = false
+
+const trackImage = computed(() => track.value ? trackImageUrl(track.value.slug) : '')
+const goalLapTimeMs = computed(() => goal.value ? goal.value.goal_lap_time_ms : null)
+const personalBestMs = computed(() => {
+  const valid = races.value.map(r => r.lap_time_ms).filter(v => v != null)
+  if (!valid.length) return null
+  return Math.min(...valid)
+})
+const pbDisplay = computed(() => personalBestMs.value != null ? formatMsToTime(personalBestMs.value) : '—')
+const gapMs = computed(() => {
+  if (personalBestMs.value == null || goalLapTimeMs.value == null) return null
+  return personalBestMs.value - goalLapTimeMs.value
+})
+const gapDisplay = computed(() => gapMs.value == null ? '—' : formatDelta(gapMs.value))
+const trackNotes = computed(() => goal.value ? (goal.value.notes || '') : '')
+const trackNotesHtml = computed(() => trackNotes.value ? DOMPurify.sanitize(marked.parse(trackNotes.value)) : '')
+const variationMapImage = computed(() => (
+  track.value && currentVariation.value
+    ? variationImageUrl(track.value.slug, currentVariation.value.slug)
+    : ''
+))
+
+async function loadRaces() {
+  races.value = await getRacesByVariation(currentVariation.value.id)
+}
+async function loadGoal() {
+  goal.value = await getGoalForVariation(currentVariation.value.id)
+  goalInputMs.value = goal.value ? goal.value.goal_lap_time_ms : null
+}
+async function loadAnnotations() {
+  annotations.value = await getAnnotationsForVariation(currentVariation.value.id)
+}
+async function loadAll() {
+  loading.value = true
+  const slug = route.params.trackSlug
+  const variationSlug = route.params.variationSlug
+  try {
+    const [trackData, vehicleList] = await Promise.all([
+      getTrackBySlug(slug),
+      getVehicles()
+    ])
+    track.value = trackData
+    vehicles.value = vehicleList
+    currentVariation.value = findVariation(trackData, variationSlug)
+    if (!currentVariation.value) {
+      pushToast('Variation not found', 'error')
+      return
     }
-  },
-  computed: {
-    trackImage() {
-      return this.track ? trackImageUrl(this.track.slug) : ''
-    },
-    goalLapTimeMs() {
-      return this.goal ? this.goal.goal_lap_time_ms : null
-    },
-    personalBestMs() {
-      const valid = this.races
-        .map(r => r.lap_time_ms)
-        .filter(v => v != null)
-      if (!valid.length) return null
-      return Math.min(...valid)
-    },
-    pbDisplay() {
-      return this.personalBestMs != null ? formatMsToTime(this.personalBestMs) : '—'
-    },
-    trackNotes() {
-      return this.goal ? (this.goal.notes || '') : ''
-    },
-    trackNotesHtml() {
-      if (!this.trackNotes) return ''
-      return DOMPurify.sanitize(marked.parse(this.trackNotes))
-    },
-    variationMapImage() {
-      return this.track && this.currentVariation
-        ? variationImageUrl(this.track.slug, this.currentVariation.slug)
-        : ''
-    }
-  },
-  watch: {
-    '$route.params': {
-      handler() {
-        this.loadAll()
-      },
-      immediate: false
-    },
-    'quickAddStore.open'(isOpen) {
-      if (!isOpen && this._quickAddOpenedHere) {
-        this._quickAddOpenedHere = false
-        this.loadRaces()
-      }
-    }
-  },
-  async mounted() {
-    setOnRaceSaved((variationId) => {
-      if (variationId === this.currentVariation?.id) this.loadRaces()
-    })
-    await this.loadAll()
-    this._escHandler = (e) => { if (e.key === 'Escape') this.closeImageModal() }
-    document.addEventListener('keydown', this._escHandler)
-    this._addRaceHandler = this.onAddRaceKeydown.bind(this)
-    document.addEventListener('keydown', this._addRaceHandler)
-  },
-  beforeUnmount() {
-    document.removeEventListener('keydown', this._escHandler)
-    document.removeEventListener('keydown', this._addRaceHandler)
-  },
-  unmounted() {
-    quickAddStore.currentPageVariationId = null
-    clearOnRaceSaved()
-  },
-  methods: {
-    variationImageUrl,
-    async loadAll() {
-      this.loading = true
-      const slug = this.$route.params.trackSlug
-      const variationSlug = this.$route.params.variationSlug
-      try {
-        const [track, vehicles] = await Promise.all([
-          getTrackBySlug(slug),
-          getVehicles()
-        ])
-        this.track = track
-        this.vehicles = vehicles
-        this.currentVariation = findVariation(track, variationSlug)
-        if (!this.currentVariation) {
-          pushToast('Variation not found', 'error')
-          return
-        }
-        quickAddStore.currentPageVariationId = this.currentVariation.id
-        await Promise.all([this.loadRaces(), this.loadGoal(), this.loadAnnotations()])
-      } catch (err) {
-        pushToast(err.message || 'Failed to load track', 'error')
-      } finally {
-        this.loading = false
-      }
-    },
-    async loadRaces() {
-      this.races = await getRacesByVariation(this.currentVariation.id)
-    },
-    async loadGoal() {
-      this.goal = await getGoalForVariation(this.currentVariation.id)
-      this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
-    },
-    async loadAnnotations() {
-      this.annotations = await getAnnotationsForVariation(this.currentVariation.id)
-    },
-    onAddRaceKeydown(event) {
-      if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (this.isTypingTarget(event.target)) return
-      if (event.key !== 'a' && event.key !== 'A') return
-      if (this.quickAddStore.open || this.showImageModal) return
-      if (!this.currentVariation) return
-      event.preventDefault()
-      this.onAddRow()
-    },
-    isTypingTarget(el) {
-      if (!el) return false
-      const tag = (el.tagName || '').toLowerCase()
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
-      if (el.isContentEditable) return true
-      return false
-    },
-    openImageModal() {
-      this.showImageModal = true
-    },
-    closeImageModal() {
-      this.showImageModal = false
-    },
-    startEditNotes() {
-      this.notesInput = this.trackNotes
-      this.notesEditMode = true
-      this.$nextTick(() => this.$refs.notesTextarea?.focus())
-    },
-    cancelEditNotes() {
-      this.notesEditMode = false
-    },
-    async saveNotes() {
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.goal = await upsertGoal({
-          variationId: this.currentVariation.id,
-          goalLapTimeMs: this.goalLapTimeMs,
-          notes: this.notesInput,
-          userId
-        })
-        this.notesEditMode = false
-        pushToast('Notes saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save notes', 'error')
-      }
-    },
-    async onSaveAnnotations(annotations) {
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.annotations = await saveAnnotations({
-          variationId: this.currentVariation.id,
-          annotations,
-          userId
-        })
-        pushToast('Annotations saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save annotations', 'error')
-      }
-    },
-    onAddRow() {
-      this._quickAddOpenedHere = true
-      openQuickAdd(this.currentVariation.id)
-    },
-    async onUpdateRace({ id, patch }) {
-      try {
-        const updated = await updateRace(id, patch)
-        const idx = this.races.findIndex(r => r.id === id)
-        if (idx !== -1) this.races.splice(idx, 1, updated)
-        pushToast('Race updated', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to update race', 'error')
-      }
-    },
-    async onDeleteRace(id) {
-      try {
-        await deleteRace(id)
-        this.races = this.races.filter(r => r.id !== id)
-        pushToast('Race deleted', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to delete race', 'error')
-      }
-    },
-    async onSaveGoal() {
-      const ms = this.goalInputMs
-      if (!ms) return
-      if (this.goal && this.goal.goal_lap_time_ms === ms) return
-      try {
-        const userId = authStore.user && authStore.user.id
-        this.goal = await upsertGoal({
-          variationId: this.currentVariation.id,
-          goalLapTimeMs: ms,
-          notes: this.trackNotes,
-          userId
-        })
-        pushToast('Goal saved', 'success', 1500)
-      } catch (err) {
-        pushToast(err.message || 'Failed to save goal', 'error')
-      }
-    }
+    quickAddStore.currentPageVariationId = currentVariation.value.id
+    await Promise.all([loadRaces(), loadGoal(), loadAnnotations()])
+  } catch (err) {
+    pushToast(err.message || 'Failed to load track', 'error')
+  } finally {
+    loading.value = false
   }
 }
+
+function isTypingTarget(el) {
+  if (!el) return false
+  const tag = (el.tagName || '').toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
+  if (el.isContentEditable) return true
+  return false
+}
+
+function onAddRow() {
+  quickAddOpenedHere = true
+  openQuickAdd(currentVariation.value.id)
+}
+
+function onAddRaceKeydown(event) {
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+  if (isTypingTarget(event.target)) return
+  if (event.key !== 'a' && event.key !== 'A') return
+  if (quickAddStore.open || showImageModal.value) return
+  if (!currentVariation.value) return
+  event.preventDefault()
+  onAddRow()
+}
+
+function openImageModal() {
+  showImageModal.value = true
+}
+function closeImageModal() {
+  showImageModal.value = false
+}
+
+function startEditNotes() {
+  notesInput.value = trackNotes.value
+  notesEditMode.value = true
+  nextTick(() => notesTextarea.value?.focus())
+}
+function cancelEditNotes() {
+  notesEditMode.value = false
+}
+async function saveNotes() {
+  try {
+    const userId = authStore.user && authStore.user.id
+    goal.value = await upsertGoal({
+      variationId: currentVariation.value.id,
+      goalLapTimeMs: goalLapTimeMs.value,
+      notes: notesInput.value,
+      userId
+    })
+    notesEditMode.value = false
+    pushToast('Notes saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save notes', 'error')
+  }
+}
+
+async function onSaveAnnotations(newAnnotations) {
+  try {
+    const userId = authStore.user && authStore.user.id
+    annotations.value = await saveAnnotations({
+      variationId: currentVariation.value.id,
+      annotations: newAnnotations,
+      userId
+    })
+    pushToast('Annotations saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save annotations', 'error')
+  }
+}
+
+async function onUpdateRace({ id, patch }) {
+  try {
+    const updated = await updateRace(id, patch)
+    const idx = races.value.findIndex(r => r.id === id)
+    if (idx !== -1) races.value.splice(idx, 1, updated)
+    pushToast('Race updated', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to update race', 'error')
+  }
+}
+async function onDeleteRace(id) {
+  try {
+    await deleteRace(id)
+    races.value = races.value.filter(r => r.id !== id)
+    pushToast('Race deleted', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to delete race', 'error')
+  }
+}
+async function onSaveGoal() {
+  const ms = goalInputMs.value
+  if (!ms) return
+  if (goal.value && goal.value.goal_lap_time_ms === ms) return
+  try {
+    const userId = authStore.user && authStore.user.id
+    goal.value = await upsertGoal({
+      variationId: currentVariation.value.id,
+      goalLapTimeMs: ms,
+      notes: trackNotes.value,
+      userId
+    })
+    pushToast('Goal saved', 'success', 1500)
+  } catch (err) {
+    pushToast(err.message || 'Failed to save goal', 'error')
+  }
+}
+
+watch(() => route.params, loadAll)
+watch(() => quickAddStore.open, (isOpen) => {
+  if (!isOpen && quickAddOpenedHere) {
+    quickAddOpenedHere = false
+    loadRaces()
+  }
+})
+
+useEventListener(document, 'keydown', (e) => { if (e.key === 'Escape') closeImageModal() })
+useEventListener(document, 'keydown', onAddRaceKeydown)
+
+onMounted(() => {
+  setOnRaceSaved((variationId) => {
+    if (variationId === currentVariation.value?.id) loadRaces()
+  })
+  loadAll()
+})
+
+onUnmounted(() => {
+  quickAddStore.currentPageVariationId = null
+  clearOnRaceSaved()
+})
 </script>

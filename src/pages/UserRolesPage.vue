@@ -1,6 +1,6 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+  <div class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       User <em class="signal">Roles</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage admin access for registered users.</p>
@@ -151,75 +151,56 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 import { authStore } from '../stores/authStore.js'
 import { getAllUsers, setUserRole } from '../services/adminService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { formatDate } from '../utils/dateFormat.js'
+import { useEventListener } from '../composables/useEventListener.js'
 
-export default {
-  name: 'UserRolesPage',
-  data() {
-    return {
-      loading: true,
-      error: null,
-      users: [],
-      saving: false,
-      dialog: {
-        open: false,
-        user: null,
-        selectedRole: null
-      },
-      availableRoles: [
-        { value: 'user',  label: 'User',  description: 'Standard access' },
-        { value: 'admin', label: 'Admin', description: 'Access to admin pages' }
-      ]
-    }
-  },
-  computed: {
-    currentUserId() {
-      return authStore.user?.id ?? null
-    }
-  },
-  mounted() {
-    this._onKeydown = e => { if (e.key === 'Escape') this.closeDialog() }
-    window.addEventListener('keydown', this._onKeydown)
-  },
-  beforeUnmount() {
-    window.removeEventListener('keydown', this._onKeydown)
-  },
-  async created() {
-    try {
-      this.users = await getAllUsers()
-    } catch (err) {
-      this.error = err.message || 'Failed to load users'
-    } finally {
-      this.loading = false
-    }
-  },
-  methods: {
-    formatDate(iso) {
-      return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-    },
-    openDialog(user) {
-      this.dialog = { open: true, user, selectedRole: user.role }
-    },
-    closeDialog() {
-      this.dialog = { open: false, user: null, selectedRole: null }
-    },
-    async confirmChange() {
-      const { user, selectedRole } = this.dialog
-      this.saving = true
-      try {
-        await setUserRole(user.id, selectedRole)
-        user.role = selectedRole
-        pushToast(`${user.email} is now ${selectedRole}`, 'success')
-        this.closeDialog()
-      } catch (err) {
-        pushToast(err.message || 'Failed to update role', 'error')
-      } finally {
-        this.saving = false
-      }
-    }
+const loading = ref(true)
+const error = ref(null)
+const users = ref([])
+const saving = ref(false)
+const dialog = ref({ open: false, user: null, selectedRole: null })
+const availableRoles = [
+  { value: 'user', label: 'User', description: 'Standard access' },
+  { value: 'admin', label: 'Admin', description: 'Access to admin pages' }
+]
+
+const currentUserId = computed(() => authStore.user?.id ?? null)
+
+function openDialog(user) {
+  dialog.value = { open: true, user, selectedRole: user.role }
+}
+function closeDialog() {
+  dialog.value = { open: false, user: null, selectedRole: null }
+}
+async function confirmChange() {
+  const { user, selectedRole } = dialog.value
+  saving.value = true
+  try {
+    await setUserRole(user.id, selectedRole)
+    user.role = selectedRole
+    pushToast(`${user.email} is now ${selectedRole}`, 'success')
+    closeDialog()
+  } catch (err) {
+    pushToast(err.message || 'Failed to update role', 'error')
+  } finally {
+    saving.value = false
   }
 }
+
+useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog() })
+
+onMounted(async () => {
+  try {
+    users.value = await getAllUsers()
+  } catch (err) {
+    error.value = err.message || 'Failed to load users'
+  } finally {
+    loading.value = false
+  }
+})
 </script>

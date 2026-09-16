@@ -1,75 +1,51 @@
 <template>
-  <div
-    v-if="qa.open"
-    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-hidden"
-    @mousedown.self="onClose"
-    @keydown.esc.stop="onClose"
-  >
-    <div
-      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="quick-add-title"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h2 id="quick-add-title" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
-          Quick add <em class="signal">race</em>
-        </h2>
+  <BaseModal :open="qa.open" @close="onClose">
+    <template #title>Quick add <em class="signal">race</em></template>
+
+    <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
+
+    <div v-else-if="!chosen">
+      <TrackVariationPicker :tracks="tracks" @select="onTrackSelected" />
+    </div>
+
+    <div v-else>
+      <div class="mb-4 flex items-center justify-between gap-3 text-sm">
+        <div class="flex items-center gap-3 min-w-0">
+          <img
+            :src="variationImageUrl(chosen.track.slug, chosen.variation.slug)"
+            :alt="chosen.variation.name"
+            class="w-16 h-12 object-contain bg-black rounded shrink-0"
+            loading="lazy"
+          />
+          <div class="min-w-0">
+            <div class="font-semibold truncate text-brand-text dark:text-brand-text-dark">{{ chosen.track.name }}</div>
+            <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark truncate">{{ chosen.variation.name }}</div>
+          </div>
+        </div>
         <button
           type="button"
-          class="text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
-          aria-label="Close"
-          @click="onClose"
+          class="text-xs text-brand-accent hover:underline shrink-0"
+          @click="resetChoice"
         >
-          ✕
+          Change track
         </button>
       </div>
 
-      <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
-
-      <div v-else-if="!chosen">
-        <TrackVariationPicker :tracks="tracks" @select="onTrackSelected" />
-      </div>
-
-      <div v-else>
-        <div class="mb-4 flex items-center justify-between gap-3 text-sm">
-          <div class="flex items-center gap-3 min-w-0">
-            <img
-              :src="variationImageUrl(chosen.track.slug, chosen.variation.slug)"
-              :alt="chosen.variation.name"
-              class="w-16 h-12 object-contain bg-black rounded shrink-0"
-              loading="lazy"
-            />
-            <div class="min-w-0">
-              <div class="font-semibold truncate text-brand-text dark:text-brand-text-dark">{{ chosen.track.name }}</div>
-              <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark truncate">{{ chosen.variation.name }}</div>
-            </div>
-          </div>
-          <button
-            type="button"
-            class="text-xs text-brand-accent hover:underline shrink-0"
-            @click="resetChoice"
-          >
-            Change track
-          </button>
-        </div>
-
-        <RaceForm
-          :vehicles="vehicles"
-          :vehicle-pi-map="vehiclePiMap"
-          :defaults="formDefaults"
-          :last-race="lastRace"
-          :goal-lap-time-ms="goalLapTimeMs"
-          :saving="saving"
-          @submit="onSaveRace"
-          @cancel="onClose"
-        />
-      </div>
+      <RaceForm
+        :vehicles="vehicles"
+        :vehicle-pi-map="vehiclePiMap"
+        :defaults="formDefaults"
+        :goal-lap-time-ms="goalLapTimeMs"
+        :saving="saving"
+        @submit="onSaveRace"
+        @cancel="onClose"
+      />
     </div>
-  </div>
+  </BaseModal>
 </template>
 
 <script>
+import BaseModal from './BaseModal.vue'
 import TrackVariationPicker from './TrackVariationPicker.vue'
 import RaceForm from './RaceForm.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
@@ -78,13 +54,13 @@ import { prefsStore } from '../stores/prefsStore.js'
 import { authStore } from '../stores/authStore.js'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
-import { createRace, getRacesByVariation, getVehiclePiMap } from '../services/raceService.js'
+import { createRace, getVehiclePiMap } from '../services/raceService.js'
 import { getGoalForVariation } from '../services/goalService.js'
 import { pushToast } from '../stores/toastStore.js'
 
 export default {
   name: 'QuickAddModal',
-  components: { TrackVariationPicker, RaceForm },
+  components: { BaseModal, TrackVariationPicker, RaceForm },
   data() {
     return {
       qa: quickAddStore,
@@ -94,7 +70,6 @@ export default {
       saving: false,
       chosen: null,
       vehiclePiMap: {},
-      lastRace: null,
       goalLapTimeMs: null
     }
   },
@@ -108,17 +83,9 @@ export default {
   },
   watch: {
     'qa.open'(isOpen) {
-      if (isOpen) {
-        document.body.style.overflow = 'hidden'
-        this.onOpened()
-      } else {
-        document.body.style.overflow = ''
-        this.resetState()
-      }
+      if (isOpen) this.onOpened()
+      else this.resetState()
     }
-  },
-  unmounted() {
-    document.body.style.overflow = ''
   },
   methods: {
     variationImageUrl,
@@ -150,25 +117,19 @@ export default {
     async onTrackSelected({ track, variation }) {
       this.chosen = { track, variation }
       try {
-        const [races, goal] = await Promise.all([
-          getRacesByVariation(variation.id),
-          getGoalForVariation(variation.id)
-        ])
-        this.lastRace = races[0] || null
+        this.goalLapTimeMs = null
+        const goal = await getGoalForVariation(variation.id)
         this.goalLapTimeMs = goal ? goal.goal_lap_time_ms : null
       } catch {
-        this.lastRace = null
         this.goalLapTimeMs = null
       }
     },
     resetChoice() {
       this.chosen = null
-      this.lastRace = null
       this.goalLapTimeMs = null
     },
     resetState() {
       this.chosen = null
-      this.lastRace = null
       this.goalLapTimeMs = null
       this.saving = false
     },

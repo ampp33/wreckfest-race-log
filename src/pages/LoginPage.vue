@@ -1,17 +1,18 @@
 <template>
   <div class="min-h-screen flex items-center justify-center px-6">
-    <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-6 sm:p-8 w-full max-w-md">
-      <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-3">
-        Wreckfest Race <em class="signal">Log</em>
+    <div class="rule-top w-full max-w-md pt-6">
+      <div class="ov text-brand-accent dark:text-brand-accent-dark mb-4">Wreckfest Race Log</div>
+      <h1 class="font-heading font-normal tracking-normal leading-[0.86] text-display-sm text-brand-text dark:text-brand-text-dark mb-4">
+        {{ mode === 'signin' ? 'Sign in' : 'Create an account' }}
       </h1>
-      <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
+      <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mb-8">
         {{ mode === 'signin' ? 'Sign in to log your races.' : 'Create an account to start logging races.' }}
       </p>
 
       <button
         type="button"
         :disabled="submitting"
-        class="w-full flex items-center justify-center gap-2 font-body font-medium border border-brand-border dark:border-brand-border-dark rounded px-6 py-3 hover:bg-brand-bg dark:hover:bg-brand-bg-dark transition-colors disabled:opacity-60"
+        class="w-full min-h-[44px] flex items-center justify-center gap-2.5 font-body font-medium border border-brand-border dark:border-brand-border-dark px-6 hover:border-brand-accent dark:hover:border-brand-accent-dark disabled:opacity-60"
         @click="onGoogleSignIn"
       >
         <svg viewBox="0 0 18 18" class="w-4 h-4" aria-hidden="true">
@@ -23,15 +24,15 @@
         Continue with Google
       </button>
 
-      <div class="flex items-center gap-3 my-4">
+      <div class="flex items-center gap-3 my-5">
         <div class="flex-1 h-px bg-brand-border dark:bg-brand-border-dark"></div>
-        <span class="font-body text-[11px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark">or</span>
+        <span class="ov text-brand-muted dark:text-brand-muted-dark">or</span>
         <div class="flex-1 h-px bg-brand-border dark:bg-brand-border-dark"></div>
       </div>
 
-      <form @submit.prevent="onSubmit" class="space-y-3">
+      <form @submit.prevent="onSubmit" class="space-y-4">
         <div>
-          <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+          <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
             Email
           </label>
           <input
@@ -39,13 +40,13 @@
             type="email"
             required
             autocomplete="email"
-            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+          <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
             Password
           </label>
           <input
@@ -54,7 +55,7 @@
             required
             minlength="6"
             :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
-            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
             placeholder="••••••••"
           />
         </div>
@@ -62,13 +63,13 @@
         <button
           type="submit"
           :disabled="submitting"
-          class="w-full font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-60"
+          class="ov w-full min-h-[44px] flex items-center justify-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85 disabled:opacity-60"
         >
           {{ submitButtonLabel }}
         </button>
       </form>
 
-      <p class="mt-4 font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark text-center">
+      <p class="mt-6 font-body text-[15px] text-brand-muted dark:text-brand-muted-dark text-center">
         {{ mode === 'signin' ? "Don't have an account?" : 'Already have an account?' }}
         <button
           type="button"
@@ -79,8 +80,8 @@
         </button>
       </p>
 
-      <p v-if="message" class="mt-4 text-sm text-green-600">{{ message }}</p>
-      <p v-if="errorMessage" class="mt-4 text-sm text-red-600">{{ errorMessage }}</p>
+      <p v-if="message" class="mt-5 text-sm text-brand-good dark:text-brand-good-dark">{{ message }}</p>
+      <p v-if="errorMessage" class="mt-5 text-sm text-brand-accent dark:text-brand-accent-dark">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
@@ -110,7 +111,7 @@ export default {
       if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
         return target
       }
-      return '/'
+      return '/tracks'
     }
   },
   methods: {

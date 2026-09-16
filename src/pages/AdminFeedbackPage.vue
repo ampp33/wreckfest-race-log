@@ -1,36 +1,36 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+  <div class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       <em class="signal">Feedback</em>
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
+    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10 max-w-xl">
       All user-submitted feedback, newest first.
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
-    <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
+    <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else-if="!entries.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
       No feedback has been submitted yet.
     </div>
 
-    <div v-else class="space-y-3">
+    <div v-else class="rule-top divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
       <div
         v-for="entry in entries"
         :key="entry.id"
-        class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4"
+        class="py-5"
       >
-        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-2">
-          <span class="font-body font-medium text-brand-text dark:text-brand-text-dark">{{ entry.user_email }}</span>
-          <span class="text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(entry.created_at) }}</span>
+        <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-3">
+          <span class="font-body font-bold text-brand-text dark:text-brand-text-dark">{{ entry.user_email }}</span>
+          <span class="ov tabular text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(entry.created_at) }}</span>
         </div>
-        <p class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark whitespace-pre-wrap mb-2">{{ entry.feedback_text }}</p>
+        <p class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark whitespace-pre-wrap mb-3">{{ entry.feedback_text }}</p>
         <a
           :href="entry.url"
           target="_blank"
           rel="noopener noreferrer"
-          class="text-xs text-brand-accent hover:underline break-all"
+          class="ov text-brand-accent dark:text-brand-accent-dark hover:underline break-all"
         >
           {{ entry.url }}
         </a>
@@ -41,6 +41,7 @@
 
 <script>
 import { getAllFeedback } from '../services/adminService.js'
+import { formatDateTime } from '../utils/dateFormat.js'
 
 export default {
   name: 'AdminFeedbackPage',
@@ -61,9 +62,7 @@ export default {
     }
   },
   methods: {
-    formatDate(iso) {
-      return new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-    }
+    formatDate: formatDateTime
   }
 }
 </script>

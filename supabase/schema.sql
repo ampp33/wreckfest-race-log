@@ -696,6 +696,21 @@ begin
 end;
 $$;
 
+-- Returns the total number of races logged, site-wide — intentionally
+-- PUBLIC (no is_admin check, granted to anon). Used by the public home
+-- page to show a live "races logged" count to signed-out visitors, who
+-- can't otherwise see into the `races` table (its RLS policies are all
+-- `to authenticated ... using (auth.uid() = user_id)` — see above).
+create or replace function public.get_total_race_count()
+returns bigint
+language sql
+security definer stable set search_path = public
+as $$
+    select count(*) from public.races
+$$;
+
+grant execute on function public.get_total_race_count to anon, authenticated;
+
 -- Returns all feedback entries with the submitting user's email, newest
 -- first — admin only. The "feedback select admin" RLS policy already
 -- lets an admin select these rows directly, but a plain select() from

@@ -6,13 +6,13 @@
     @keydown.esc.stop="onCancel"
   >
     <div
-      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full max-w-sm p-4 sm:p-6 border border-brand-border dark:border-brand-border-dark"
+      class="bg-brand-bg dark:bg-brand-bg-dark w-full max-w-sm p-5 sm:p-6 border-2 border-brand-strong dark:border-brand-strong-dark"
       role="alertdialog"
       aria-modal="true"
       :aria-labelledby="titleId"
       :aria-describedby="message ? descId : undefined"
     >
-      <h2 :id="titleId" class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-2">
+      <h2 :id="titleId" class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-2">
         {{ title }}
       </h2>
       <p v-if="message" :id="descId" class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-5">
@@ -23,15 +23,14 @@
         <button
           ref="cancelBtn"
           type="button"
-          class="w-full sm:w-auto px-4 py-2 rounded border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+          class="ov w-full sm:w-auto min-h-[44px] px-5 flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
           @click="onCancel"
         >
           {{ cancelLabel }}
         </button>
         <button
           type="button"
-          class="w-full sm:w-auto px-4 py-2 rounded text-white"
-          :class="danger ? 'bg-red-600 hover:bg-red-700' : 'bg-brand-accent hover:opacity-90'"
+          class="ov w-full sm:w-auto min-h-[44px] px-5 flex items-center justify-center text-white bg-brand-accent dark:bg-brand-accent-dark hover:opacity-85"
           @click="onConfirm"
         >
           {{ confirmLabel }}
@@ -51,8 +50,7 @@ export default {
     title: { type: String, default: 'Are you sure?' },
     message: { type: String, default: '' },
     confirmLabel: { type: String, default: 'Delete' },
-    cancelLabel: { type: String, default: 'Cancel' },
-    danger: { type: Boolean, default: true }
+    cancelLabel: { type: String, default: 'Cancel' }
   },
   emits: ['confirm', 'cancel'],
   data() {

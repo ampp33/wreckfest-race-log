@@ -2,25 +2,24 @@
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
       <div class="col-span-2 min-w-0 overflow-hidden">
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Date / time
         </label>
         <input
-          ref="datetimeInput"
           v-model="form.datetime"
           type="datetime-local"
-          class="w-full min-w-0 max-w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-w-0 max-w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Vehicle
         </label>
         <select
           ref="vehicleInput"
           v-model="form.vehicleId"
-          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         >
           <option :value="null">— none —</option>
           <option v-for="v in vehicles" :key="v.id" :value="v.id">
@@ -30,28 +29,28 @@
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Class (PI)
         </label>
         <div class="flex gap-2">
           <div
-            class="w-10 h-10 shrink-0 flex items-center justify-center rounded font-display font-black text-white text-base"
+            class="w-11 min-h-[44px] shrink-0 flex items-center justify-center font-display font-black text-white text-base"
             :style="{ backgroundColor: piColor }"
           >{{ piClass }}</div>
           <input
             :value="form.performanceIndex"
             type="text"
             inputmode="numeric"
-            class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+            class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
             placeholder="0"
             @input="form.performanceIndex = $event.target.value.replace(/[^0-9]/g, '')"
           />
         </div>
       </div>
 
-      <div class="col-span-2 rounded bg-brand-surface dark:bg-brand-bg-dark px-3 py-1 space-y-1">
+      <div class="col-span-2 bg-brand-surface dark:bg-brand-surface-dark px-4 py-1 space-y-1">
         <div v-for="(cfg, i) in tuningSliderConfig" :key="i">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark mb-0 mt-3">{{ cfg.label }}</div>
+          <div class="ov block text-brand-text dark:text-brand-text-dark mb-0 mt-3">{{ cfg.label }}</div>
           <div class="relative flex items-center">
             <div class="absolute inset-x-0 h-px bg-brand-border dark:bg-brand-border-dark" />
             <div class="relative flex justify-between w-full">
@@ -83,7 +82,7 @@
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Tuning
         </label>
         <input
@@ -91,59 +90,59 @@
           type="number"
           min="0"
           inputmode="numeric"
-          class="w-full h-10 rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
         />
       </div>
       
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Place
         </label>
         <input
           :value="form.place"
           type="text"
           inputmode="numeric"
-          class="w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
           placeholder="1"
           @input="form.place = $event.target.value.replace(/[^0-9]/g, '')"
         />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Lap time<template v-if="goalLapTimeMs"> (🎯 {{ formatMsToTime(goalLapTimeMs) }})</template>
         </label>
         <LapTimeInput v-model="form.lapTimeMs" />
       </div>
 
       <div>
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Total time (optional)
         </label>
         <LapTimeInput v-model="form.totalTimeMs" />
       </div>
 
       <div class="col-span-2">
-        <label class="block font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark mb-1">
+        <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Notes (Ctrl+Enter to save)
         </label>
         <textarea
           ref="notesInput"
           v-model="form.notes"
           rows="2"
-          class="w-full font-mono rounded border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 resize-none"
+          class="w-full min-h-[44px] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark px-3 py-2 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark resize-none"
           @input="autoExpand"
         />
       </div>
 
     </div>
 
-    <p v-if="errorMessage" class="mt-3 text-sm text-red-600">{{ errorMessage }}</p>
+    <p v-if="errorMessage" class="mt-3 text-sm text-brand-accent dark:text-brand-accent-dark">{{ errorMessage }}</p>
 
     <div class="mt-4 flex items-center justify-between gap-3">
       <button
         type="button"
-        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
+        class="ov min-h-[44px] flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark"
         @click="$emit('cancel')"
       >
         Cancel (Esc)
@@ -152,7 +151,7 @@
         <button
           type="submit"
           :disabled="saving"
-          class="font-display font-black uppercase tracking-widest bg-brand-accent text-white px-6 py-3 rounded-none hover:opacity-85 active:opacity-70 transition-opacity disabled:opacity-60"
+          class="ov min-h-[44px] px-7 flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85 disabled:opacity-60"
         >
           {{ saving ? 'Saving...' : 'Save (Enter)' }}
         </button>
@@ -161,12 +160,14 @@
   </form>
 </template>
 
-<script>
+<script setup>
+import { reactive, ref, computed, watch, nextTick, onMounted } from 'vue'
 import LapTimeInput from './LapTimeInput.vue'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { piInfo } from '../utils/piInfo.js'
+import { useEventListener } from '../composables/useEventListener.js'
 
-const TUNING_SLIDER_CONFIG = [
+const tuningSliderConfig = [
   { label: 'Suspension',    left: 'SOFT',  center: 'STANDARD', right: 'STIFF'  },
   { label: 'Gear Ratio',    left: 'SHORT', center: 'STANDARD', right: 'LONG'   },
   { label: 'Differential',  left: 'OPEN',  center: 'LIMITED',  right: 'LOCKED' },
@@ -206,113 +207,94 @@ function emptyForm() {
   }
 }
 
-export default {
-  name: 'RaceForm',
-  components: { LapTimeInput },
-  props: {
-    vehicles: { type: Array, required: true },
-    vehiclePiMap: { type: Object, default: () => ({}) },
-    defaults: { type: Object, default: () => ({}) },
-    lastRace: { type: Object, default: null },
-    goalLapTimeMs: { type: Number, default: null },
-    saving: { type: Boolean, default: false },
-    autofocus: { type: Boolean, default: true }
-  },
-  emits: ['submit', 'cancel'],
-  data() {
-    return {
-      form: { ...emptyForm(), ...this.defaults },
-      errorMessage: '',
-      sliders: parseSliders(this.defaults.tuning),
-      tuningSliderConfig: TUNING_SLIDER_CONFIG
-    }
-  },
-  watch: {
-    'form.tuning'(val) {
-      if (val !== slidersToTuning(this.sliders)) {
-        const parsed = parseSliders(val)
-        parsed.forEach((v, i) => this.sliders.splice(i, 1, v))
-      }
-    },
-    'form.vehicleId': {
-      handler(vehicleId) {
-        if (!vehicleId) return
-        const pi = this.vehiclePiMap[vehicleId]
-        if (pi != null) this.form.performanceIndex = String(pi)
-      },
-      immediate: true
-    }
-  },
-  computed: {
-    canDuplicateLast() {
-      return Boolean(this.lastRace)
-    },
-    piClass() {
-      return piInfo(this.form.performanceIndex).cls
-    },
-    piColor() {
-      return piInfo(this.form.performanceIndex).color
-    }
-  },
-  mounted() {
-    if (this.autofocus) {
-      this.$nextTick(() => this.$refs.vehicleInput && this.$refs.vehicleInput.focus())
-    }
-    this.autoExpand()
-  },
-  methods: {
-    formatMsToTime,
-    piInfo,
-    setSlider(i, pos) {
-      this.sliders.splice(i, 1, pos)
-      this.form.tuning = slidersToTuning(this.sliders)
-    },
-    onFormKeydown(event) {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        this.$emit('cancel')
-        return
-      }
-      // Enter submits form unless we're inside the textarea (use Ctrl+Enter
-      // there). This matches the spec's "fast input" rule.
-      if (event.key === 'Enter') {
-        const inTextarea = event.target && event.target.tagName === 'TEXTAREA'
-        if (inTextarea && !event.ctrlKey && !event.metaKey) return
-        event.preventDefault()
-        this.onSubmit()
-      }
-    },
-    autoExpand() {
-      const el = this.$refs.notesInput
-      if (!el) return
-      el.style.height = 'auto'
-      el.style.height = `${Math.min(el.scrollHeight, 200)}px`
-    },
-    onDuplicateLast() {
-      if (!this.lastRace) return
-      this.form.vehicleId = this.lastRace.vehicle_id || null
-      this.form.tuning = this.lastRace.tuning ?? null
-      this.form.place = this.lastRace.place || ''
-      this.form.lapTimeMs = this.lastRace.lap_time_ms || null
-      this.form.totalTimeMs = this.lastRace.total_time_ms || null
-      this.form.performanceIndex = this.lastRace.performance_index != null ? String(this.lastRace.performance_index) : '0'
-      this.form.notes = this.lastRace.notes || ''
-    },
-    onSubmit() {
-      this.errorMessage = ''
-      const pi = parseInt(this.form.performanceIndex, 10)
-      const payload = {
-        datetime: new Date(this.form.datetime).toISOString(),
-        vehicle_id: this.form.vehicleId || null,
-        tuning: this.form.tuning ?? null,
-        place: this.form.place || null,
-        lap_time_ms: this.form.lapTimeMs,
-        total_time_ms: this.form.totalTimeMs,
-        performance_index: isNaN(pi) ? null : pi,
-        notes: this.form.notes || null
-      }
-      this.$emit('submit', payload)
-    }
+const props = defineProps({
+  vehicles: { type: Array, required: true },
+  vehiclePiMap: { type: Object, default: () => ({}) },
+  defaults: { type: Object, default: () => ({}) },
+  goalLapTimeMs: { type: Number, default: null },
+  saving: { type: Boolean, default: false },
+  autofocus: { type: Boolean, default: true }
+})
+
+const emit = defineEmits(['submit', 'cancel'])
+
+const form = reactive({ ...emptyForm(), ...props.defaults })
+const errorMessage = ref('')
+const sliders = ref(parseSliders(props.defaults.tuning))
+
+const vehicleInput = ref(null)
+const notesInput = ref(null)
+
+const piClass = computed(() => piInfo(form.performanceIndex).cls)
+const piColor = computed(() => piInfo(form.performanceIndex).color)
+
+watch(() => form.tuning, (val) => {
+  if (val !== slidersToTuning(sliders.value)) {
+    const parsed = parseSliders(val)
+    parsed.forEach((v, i) => sliders.value.splice(i, 1, v))
+  }
+})
+
+watch(() => form.vehicleId, (vehicleId) => {
+  if (!vehicleId) return
+  const pi = props.vehiclePiMap[vehicleId]
+  if (pi != null) form.performanceIndex = String(pi)
+}, { immediate: true })
+
+function setSlider(i, pos) {
+  sliders.value.splice(i, 1, pos)
+  form.tuning = slidersToTuning(sliders.value)
+}
+
+function onFormKeydown(event) {
+  // Enter submits form unless we're inside the textarea (use Ctrl+Enter
+  // there). This matches the spec's "fast input" rule.
+  if (event.key === 'Enter') {
+    const inTextarea = event.target && event.target.tagName === 'TEXTAREA'
+    if (inTextarea && !event.ctrlKey && !event.metaKey) return
+    event.preventDefault()
+    onSubmit()
   }
 }
+
+function autoExpand() {
+  const el = notesInput.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 200)}px`
+}
+
+function onSubmit() {
+  errorMessage.value = ''
+  const pi = parseInt(form.performanceIndex, 10)
+  const payload = {
+    datetime: new Date(form.datetime).toISOString(),
+    vehicle_id: form.vehicleId || null,
+    tuning: form.tuning ?? null,
+    place: form.place || null,
+    lap_time_ms: form.lapTimeMs,
+    total_time_ms: form.totalTimeMs,
+    performance_index: isNaN(pi) ? null : pi,
+    notes: form.notes || null
+  }
+  emit('submit', payload)
+}
+
+// Escape is bound at the document level rather than on the form, because
+// when editing an existing race (autofocus: false) nothing has focus when
+// the form mounts — the "Edit" button that had it is gone — so a keydown
+// on the form itself would never see the first Escape press.
+useEventListener(document, 'keydown', (event) => {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    emit('cancel')
+  }
+})
+
+onMounted(() => {
+  if (props.autofocus) {
+    nextTick(() => vehicleInput.value && vehicleInput.value.focus())
+  }
+  autoExpand()
+})
 </script>

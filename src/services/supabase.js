@@ -9,6 +9,12 @@ if (!url || !anonKey) {
   console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
 }
 
+// Re-exported for pages that need to display these (e.g. the telemetry tool
+// setup guide) — the anon key is a public identifier, not a secret, per
+// docs/external-api.md.
+export const supabaseUrl = url
+export const supabaseAnonKey = anonKey
+
 export const supabase = createClient(url, anonKey, {
   auth: {
     persistSession: true,

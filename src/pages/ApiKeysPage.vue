@@ -1,10 +1,10 @@
 <template>
-  <div class="max-w-4xl mx-auto px-6 py-6 pb-24">
-    <h1 class="font-display font-black tracking-tighter leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+  <div class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       API <em class="signal">Keys</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
-      Generate keys for the Wreckfest sidecar app so it can auto-submit race results on your behalf.
+      Generate keys for the Telemetry plugin so it can auto-submit race results on your behalf.
     </p>
 
     <!-- New key reveal banner -->
@@ -130,6 +130,7 @@
 <script>
 import { getApiKeys, createApiKey, deleteApiKey } from '../services/apiKeyService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { formatDate } from '../utils/dateFormat.js'
 
 export default {
   name: 'ApiKeysPage',
@@ -195,9 +196,7 @@ export default {
         // fallback: the input is already selectable
       }
     },
-    formatDate(iso) {
-      return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-    }
+    formatDate
   }
 }
 </script>

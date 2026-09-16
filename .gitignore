@@ -9,3 +9,12 @@ dist
 .claude
 sidecar
 *.traineddata
+
+# local design references (images, not source)
+references/
+.design*
+# generated dev tool — build with: node tools/make-line-editor.mjs local
+public/line-editor.html
+dist-editor.html
+
+supabase/

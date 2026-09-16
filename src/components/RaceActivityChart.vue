@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+  <div class="rule-top pt-5">
     <div class="flex items-center justify-between mb-4">
-      <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-text dark:text-brand-text-dark">Race Activity</div>
+      <div class="ov text-brand-muted dark:text-brand-muted-dark">Race activity</div>
       <div class="flex gap-1">
         <button
           v-for="tab in tabs"
@@ -21,7 +21,8 @@
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import {
   Chart,
   BarController,
@@ -30,8 +31,9 @@ import {
   CategoryScale,
   Tooltip
 } from 'chart.js'
-import { markRaw } from 'vue'
 import { prefsStore } from '../stores/prefsStore.js'
+import { useChart } from '../composables/useChart.js'
+import { getChartTheme } from '../utils/chartTheme.js'
 
 Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip)
 
@@ -48,173 +50,144 @@ function addDays(date, n) {
   return d
 }
 
-export default {
-  name: 'RaceActivityChart',
-  props: {
-    hourlyCounts: { type: Array, default: () => new Array(24).fill(0) },
-    dailyCounts: { type: Object, default: () => ({}) }
-  },
-  data() {
-    return {
-      chart: null,
-      activeTab: 'week',
-      tabs: [
-        { key: 'day', label: 'Day' },
-        { key: 'week', label: 'Week' },
-        { key: 'month', label: 'Month' },
-        { key: 'year', label: 'Year' }
-      ]
+const props = defineProps({
+  hourlyCounts: { type: Array, default: () => new Array(24).fill(0) },
+  dailyCounts: { type: Object, default: () => ({}) },
+  // Which tab is selected on mount — e.g. the homepage demo opens on
+  // 'year' so it reads as races-per-month without requiring a click.
+  initialTab: { type: String, default: 'week' }
+})
+
+const tabs = [
+  { key: 'day', label: 'Day' },
+  { key: 'week', label: 'Week' },
+  { key: 'month', label: 'Month' },
+  { key: 'year', label: 'Year' }
+]
+
+const canvas = ref(null)
+const { chart, render } = useChart(canvas)
+const activeTab = ref(props.initialTab)
+
+const isDark = computed(() => prefsStore.darkMode)
+
+const chartData = computed(() => {
+  const now = new Date()
+  if (activeTab.value === 'day') {
+    const labels = Array.from({ length: 24 }, (_, h) => {
+      const ampm = h < 12 ? 'am' : 'pm'
+      const hour = h % 12 || 12
+      return `${hour}${ampm}`
+    })
+    return { labels, data: [...props.hourlyCounts] }
+  }
+
+  if (activeTab.value === 'week') {
+    const days = Array.from({ length: 7 }, (_, i) => addDays(now, i - 6))
+    const labels = days.map(d => d.toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' }))
+    const data = days.map(d => props.dailyCounts[localDateStr(d)] || 0)
+    return { labels, data }
+  }
+
+  if (activeTab.value === 'month') {
+    const days = Array.from({ length: 30 }, (_, i) => addDays(now, i - 29))
+    const labels = days.map(d => d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }))
+    const data = days.map(d => props.dailyCounts[localDateStr(d)] || 0)
+    return { labels, data }
+  }
+
+  // year: past 12 months
+  const months = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    months.push(d)
+  }
+  const labels = months.map(d => d.toLocaleDateString(undefined, { month: 'short' }))
+  const data = months.map(d => {
+    const y = d.getFullYear()
+    const m = d.getMonth()
+    let total = 0
+    for (const [dateStr, count] of Object.entries(props.dailyCounts)) {
+      const pd = new Date(dateStr + 'T00:00:00')
+      if (pd.getFullYear() === y && pd.getMonth() === m) total += count
     }
-  },
-  computed: {
-    isDark() {
-      return prefsStore.darkMode
+    return total
+  })
+  return { labels, data }
+})
+
+function renderChart() {
+  if (!canvas.value) return
+
+  const theme = getChartTheme(isDark.value)
+  const barColor = '#C41E1E'
+  const { labels, data } = chartData.value
+
+  render({
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: barColor + 'cc',
+        borderColor: barColor,
+        borderWidth: 1,
+        borderRadius: 3
+      }]
     },
-    chartData() {
-      const now = new Date()
-      if (this.activeTab === 'day') {
-        const labels = Array.from({ length: 24 }, (_, h) => {
-          const ampm = h < 12 ? 'am' : 'pm'
-          const hour = h % 12 || 12
-          return `${hour}${ampm}`
-        })
-        return { labels, data: [...this.hourlyCounts] }
-      }
-
-      if (this.activeTab === 'week') {
-        const days = Array.from({ length: 7 }, (_, i) => addDays(now, i - 6))
-        const labels = days.map(d => d.toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' }))
-        const data = days.map(d => this.dailyCounts[localDateStr(d)] || 0)
-        return { labels, data }
-      }
-
-      if (this.activeTab === 'month') {
-        const days = Array.from({ length: 30 }, (_, i) => addDays(now, i - 29))
-        const labels = days.map(d => d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }))
-        const data = days.map(d => this.dailyCounts[localDateStr(d)] || 0)
-        return { labels, data }
-      }
-
-      // year: past 12 months
-      const months = []
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        months.push(d)
-      }
-      const labels = months.map(d => d.toLocaleDateString(undefined, { month: 'short' }))
-      const data = months.map(d => {
-        const y = d.getFullYear()
-        const m = d.getMonth()
-        let total = 0
-        for (const [dateStr, count] of Object.entries(this.dailyCounts)) {
-          const pd = new Date(dateStr + 'T00:00:00')
-          if (pd.getFullYear() === y && pd.getMonth() === m) total += count
-        }
-        return total
-      })
-      return { labels, data }
-    }
-  },
-  watch: {
-    chartData() {
-      this.$nextTick(() => {
-        if (this.chart) {
-          const { labels, data } = this.chartData
-          this.chart.data.labels = labels
-          this.chart.data.datasets[0].data = data
-          this.chart.update()
-        } else {
-          this.renderChart()
-        }
-      })
-    },
-    isDark() {
-      this.$nextTick(() => this.renderChart())
-    }
-  },
-  mounted() {
-    this.renderChart()
-  },
-  beforeUnmount() {
-    this.destroyChart()
-  },
-  methods: {
-    destroyChart() {
-      if (this.chart) {
-        this.chart.stop()
-        this.chart.destroy()
-        this.chart = null
-      }
-    },
-    renderChart() {
-      this.destroyChart()
-      if (!this.$refs.canvas) return
-
-      const dark = this.isDark
-      const gridColor = dark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
-      const tickColor = dark ? '#B4B2A9' : '#5F5E5A'
-      const barColor = '#C41E1E'
-
-      const { labels, data } = this.chartData
-
-      this.chart = markRaw(new Chart(this.$refs.canvas, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            data,
-            backgroundColor: barColor + 'cc',
-            borderColor: barColor,
-            borderWidth: 1,
-            borderRadius: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: { duration: 400, easing: 'easeInOutQuart' },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: dark ? '#222220' : '#fff',
-              borderColor: dark ? '#383836' : '#C8C6BF',
-              borderWidth: 1,
-              titleColor: dark ? '#F5F4F0' : '#1C1C1A',
-              bodyColor: dark ? '#B4B2A9' : '#5F5E5A',
-              padding: 10,
-              cornerRadius: 8,
-              callbacks: {
-                label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              border: { display: false },
-              ticks: {
-                color: tickColor,
-                font: { size: 10 },
-                maxRotation: 45,
-                autoSkip: true,
-                maxTicksLimit: this.activeTab === 'month' ? 10 : 24
-              }
-            },
-            y: {
-              grid: { color: gridColor, drawBorder: false },
-              border: { display: false },
-              beginAtZero: true,
-              ticks: {
-                color: tickColor,
-                font: { size: 11 },
-                stepSize: 1,
-                precision: 0
-              }
-            }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 400, easing: 'easeInOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...theme.tooltip,
+          callbacks: {
+            label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
           }
         }
-      }))
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: theme.tickColor,
+            font: { size: 10 },
+            maxRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: activeTab.value === 'month' ? 10 : 24
+          }
+        },
+        y: {
+          grid: { color: theme.gridColor, drawBorder: false },
+          border: { display: false },
+          beginAtZero: true,
+          ticks: {
+            color: theme.tickColor,
+            font: { size: 11 },
+            stepSize: 1,
+            precision: 0
+          }
+        }
+      }
     }
-  }
+  })
 }
+
+watch(chartData, () => {
+  nextTick(() => {
+    if (chart.value) {
+      const { labels, data } = chartData.value
+      chart.value.data.labels = labels
+      chart.value.data.datasets[0].data = data
+      chart.value.update()
+    } else {
+      renderChart()
+    }
+  })
+})
+watch(isDark, () => nextTick(renderChart))
+onMounted(renderChart)
 </script>
