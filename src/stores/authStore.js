@@ -20,6 +20,17 @@ export const authStore = reactive({
   }
 })
 
+// Supabase fires its SIGNED_OUT event asynchronously, so `await signOut()`
+// can return while this store still holds the old session. Callers that
+// navigate straight after signing out use this to drop it synchronously —
+// otherwise the router guard still sees an authenticated visitor and sends
+// them somewhere else. The auth-change listener below sets the same fields
+// again when the event does land, which is harmless.
+export function clearAuthSession() {
+  authStore.session = null
+  authStore.userRoles = []
+}
+
 async function fetchUserRoles() {
   if (!authStore.user) {
     authStore.userRoles = []

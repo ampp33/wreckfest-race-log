@@ -101,7 +101,7 @@
             aria-label="Sign out"
             @click="onSignOut"
           >
-            <span class="w-4 h-4 inline-block" v-html="doorOpenIcon"></span>
+            <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
           </button>
         </div>
       </div>
@@ -189,7 +189,7 @@
             class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
             @click="onSignOut"
           >
-            <span class="w-4 h-4 inline-block" v-html="doorOpenIcon"></span>
+            <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
             Sign out
           </button>
         </div>
@@ -199,18 +199,27 @@
 </template>
 
 <script>
-import { authStore } from '../stores/authStore.js'
+import { authStore, clearAuthSession } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { openFeedback } from '../stores/feedbackStore.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
-import doorOpenIcon from '../assets/icons/door-open.svg?raw'
+import signOutIcon from '../assets/icons/sign-out.svg?raw'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 import feedbackIcon from '../assets/icons/feedback.svg?raw'
 import menuIcon from '../assets/icons/menu.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
+
+// The sign-out icon knocks its figure out of the doorway with an SVG <mask>,
+// which is referenced by id — so inlining the same markup twice puts two
+// elements with that id in the document, and both copies resolve to the first
+// one. Below the sm breakpoint the first copy lives in the desktop cluster's
+// `hidden` (display:none) subtree, which builds no mask at all, and the mobile
+// drawer's copy then renders as a bare filled square. Giving the drawer its
+// own id keeps the two instances independent.
+const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
@@ -225,7 +234,8 @@ export default {
       feedbackIcon,
       menuIcon,
       closeIcon,
-      doorOpenIcon,
+      signOutIcon,
+      signOutIconMobile,
       navItems: [
         { to: '/tracks', label: 'Tracks' },
         { to: '/races', label: 'Races' },
@@ -271,7 +281,8 @@ export default {
       this.mobileMenuOpen = false
       try {
         await signOut()
-        this.$router.push('/login')
+        clearAuthSession()
+        this.$router.push('/')
       } catch (err) {
         pushToast(err.message || 'Sign out failed', 'error')
       }

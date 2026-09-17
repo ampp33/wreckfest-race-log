@@ -29,7 +29,7 @@
           class="ov min-h-[44px] min-w-[44px] px-2.5 sm:px-5 flex items-center justify-center whitespace-nowrap bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85"
           aria-label="Sign in"
         >
-          <span class="w-4 h-4 inline-block sm:hidden" v-html="doorOpenIcon"></span>
+          <span class="w-4 h-4 inline-block sm:hidden" v-html="signInIcon"></span>
           <span class="hidden sm:inline">Sign in</span>
         </router-link>
       </div>
@@ -42,7 +42,7 @@ import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
-import doorOpenIcon from '../assets/icons/door-open.svg?raw'
+import signInIcon from '../assets/icons/sign-in.svg?raw'
 
 export default {
   name: 'PublicHeader',
@@ -52,7 +52,7 @@ export default {
       prefs: prefsStore,
       sunIcon,
       moonIcon,
-      doorOpenIcon
+      signInIcon
     }
   },
   methods: {
