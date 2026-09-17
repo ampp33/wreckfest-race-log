@@ -8,7 +8,22 @@
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
-    <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
+    <!-- The controls row (and the refresh button in it) only renders once a
+         load has succeeded, so the error state repeats it as a retry. -->
+    <div v-else-if="error" class="flex items-center gap-3 flex-wrap">
+      <p class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
+      <button
+        type="button"
+        class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark disabled:opacity-40"
+        :disabled="refreshing"
+        :aria-busy="refreshing"
+        title="Retry"
+        aria-label="Retry loading races"
+        @click="load({ refresh: true })"
+      >
+        <span class="w-6 h-6 inline-block" :class="{ 'animate-spin': refreshing }" v-html="refreshIcon"></span>
+      </button>
+    </div>
 
     <div v-else>
       <!-- Controls row -->
@@ -17,6 +32,17 @@
           {{ total }} race{{ total === 1 ? '' : 's' }}
         </div>
         <div class="flex items-center gap-3">
+          <button
+            type="button"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark disabled:opacity-40"
+            :disabled="refreshing"
+            :aria-busy="refreshing"
+            title="Refresh"
+            aria-label="Refresh races"
+            @click="load({ refresh: true })"
+          >
+            <span class="w-6 h-6 inline-block" :class="{ 'animate-spin': refreshing }" v-html="refreshIcon"></span>
+          </button>
           <span class="ov text-brand-muted dark:text-brand-muted-dark">Per page</span>
           <div class="flex">
             <button
@@ -262,6 +288,7 @@ import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
+import refreshIcon from '../assets/icons/refresh.svg?raw'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -275,6 +302,7 @@ export default {
   data() {
     return {
       loading: true,
+      refreshing: false,
       error: null,
       rows: [],
       vehicles: [],
@@ -284,7 +312,8 @@ export default {
       editing: {},
       saving: {},
       confirmDeleteRace: null,
-      apiIcon
+      apiIcon,
+      refreshIcon
     }
   },
   computed: {
@@ -317,47 +346,67 @@ export default {
     }
   },
   async mounted() {
-    try {
-      const [races, tracks, vehicles] = await Promise.all([
-        getAllRaces(),
-        getTracks(),
-        getVehicles()
-      ])
-
-      const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-
-      const variationMap = {}
-      for (const track of tracks) {
-        for (const v of track.track_variations || []) {
-          variationMap[v.id] = {
-            trackName: track.name,
-            trackSlug: track.slug,
-            variationName: v.name,
-            variationSlug: v.slug
-          }
-        }
-      }
-
-      this.vehicles = vehicles
-
-      this.rows = races.map(r => ({
-        ...r,
-        vehicleName: vehicleMap[r.vehicle_id] ?? '—',
-        ...(variationMap[r.track_variation_id] ?? {
-          trackName: '—',
-          trackSlug: null,
-          variationName: '—',
-          variationSlug: null
-        })
-      }))
-    } catch (err) {
-      this.error = err.message || 'Failed to load races'
-      pushToast(this.error, 'error')
-    } finally {
-      this.loading = false
-    }
+    await this.load()
   },
   methods: {
+    // Shared by the initial mount and the header's refresh button. A refresh
+    // only raises `refreshing`, never `loading`/`error` — the table stays on
+    // screen (keeping expanded rows, page and page size), and a refresh that
+    // fails leaves the rows already shown in place and reports by toast
+    // rather than replacing the whole page with an error line.
+    async load({ refresh = false } = {}) {
+      if (refresh) this.refreshing = true
+      try {
+        const [races, tracks, vehicles] = await Promise.all([
+          getAllRaces(),
+          getTracks(),
+          getVehicles()
+        ])
+
+        const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+
+        const variationMap = {}
+        for (const track of tracks) {
+          for (const v of track.track_variations || []) {
+            variationMap[v.id] = {
+              trackName: track.name,
+              trackSlug: track.slug,
+              variationName: v.name,
+              variationSlug: v.slug
+            }
+          }
+        }
+
+        this.vehicles = vehicles
+
+        this.rows = races.map(r => ({
+          ...r,
+          vehicleName: vehicleMap[r.vehicle_id] ?? '—',
+          ...(variationMap[r.track_variation_id] ?? {
+            trackName: '—',
+            trackSlug: null,
+            variationName: '—',
+            variationSlug: null
+          })
+        }))
+
+        // Races deleted elsewhere can shrink the list past the page being
+        // viewed, which would otherwise leave an empty table.
+        if (this.currentPage > this.totalPages) this.currentPage = this.totalPages
+
+        // Clearing this is what swaps the error state's Retry button out for
+        // the table, so a refresh doubles as the recovery path.
+        this.error = null
+        if (refresh) pushToast('Races refreshed', 'success', 1500)
+      } catch (err) {
+        const message = err.message || 'Failed to load races'
+        if (!refresh) this.error = message
+        pushToast(message, 'error')
+      } finally {
+        this.loading = false
+        this.refreshing = false
+      }
+    },
     formatDateTime,
     formatMs(ms) {
       return formatMsToTime(ms)
