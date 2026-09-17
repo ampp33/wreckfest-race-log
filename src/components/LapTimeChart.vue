@@ -105,15 +105,16 @@ const chartData = computed(() => {
     }
   })
 
+  const fastestLapColor = isDark.value ? '#FFFFFF' : '#000000'
   datasets.push({
     label: 'Fastest Lap',
     data: sortedDates.map(d => byDate[d] ?? null),
-    borderColor: '#000000',
-    backgroundColor: '#00000018',
+    borderColor: fastestLapColor,
+    backgroundColor: fastestLapColor + '18',
     borderWidth: 2.5,
     pointRadius: 4,
     pointHoverRadius: 7,
-    pointBackgroundColor: '#000000',
+    pointBackgroundColor: fastestLapColor,
     pointBorderColor: '#fff',
     pointBorderWidth: 2,
     tension: 0.35,
