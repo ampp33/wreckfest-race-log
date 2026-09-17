@@ -1,13 +1,24 @@
 <template>
   <nav class="bg-brand-bg dark:bg-brand-bg-dark border-b border-brand-border dark:border-brand-border-dark">
     <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
-      <router-link to="/tracks" class="flex items-baseline gap-2.5 shrink-0">
+      <router-link to="/races" class="flex items-baseline gap-2.5 shrink-0">
         <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
         <span class="ov-lg text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
       </router-link>
 
       <!-- Desktop nav -->
       <div class="hidden sm:flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[13px] font-body">
+        <!-- Getting Started leads the bar and is deliberately not one of the
+             plain text links: it's the outlined red chip, so a new account
+             can find it without reading the row. `ov` small-caps rather than
+             the plain link style, so it reads as chrome rather than as a
+             fifth section. -->
+        <router-link
+          to="/getting-started"
+          class="ov min-h-[44px] px-3.5 flex items-center border border-brand-accent dark:border-brand-accent-dark text-brand-accent dark:text-brand-accent-dark hover:bg-brand-accent dark:hover:bg-brand-accent-dark hover:text-white dark:hover:text-white"
+          active-class="bg-brand-accent dark:bg-brand-accent-dark text-white dark:text-white"
+        >Getting Started</router-link>
+
         <router-link
           v-for="item in navItems"
           :key="item.to"
@@ -65,30 +76,40 @@
           </div>
         </div>
 
-        <button
-          type="button"
-          class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
-          @click="onToggleDark"
-          :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-        >{{ prefs.darkMode ? 'Light' : 'Dark' }}</button>
+        <!-- Icon-only control cluster, same sun/moon + door icons as
+             PublicHeader's compact controls, grouped with a tighter gap than
+             the text links so the three tiles read as one set. -->
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
+            @click="onToggleDark"
+            :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+          >
+            <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+          </button>
 
-        <button
-          type="button"
-          class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-          aria-label="Send feedback"
-          @click="onOpenFeedback"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-          </svg>
-        </button>
+          <button
+            type="button"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            aria-label="Send feedback"
+            @click="onOpenFeedback"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
+            </svg>
+          </button>
 
-        <button
-          v-if="auth.isAuthenticated"
-          type="button"
-          class="min-h-[44px] flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark text-[13px]"
-          @click="onSignOut"
-        >Sign out</button>
+          <button
+            v-if="auth.isAuthenticated"
+            type="button"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            aria-label="Sign out"
+            @click="onSignOut"
+          >
+            <span class="w-4 h-4 inline-block" v-html="doorOpenIcon"></span>
+          </button>
+        </div>
       </div>
 
       <!-- Mobile hamburger -->
@@ -112,6 +133,14 @@
     <!-- Mobile menu: a red slab, full bleed, squared off. -->
     <div v-if="mobileMenuOpen" class="sm:hidden bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
       <div class="max-w-7xl mx-auto px-6 py-2">
+        <!-- Same idea as the desktop chip: inverted out of the red slab so
+             it leads the menu instead of blending into the link list. -->
+        <router-link
+          to="/getting-started"
+          class="ov my-2 min-h-[44px] px-4 flex items-center bg-white text-brand-accent"
+          @click="mobileMenuOpen = false"
+        >Getting Started</router-link>
+
         <router-link
           v-for="item in navItems"
           :key="item.to"
@@ -147,29 +176,34 @@
         <div class="flex gap-2 pt-3 pb-2">
           <button
             type="button"
-            class="ov min-h-[44px] px-4 flex items-center border border-white/50 hover:bg-white/10"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
             @click="onToggleDark"
             :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-          >{{ prefs.darkMode ? 'Light' : 'Dark' }}</button>
+          >
+            <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+          </button>
 
           <button
             type="button"
-            class="ov min-h-[44px] px-4 flex items-center gap-2 border border-white/50 hover:bg-white/10"
+            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
+            aria-label="Send feedback"
             @click="onOpenFeedback"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
             </svg>
-            Feedback
+          </button>
+
+          <button
+            v-if="auth.isAuthenticated"
+            type="button"
+            class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
+            @click="onSignOut"
+          >
+            <span class="w-4 h-4 inline-block" v-html="doorOpenIcon"></span>
+            Sign out
           </button>
         </div>
-
-        <button
-          v-if="auth.isAuthenticated"
-          type="button"
-          class="flex min-h-[44px] w-full items-center text-white/75 hover:text-white text-[13px]"
-          @click="onSignOut"
-        >Sign out</button>
       </div>
     </div>
   </nav>
@@ -181,6 +215,9 @@ import { prefsStore } from '../stores/prefsStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { openFeedback } from '../stores/feedbackStore.js'
+import sunIcon from '../assets/icons/sun.svg?raw'
+import moonIcon from '../assets/icons/moon.svg?raw'
+import doorOpenIcon from '../assets/icons/door-open.svg?raw'
 
 export default {
   name: 'NavBar',
@@ -189,6 +226,9 @@ export default {
       auth: authStore,
       prefs: prefsStore,
       mobileMenuOpen: false,
+      sunIcon,
+      moonIcon,
+      doorOpenIcon,
       navItems: [
         { to: '/tracks', label: 'Tracks' },
         { to: '/races', label: 'Races' },
