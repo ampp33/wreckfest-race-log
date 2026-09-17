@@ -100,7 +100,7 @@
                 class="text-xs text-red-500 hover:underline"
                 @click="confirmDeleteId = key.id"
               >
-                Delete
+                Revoke
               </button>
               <span v-else class="inline-flex items-center gap-2">
                 <span class="text-xs text-brand-muted dark:text-brand-muted-dark">Sure?</span>
@@ -182,9 +182,9 @@ export default {
       try {
         await deleteApiKey(id)
         this.keys = this.keys.filter(k => k.id !== id)
-        pushToast('API key deleted', 'success')
+        pushToast('API key revoked', 'success')
       } catch (err) {
-        pushToast(err.message || 'Failed to delete key', 'error')
+        pushToast(err.message || 'Failed to revoke key', 'error')
       }
     },
     async copyNewKey() {

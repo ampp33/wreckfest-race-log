@@ -74,6 +74,12 @@ alter table public.races add column if not exists lap_count integer;
 alter table public.races add column if not exists lap_times_ms jsonb;
 alter table public.races add column if not exists results_roster jsonb;
 
+-- Where the race was logged from: the web UI, or the external API (see
+-- api_key_id below, added once the api_keys table exists further down).
+alter table public.races add column if not exists source text not null default 'web';
+alter table public.races drop constraint if exists races_source_check;
+alter table public.races add constraint races_source_check check (source in ('web', 'api'));
+
 create index if not exists races_user_track_idx
     on public.races (user_id, track_variation_id, datetime desc);
 
@@ -479,6 +485,16 @@ create table if not exists public.api_keys (
     last_used_at timestamptz
 );
 
+-- Soft-revocation: "deleting" a key from the UI sets this instead of
+-- removing the row, so races.api_key_id (below) keeps resolving to the
+-- real key/owner forever, even after the key stops working.
+alter table public.api_keys add column if not exists revoked_at timestamptz;
+
+-- Now that api_keys exists, link races to the key that logged them (for
+-- source = 'api' rows). "on delete set null" mirrors vehicle_id on races
+-- above — revoking/removing a key never deletes or orphans its races.
+alter table public.races add column if not exists api_key_id uuid references public.api_keys(id) on delete set null;
+
 alter table public.api_keys enable row level security;
 
 drop policy if exists "api_keys select own" on public.api_keys;
@@ -498,6 +514,15 @@ create policy "api_keys delete own"
     on public.api_keys for delete
     to authenticated
     using (auth.uid() = user_id);
+
+-- Needed so a user can soft-revoke (set revoked_at) their own key instead
+-- of hard-deleting it.
+drop policy if exists "api_keys update own" on public.api_keys;
+create policy "api_keys update own"
+    on public.api_keys for update
+    to authenticated
+    using (auth.uid() = user_id)
+    with check (auth.uid() = user_id);
 
 -- RPC called by the external companion tool: validates the raw API key,
 -- resolves track/variation by exact display-name match and vehicle by
@@ -546,6 +571,7 @@ security definer set search_path = public
 as $$
 declare
     v_user_id            uuid;
+    v_key_id             uuid;
     v_key_hash           text;
     v_track_id           uuid;
     v_track_variation_id uuid;
@@ -556,10 +582,12 @@ declare
 begin
     v_key_hash := encode(sha256(api_key::bytea), 'hex');
 
-    -- Validate key by hash.
-    select user_id into v_user_id
+    -- Validate key by hash. A revoked key resolves to no user, same as an
+    -- unrecognized one, but the row itself is left in place (see
+    -- api_keys.revoked_at) so past races still resolve back to it.
+    select id, user_id into v_key_id, v_user_id
     from public.api_keys
-    where key_hash = v_key_hash;
+    where key_hash = v_key_hash and revoked_at is null;
 
     if v_user_id is null then
         return json_build_object('success', false, 'error', 'Invalid API key');
@@ -625,11 +653,13 @@ begin
     insert into public.races (
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
-        performance_index, tuning, notes, lap_count, lap_times_ms, results_roster
+        performance_index, tuning, notes, lap_count, lap_times_ms, results_roster,
+        source, api_key_id
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
-        performance_index, v_tuning, notes, v_lap_count, lap_times_ms, results_roster
+        performance_index, v_tuning, notes, v_lap_count, lap_times_ms, results_roster,
+        'api', v_key_id
     )
     returning id into v_race_id;
 
@@ -648,12 +678,17 @@ grant execute on function public.insert_race_with_api_key_wf1 to anon, authentic
 -- =====================================================================
 
 -- Returns every issued API key with its issuing user's email — admin only.
+-- Adding revoked_at changes the returned row type, which `create or
+-- replace` can't do for OUT-parameter functions — drop first.
+drop function if exists public.get_all_api_keys();
+
 create or replace function public.get_all_api_keys()
 returns table(
     id           uuid,
     name         text,
     created_at   timestamptz,
     last_used_at timestamptz,
+    revoked_at   timestamptz,
     user_id      uuid,
     user_email   text
 )
@@ -671,6 +706,7 @@ begin
         k.name,
         k.created_at,
         k.last_used_at,
+        k.revoked_at,
         k.user_id,
         u.email::text as user_email
     from public.api_keys k
@@ -679,9 +715,11 @@ begin
 end;
 $$;
 
--- Deletes any user's API key by id — admin only. The regular
--- "api_keys delete own" RLS policy only lets a user delete their own
--- key, so admin removal needs a security-definer RPC.
+-- Revokes any user's API key by id — admin only. The regular
+-- "api_keys update own" RLS policy only lets a user revoke their own
+-- key, so admin revocation needs a security-definer RPC. This sets
+-- revoked_at rather than deleting the row, so races logged with the key
+-- keep resolving back to it (see races.api_key_id).
 create or replace function public.admin_delete_api_key(key_id uuid)
 returns void
 language plpgsql
@@ -692,7 +730,8 @@ begin
         raise exception 'Unauthorized: admin access required';
     end if;
 
-    delete from public.api_keys where id = key_id;
+    update public.api_keys set revoked_at = now()
+    where id = key_id and revoked_at is null;
 end;
 $$;
 

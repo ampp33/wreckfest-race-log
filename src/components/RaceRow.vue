@@ -5,7 +5,15 @@
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
           <div class="font-bold text-brand-text dark:text-brand-text-dark truncate">{{ vehicleName }}</div>
-          <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formattedDate }}</div>
+          <div class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
+            {{ formattedDate }}
+            <span
+              v-if="race.source === 'api'"
+              class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+              :title="apiSourceTitle"
+              v-html="apiIcon"
+            ></span>
+          </div>
         </div>
         <RaceRowActions
           :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
@@ -86,7 +94,15 @@
   >
     <template v-if="!editing">
       <td class="py-2 pl-0 pr-3 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
-        {{ formattedDate }}
+        <span class="inline-flex items-center gap-1">
+          {{ formattedDate }}
+          <span
+            v-if="race.source === 'api'"
+            class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+            :title="apiSourceTitle"
+            v-html="apiIcon"
+          ></span>
+        </span>
       </td>
       <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
       <td class="py-2 pr-3 whitespace-nowrap">
@@ -157,6 +173,7 @@ import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
+import apiIcon from '../assets/icons/api.svg?raw'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -180,10 +197,16 @@ export default {
       editing: false,
       saving: false,
       expanded: false,
-      confirmingDelete: false
+      confirmingDelete: false,
+      apiIcon
     }
   },
   computed: {
+    apiSourceTitle() {
+      return this.race.api_key?.name
+        ? `Logged via API — key: ${this.race.api_key.name}`
+        : 'Logged via API'
+    },
     vehicleName() {
       const v = this.vehicles.find(x => x.id === this.race.vehicle_id)
       return v ? v.name : '—'

@@ -51,7 +51,15 @@
                     <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
                   </router-link>
                   <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
-                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ formatDateTime(race.datetime) }}</div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
+                    {{ formatDateTime(race.datetime) }}
+                    <span
+                      v-if="race.source === 'api'"
+                      class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+                      :title="apiSourceTitle(race)"
+                      v-html="apiIcon"
+                    ></span>
+                  </div>
                 </div>
                 <RaceRowActions
                   :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
@@ -126,7 +134,15 @@
               <template v-for="race in pageRows" :key="race.id">
                 <tr v-if="!editing[race.id]" class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
                   <td class="px-3.5 py-2 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
-                    {{ formatDateTime(race.datetime) }}
+                    <span class="inline-flex items-center gap-1">
+                      {{ formatDateTime(race.datetime) }}
+                      <span
+                        v-if="race.source === 'api'"
+                        class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+                        :title="apiSourceTitle(race)"
+                        v-html="apiIcon"
+                      ></span>
+                    </span>
                   </td>
                   <td class="px-3.5 py-2">
                     <router-link
@@ -245,6 +261,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
+import apiIcon from '../assets/icons/api.svg?raw'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -266,7 +283,8 @@ export default {
       expanded: {},
       editing: {},
       saving: {},
-      confirmDeleteRace: null
+      confirmDeleteRace: null,
+      apiIcon
     }
   },
   computed: {
@@ -355,6 +373,11 @@ export default {
     },
     hasRoster(race) {
       return Array.isArray(race.results_roster) && race.results_roster.length > 0
+    },
+    apiSourceTitle(race) {
+      return race.api_key?.name
+        ? `Logged via API — key: ${race.api_key.name}`
+        : 'Logged via API'
     },
     toggleExpanded(id) {
       this.expanded[id] = !this.expanded[id]

@@ -21,6 +21,7 @@ export async function getApiKeys() {
   const { data, error } = await supabase
     .from('api_keys')
     .select('id, name, created_at, last_used_at')
+    .is('revoked_at', null)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data || []
@@ -41,7 +42,12 @@ export async function createApiKey(name) {
   return rawKey
 }
 
+// Soft-revoke rather than hard-delete, so races logged with this key keep
+// resolving back to it (see races.api_key_id / races.source).
 export async function deleteApiKey(id) {
-  const { error } = await supabase.from('api_keys').delete().eq('id', id)
+  const { error } = await supabase
+    .from('api_keys')
+    .update({ revoked_at: new Date().toISOString() })
+    .eq('id', id)
   if (error) throw error
 }
