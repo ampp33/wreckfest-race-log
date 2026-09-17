@@ -87,9 +87,7 @@
           title="Discard changes"
           @click.stop="$emit('discard')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
+          <span class="w-4 h-4 inline-block" v-html="closeIcon"></span>
         </button>
         <button
           type="button"
@@ -97,9 +95,7 @@
           title="Save annotations"
           @click.stop="$emit('save')"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
+          <span class="w-4 h-4 inline-block" v-html="checkIcon"></span>
         </button>
       </template>
     </div>
@@ -140,6 +136,8 @@
 <script>
 import { loadTrackPaths, getTrackPath } from '../utils/trackPath.js'
 import editIcon from '../assets/icons/edit.svg?raw'
+import closeIcon from '../assets/icons/close-filled.svg?raw'
+import checkIcon from '../assets/icons/check.svg?raw'
 
 let uid = 0
 
@@ -169,6 +167,8 @@ export default {
   data() {
     return {
       editIcon,
+      closeIcon,
+      checkIcon,
       ringPath: null,
       // One entry per stroke — a junction layout carries several.
       reps: [],

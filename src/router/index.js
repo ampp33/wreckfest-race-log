@@ -13,11 +13,13 @@ import RacesPage from '../pages/RacesPage.vue'
 import ApiKeysPage from '../pages/ApiKeysPage.vue'
 import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
 import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
+import GettingStartedPage from '../pages/GettingStartedPage.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { public: true } },
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
+  { path: '/getting-started', name: 'getting-started', component: GettingStartedPage },
   { path: '/tracks', name: 'tracks', component: TrackListPage },
   {
     path: '/track/:trackSlug/:variationSlug',
@@ -47,7 +49,18 @@ router.beforeEach(async to => {
     // Signed-in visitors don't need the marketing page — send them
     // straight into the app instead of showing it every time they hit "/".
     if (to.name === 'home' && authStore.isAuthenticated) {
-      return { name: 'tracks' }
+      return { name: 'races' }
+    }
+    // OAuth sign-in (Google/Discord) does a full-page redirect away and
+    // back, so there's no in-page JS left to route away afterward like the
+    // password form does — the browser lands back on /login already
+    // authenticated and the guard has to send it onward itself.
+    if (to.name === 'login' && authStore.isAuthenticated) {
+      const target = to.query.redirect
+      if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
+        return target
+      }
+      return { name: 'races' }
     }
     return true
   }
@@ -55,7 +68,7 @@ router.beforeEach(async to => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return { name: 'tracks' }
+    return { name: 'races' }
   }
   return true
 })

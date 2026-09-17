@@ -24,6 +24,14 @@ export async function signInWithGoogle(redirectTo) {
   // there's no session to return here — onAuthChange picks it up on redirect back.
 }
 
+export async function signInWithDiscord(redirectTo) {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: { redirectTo }
+  })
+  if (error) throw error
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut()
   if (error) throw error
