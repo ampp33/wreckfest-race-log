@@ -35,9 +35,7 @@
             :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTelemetryRoute }"
           >
             Telemetry
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-px" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
+            <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
             <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
@@ -59,9 +57,7 @@
             :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isAdminRoute }"
           >
             Admin
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 mt-px" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
-            </svg>
+            <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
             <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
@@ -95,9 +91,7 @@
             aria-label="Send feedback"
             @click="onOpenFeedback"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-            </svg>
+            <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
           </button>
 
           <button
@@ -123,10 +117,7 @@
         aria-label="Toggle menu"
         @click="mobileMenuOpen = !mobileMenuOpen"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
-          <path v-if="!mobileMenuOpen" stroke-linecap="square" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-          <path v-else stroke-linecap="square" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <span class="w-5 h-5 inline-block" v-html="mobileMenuOpen ? closeIcon : menuIcon"></span>
       </button>
     </div>
 
@@ -189,9 +180,7 @@
             aria-label="Send feedback"
             @click="onOpenFeedback"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
-            </svg>
+            <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
           </button>
 
           <button
@@ -218,6 +207,10 @@ import { openFeedback } from '../stores/feedbackStore.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
 import doorOpenIcon from '../assets/icons/door-open.svg?raw'
+import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
+import feedbackIcon from '../assets/icons/feedback.svg?raw'
+import menuIcon from '../assets/icons/menu.svg?raw'
+import closeIcon from '../assets/icons/close-filled.svg?raw'
 
 export default {
   name: 'NavBar',
@@ -228,6 +221,10 @@ export default {
       mobileMenuOpen: false,
       sunIcon,
       moonIcon,
+      chevronDownIcon,
+      feedbackIcon,
+      menuIcon,
+      closeIcon,
       doorOpenIcon,
       navItems: [
         { to: '/tracks', label: 'Tracks' },

@@ -49,7 +49,18 @@ router.beforeEach(async to => {
     // Signed-in visitors don't need the marketing page — send them
     // straight into the app instead of showing it every time they hit "/".
     if (to.name === 'home' && authStore.isAuthenticated) {
-      return { name: 'tracks' }
+      return { name: 'races' }
+    }
+    // OAuth sign-in (Google/Discord) does a full-page redirect away and
+    // back, so there's no in-page JS left to route away afterward like the
+    // password form does — the browser lands back on /login already
+    // authenticated and the guard has to send it onward itself.
+    if (to.name === 'login' && authStore.isAuthenticated) {
+      const target = to.query.redirect
+      if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
+        return target
+      }
+      return { name: 'races' }
     }
     return true
   }
@@ -57,7 +68,7 @@ router.beforeEach(async to => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.meta.requiresAdmin && !authStore.isAdmin) {
-    return { name: 'tracks' }
+    return { name: 'races' }
   }
   return true
 })
