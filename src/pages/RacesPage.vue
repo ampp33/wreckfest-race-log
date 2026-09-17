@@ -43,13 +43,16 @@
           >
             <span class="w-6 h-6 inline-block" :class="{ 'animate-spin': refreshing }" v-html="refreshIcon"></span>
           </button>
-          <span class="ov text-brand-muted dark:text-brand-muted-dark">Per page</span>
-          <div class="flex">
+          <!-- The visible "Per page" label used to carry this group's meaning;
+               with it dropped for room on phones, the name moves to ARIA. -->
+          <div class="flex" role="group" aria-label="Races per page">
             <button
               v-for="size in [25, 50, 100]"
               :key="size"
               type="button"
               class="tabular min-h-[44px] min-w-[52px] border text-sm font-semibold -ml-px first:ml-0"
+              :aria-pressed="pageSize === size"
+              :title="`${size} per page`"
               :class="pageSize === size
                 ? 'bg-brand-strong dark:bg-brand-strong-dark border-brand-strong dark:border-brand-strong-dark text-brand-bg dark:text-brand-bg-dark'
                 : 'border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:border-brand-accent'"
