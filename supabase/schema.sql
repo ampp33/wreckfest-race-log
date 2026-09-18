@@ -772,15 +772,50 @@ $$;
 -- Identity is verified inside via the API key hash — no session needed.
 grant execute on function public.insert_race_with_api_key_wf1 to anon, authenticated;
 
+-- Returns the current user's own active (non-revoked) API keys along with
+-- how many races each has logged. A plain select() from the client can't
+-- do the count/join, so this RPC does it — security definer so it can
+-- read races by api_key_id without a "races select by api_key" RLS policy,
+-- but scoped to auth.uid() so it never exposes another user's keys.
+create or replace function public.get_api_keys_with_counts()
+returns table(
+    id           uuid,
+    name         text,
+    created_at   timestamptz,
+    last_used_at timestamptz,
+    race_count   bigint
+)
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    return query
+    select
+        k.id,
+        k.name,
+        k.created_at,
+        k.last_used_at,
+        count(r.id) as race_count
+    from public.api_keys k
+    left join public.races r on r.api_key_id = k.id
+    where k.user_id = auth.uid() and k.revoked_at is null
+    group by k.id, k.name, k.created_at, k.last_used_at
+    order by k.created_at desc;
+end;
+$$;
+
+grant execute on function public.get_api_keys_with_counts to authenticated;
+
 -- =====================================================================
 -- Admin RPCs: API keys and feedback overview.
 -- Raw key values are never stored (see api_keys above), so the admin
 -- listing exposes id/name/timestamps/issuer only — never a key value.
 -- =====================================================================
 
--- Returns every issued API key with its issuing user's email — admin only.
--- Adding revoked_at changes the returned row type, which `create or
--- replace` can't do for OUT-parameter functions — drop first.
+-- Returns every issued API key with its issuing user's email and the
+-- number of races logged with it — admin only. Adding revoked_at/race_count
+-- changes the returned row type, which `create or replace` can't do for
+-- OUT-parameter functions — drop first.
 drop function if exists public.get_all_api_keys();
 
 create or replace function public.get_all_api_keys()
@@ -791,7 +826,8 @@ returns table(
     last_used_at timestamptz,
     revoked_at   timestamptz,
     user_id      uuid,
-    user_email   text
+    user_email   text,
+    race_count   bigint
 )
 language plpgsql
 security definer set search_path = public
@@ -809,9 +845,12 @@ begin
         k.last_used_at,
         k.revoked_at,
         k.user_id,
-        u.email::text as user_email
+        u.email::text as user_email,
+        count(r.id) as race_count
     from public.api_keys k
     join auth.users u on u.id = k.user_id
+    left join public.races r on r.api_key_id = k.id
+    group by k.id, k.name, k.created_at, k.last_used_at, k.revoked_at, k.user_id, u.email
     order by k.created_at desc;
 end;
 $$;

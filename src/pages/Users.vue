@@ -1,9 +1,9 @@
 <template>
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
-      User <em class="signal">Roles</em>
+      <em class="signal">Users</em>
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage admin access for registered users.</p>
+    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage registered users' access and standing.</p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 

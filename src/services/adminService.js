@@ -37,7 +37,7 @@ export async function setUserBanned(userId, banned) {
 export async function getAllApiKeys() {
   const { data, error } = await supabase.rpc('get_all_api_keys')
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(key => ({ ...key, race_count: Number(key.race_count) || 0 }))
 }
 
 export async function adminDeleteApiKey(id) {

@@ -13,11 +13,14 @@ export async function getRacesByVariation(variationId) {
   return data || []
 }
 
-export async function getAllRaces() {
-  const { data, error } = await supabase
+export async function getAllRaces({ source, apiKeyId } = {}) {
+  let query = supabase
     .from('races')
     .select(RACE_COLUMNS + ', track_variation_id')
     .order('datetime', { ascending: false }).order('created_at', { ascending: false })
+  if (source) query = query.eq('source', source)
+  if (apiKeyId) query = query.eq('api_key_id', apiKeyId)
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }

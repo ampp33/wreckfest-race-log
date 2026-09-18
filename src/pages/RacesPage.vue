@@ -5,6 +5,10 @@
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10">
       <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
+      <template v-if="isFiltered">
+        — filtered to races logged {{ apiKeyIdFilter ? 'with this API key' : `via the ${sourceFilter === 'api' ? 'Telemetry API' : 'web app'}` }}.
+        <router-link to="/races" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Clear filter</router-link>
+      </template>
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
@@ -320,6 +324,17 @@ export default {
     }
   },
   computed: {
+    sourceFilter() {
+      const source = this.$route.query.source
+      return source === 'web' || source === 'api' ? source : null
+    },
+    apiKeyIdFilter() {
+      const apiKeyId = this.$route.query.api_key_id
+      return typeof apiKeyId === 'string' && apiKeyId ? apiKeyId : null
+    },
+    isFiltered() {
+      return !!(this.sourceFilter || this.apiKeyIdFilter)
+    },
     total() {
       return this.rows.length
     },
@@ -351,6 +366,12 @@ export default {
   async mounted() {
     await this.load()
   },
+  watch: {
+    '$route.query'() {
+      this.currentPage = 1
+      this.load()
+    }
+  },
   methods: {
     // Shared by the initial mount and the header's refresh button. A refresh
     // only raises `refreshing`, never `loading`/`error` — the table stays on
@@ -361,7 +382,7 @@ export default {
       if (refresh) this.refreshing = true
       try {
         const [races, tracks, vehicles] = await Promise.all([
-          getAllRaces(),
+          getAllRaces({ source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter }),
           getTracks(),
           getVehicles()
         ])

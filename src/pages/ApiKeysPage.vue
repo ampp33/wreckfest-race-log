@@ -72,57 +72,71 @@
       No API keys yet. Generate one above to get started.
     </div>
 
-    <div v-else class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead>
-          <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-            <th class="px-4 py-2 font-medium">Name</th>
-            <th class="px-4 py-2 font-medium whitespace-nowrap">Created</th>
-            <th class="px-4 py-2 font-medium whitespace-nowrap">Last used</th>
-            <th class="px-4 py-2 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
-          <tr
-            v-for="key in keys"
-            :key="key.id"
-            class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
-          >
-            <td class="px-4 py-2 font-body text-brand-text dark:text-brand-text-dark">{{ key.name }}</td>
-            <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(key.created_at) }}</td>
-            <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
-              {{ key.last_used_at ? formatDate(key.last_used_at) : 'Never' }}
-            </td>
-            <td class="px-4 py-2 text-right">
-              <button
-                v-if="confirmDeleteId !== key.id"
-                type="button"
-                class="text-xs text-red-500 hover:underline"
-                @click="confirmDeleteId = key.id"
-              >
-                Revoke
-              </button>
-              <span v-else class="inline-flex items-center gap-2">
-                <span class="text-xs text-brand-muted dark:text-brand-muted-dark">Sure?</span>
+    <div v-else>
+      <p class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark mb-4">
+        <span class="font-semibold text-brand-text dark:text-brand-text-dark">{{ totalRaceCount.toLocaleString() }}</span>
+        {{ totalRaceCount === 1 ? 'race' : 'races' }} logged with your keys.
+      </p>
+
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+              <th class="px-4 py-2 font-medium">Name</th>
+              <th class="px-4 py-2 font-medium whitespace-nowrap">Created</th>
+              <th class="px-4 py-2 font-medium whitespace-nowrap">Last used</th>
+              <th class="px-4 py-2 font-medium text-right whitespace-nowrap">Races logged</th>
+              <th class="px-4 py-2 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+            <tr
+              v-for="key in keys"
+              :key="key.id"
+              class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
+            >
+              <td class="px-4 py-2 font-body text-brand-text dark:text-brand-text-dark">{{ key.name }}</td>
+              <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(key.created_at) }}</td>
+              <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
+                {{ key.last_used_at ? formatDate(key.last_used_at) : 'Never' }}
+              </td>
+              <td class="px-4 py-2 text-right whitespace-nowrap">
+                <router-link
+                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
+                >{{ key.race_count.toLocaleString() }}</router-link>
+              </td>
+              <td class="px-4 py-2 text-right">
                 <button
+                  v-if="confirmDeleteId !== key.id"
                   type="button"
-                  class="text-xs text-red-500 font-semibold hover:underline"
-                  @click="onDelete(key.id)"
+                  class="text-xs text-red-500 hover:underline"
+                  @click="confirmDeleteId = key.id"
                 >
-                  Yes
+                  Revoke
                 </button>
-                <button
-                  type="button"
-                  class="text-xs text-brand-muted dark:text-brand-muted-dark hover:underline"
-                  @click="confirmDeleteId = null"
-                >
-                  Cancel
-                </button>
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <span v-else class="inline-flex items-center gap-2">
+                  <span class="text-xs text-brand-muted dark:text-brand-muted-dark">Sure?</span>
+                  <button
+                    type="button"
+                    class="text-xs text-red-500 font-semibold hover:underline"
+                    @click="onDelete(key.id)"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    type="button"
+                    class="text-xs text-brand-muted dark:text-brand-muted-dark hover:underline"
+                    @click="confirmDeleteId = null"
+                  >
+                    Cancel
+                  </button>
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -144,6 +158,11 @@ export default {
       newKeyValue: null,
       copied: false,
       confirmDeleteId: null
+    }
+  },
+  computed: {
+    totalRaceCount() {
+      return this.keys.reduce((sum, key) => sum + key.race_count, 0)
     }
   },
   async mounted() {

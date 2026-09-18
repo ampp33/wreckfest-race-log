@@ -18,13 +18,9 @@ function generateRawKey() {
 }
 
 export async function getApiKeys() {
-  const { data, error } = await supabase
-    .from('api_keys')
-    .select('id, name, created_at, last_used_at')
-    .is('revoked_at', null)
-    .order('created_at', { ascending: false })
+  const { data, error } = await supabase.rpc('get_api_keys_with_counts')
   if (error) throw error
-  return data || []
+  return (data || []).map(key => ({ ...key, race_count: Number(key.race_count) || 0 }))
 }
 
 export async function createApiKey(name) {

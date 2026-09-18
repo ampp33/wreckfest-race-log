@@ -17,6 +17,11 @@
     </div>
 
     <div v-else>
+      <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-6">
+        <span class="font-bold text-brand-text dark:text-brand-text-dark">{{ totalRaceCount.toLocaleString() }}</span>
+        {{ totalRaceCount === 1 ? 'race' : 'races' }} logged across all keys.
+      </p>
+
       <!-- Card layout (mobile) -->
       <div class="sm:hidden rule-top divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
         <div v-for="key in keys" :key="key.id" class="py-3">
@@ -28,6 +33,12 @@
               </div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark truncate mt-0.5">{{ key.user_email }}</div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Issued {{ formatDate(key.created_at) }}</div>
+              <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">
+                <router-link
+                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
+                >{{ key.race_count.toLocaleString() }} {{ key.race_count === 1 ? 'race' : 'races' }} logged</router-link>
+              </div>
             </div>
           </div>
           <div v-if="!key.revoked_at" class="mt-2">
@@ -57,6 +68,7 @@
               <th class="pr-4 pb-2.5 font-medium">Issued by</th>
               <th class="pr-4 pb-2.5 font-medium whitespace-nowrap">Issued</th>
               <th class="pr-4 pb-2.5 font-medium whitespace-nowrap">Last used</th>
+              <th class="pr-4 pb-2.5 font-medium text-right whitespace-nowrap">Races logged</th>
               <th class="pr-0 pb-2.5 font-medium text-right">Actions</th>
             </tr>
           </thead>
@@ -72,6 +84,12 @@
               <td class="pr-4 py-2.5 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(key.created_at) }}</td>
               <td class="pr-4 py-2.5 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
                 {{ key.last_used_at ? formatDate(key.last_used_at) : 'Never' }}
+              </td>
+              <td class="pr-4 py-2.5 tabular text-right whitespace-nowrap">
+                <router-link
+                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
+                >{{ key.race_count.toLocaleString() }}</router-link>
               </td>
               <td class="pr-0 py-2.5 text-right">
                 <template v-if="!key.revoked_at">
@@ -111,6 +129,11 @@ export default {
       loading: true,
       error: null,
       confirmDeleteId: null
+    }
+  },
+  computed: {
+    totalRaceCount() {
+      return this.keys.reduce((sum, key) => sum + key.race_count, 0)
     }
   },
   async created() {
