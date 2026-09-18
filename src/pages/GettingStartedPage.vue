@@ -7,7 +7,7 @@
      to for one specific answer — which is what a quick-start page mostly
      gets used for after the first read. -->
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-12">
+  <div class="max-w-7xl mx-auto px-6 py-12">
     <header class="mb-12 max-w-3xl">
       <div class="ov text-brand-accent dark:text-brand-accent-dark mb-5">Getting started</div>
       <h1 class="font-display font-black tracking-tightest leading-[0.88] text-display-lg text-brand-text dark:text-brand-text-dark">
