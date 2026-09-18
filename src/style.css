@@ -53,6 +53,14 @@ body,
   min-height: 100vh;
 }
 
+/* Reserve the vertical scrollbar's width on every page, whether or not that
+ * page actually has enough content to scroll — otherwise navigating between
+ * a tall page (scrollbar present) and a short one (scrollbar absent) shifts
+ * the whole layout sideways by the scrollbar's width. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   overflow-x: hidden;
   font-feature-settings: 'kern' 1;
