@@ -8,16 +8,19 @@
 
       <!-- Desktop nav -->
       <div class="hidden sm:flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[13px] font-body">
-        <!-- Getting Started leads the bar and is deliberately not one of the
-             plain text links: it's the outlined red chip, so a new account
-             can find it without reading the row. `ov` small-caps rather than
-             the plain link style, so it reads as chrome rather than as a
-             fifth section. -->
+        <!-- Getting Started stays red so a new account can spot it without
+             reading the row, but otherwise matches the plain links around it. -->
         <router-link
           to="/getting-started"
-          class="ov min-h-[44px] px-3.5 flex items-center border border-brand-accent dark:border-brand-accent-dark text-brand-accent dark:text-brand-accent-dark hover:bg-brand-accent dark:hover:bg-brand-accent-dark hover:text-white dark:hover:text-white"
-          active-class="bg-brand-accent dark:bg-brand-accent-dark text-white dark:text-white"
+          class="min-h-[44px] flex items-center text-brand-accent dark:text-brand-accent-dark hover:opacity-80"
+          active-class="font-semibold"
         >Getting Started</router-link>
+
+        <router-link
+          to="/news"
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+        >News</router-link>
 
         <router-link
           v-for="item in navItems"
@@ -124,13 +127,19 @@
     <!-- Mobile menu: a red slab, full bleed, squared off. -->
     <div v-if="mobileMenuOpen" class="sm:hidden bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
       <div class="max-w-7xl mx-auto px-6 py-2">
-        <!-- Same idea as the desktop chip: inverted out of the red slab so
-             it leads the menu instead of blending into the link list. -->
         <router-link
           to="/getting-started"
-          class="ov my-2 min-h-[44px] px-4 flex items-center bg-white text-brand-accent"
+          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+          active-class="font-bold"
           @click="mobileMenuOpen = false"
         >Getting Started</router-link>
+
+        <router-link
+          to="/news"
+          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+          active-class="font-bold"
+          @click="mobileMenuOpen = false"
+        >News</router-link>
 
         <router-link
           v-for="item in navItems"

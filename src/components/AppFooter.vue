@@ -4,7 +4,7 @@
        deliberately ignored. -->
   <footer class="relative mt-12 overflow-hidden bg-brand-slab text-[#F5F4F0] border-t-2 border-brand-accent dark:border-brand-accent-dark">
     <div class="max-w-7xl mx-auto px-6 sm:px-10 py-4">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-x-8 gap-y-3">
         <div v-for="col in columns" :key="col.title">
           <div class="ov text-brand-accent-dark mb-1">{{ col.title }}</div>
           <div class="flex flex-col">
@@ -33,9 +33,9 @@
                 :href="link.href"
                 :target="link.href ? '_blank' : undefined"
                 :rel="link.href ? 'noopener noreferrer' : undefined"
-                class="flex min-h-[24px] items-center text-[13px] text-white/70 hover:text-white"
+                class="flex min-h-[24px] items-center gap-1.5 text-[13px] text-white/70 hover:text-white"
                 :class="{ 'cursor-pointer': link.to || link.href }"
-              >{{ link.label }}</component>
+              ><span v-if="link.icon" class="inline-block w-[13px] h-[13px] shrink-0" v-html="link.icon"></span>{{ link.label }}</component>
               <button
                 v-else-if="link.action === 'export'"
                 type="button"
@@ -105,6 +105,8 @@ import { downloadJson, readJsonFile } from '../utils/exportImport.js'
 import { pushToast } from '../stores/toastStore.js'
 import supabaseIcon from '../assets/icons/supabase.svg?raw'
 import githubIcon from '../assets/icons/github.svg?raw'
+import emailIcon from '../assets/icons/email.svg?raw'
+import discordIcon from '../assets/icons/discord.svg?raw'
 
 export default {
   name: 'AppFooter',
@@ -133,6 +135,10 @@ export default {
         ] },
         { title: 'Telemetry Plugin', links: [
           { label: 'Setup guide', to: '/plugin' }
+        ] },
+        { title: 'Contact Us', links: [
+          { label: 'Email', href: 'mailto:ampp33@gmail.com', icon: emailIcon },
+          { label: 'Discord', href: 'https://discordapp.com/channels/@me/431110818302656530/', icon: discordIcon }
         ] }
       ]
     }

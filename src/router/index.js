@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { authStore, initAuthStore } from '../stores/authStore.js'
+import { authStore, initAuthStore, clearAuthSession } from '../stores/authStore.js'
+import { signOut } from '../services/authService.js'
+import { pushToast } from '../stores/toastStore.js'
 
 import HomePage from '../pages/HomePage.vue'
 import PluginPage from '../pages/PluginPage.vue'
@@ -14,12 +16,14 @@ import ApiKeysPage from '../pages/ApiKeysPage.vue'
 import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
 import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
 import GettingStartedPage from '../pages/GettingStartedPage.vue'
+import NewsPage from '../pages/NewsPage.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { public: true } },
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/getting-started', name: 'getting-started', component: GettingStartedPage },
+  { path: '/news', name: 'news', component: NewsPage },
   { path: '/tracks', name: 'tracks', component: TrackListPage },
   {
     path: '/track/:trackSlug/:variationSlug',
@@ -45,6 +49,16 @@ export const router = createRouter({
 
 router.beforeEach(async to => {
   await initAuthStore()
+
+  // A suspended account is treated as signed out from here on — the real
+  // enforcement is at the RLS/RPC level (see supabase/schema.sql), this
+  // just gets them out of the authenticated UI on their next navigation.
+  if (authStore.isBanned) {
+    clearAuthSession()
+    signOut().catch(() => {})
+    pushToast('Your account has been suspended.', 'error')
+  }
+
   if (to.meta.public) {
     // Signed-in visitors don't need the marketing page — send them
     // straight into the app instead of showing it every time they hit "/".

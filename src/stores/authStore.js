@@ -6,6 +6,7 @@ export const authStore = reactive({
   session: null,
   ready: false,
   userRoles: [],
+  banned: false,
 
   get user() {
     return this.session ? this.session.user : null
@@ -17,6 +18,10 @@ export const authStore = reactive({
 
   get isAdmin() {
     return this.userRoles.some(ur => ur.roles?.name === 'admin')
+  },
+
+  get isBanned() {
+    return this.banned
   }
 })
 
@@ -29,18 +34,28 @@ export const authStore = reactive({
 export function clearAuthSession() {
   authStore.session = null
   authStore.userRoles = []
+  authStore.banned = false
 }
 
 async function fetchUserRoles() {
   if (!authStore.user) {
     authStore.userRoles = []
+    authStore.banned = false
     return
   }
-  const { data } = await supabase
-    .from('user_roles')
-    .select('role_id, roles(name)')
-    .eq('user_id', authStore.user.id)
-  authStore.userRoles = data ?? []
+  const [{ data: roleData }, { data: detailsData }] = await Promise.all([
+    supabase
+      .from('user_roles')
+      .select('role_id, roles(name)')
+      .eq('user_id', authStore.user.id),
+    supabase
+      .from('user_details')
+      .select('status')
+      .eq('user_id', authStore.user.id)
+      .maybeSingle()
+  ])
+  authStore.userRoles = roleData ?? []
+  authStore.banned = detailsData?.status === 'banned'
 }
 
 let initialized = false

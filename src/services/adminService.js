@@ -26,6 +26,14 @@ export async function setUserRole(userId, role) {
   if (error) throw error
 }
 
+export async function setUserBanned(userId, banned) {
+  const { error } = await supabase.rpc('set_user_banned', {
+    target_user_id: userId,
+    banned
+  })
+  if (error) throw error
+}
+
 export async function getAllApiKeys() {
   const { data, error } = await supabase.rpc('get_all_api_keys')
   if (error) throw error

@@ -101,6 +101,67 @@ create table if not exists public.variation_annotations (
 create index if not exists variation_annotations_user_track_idx
     on public.variation_annotations (user_id, track_variation_id);
 
+-- User details: extensible per-user data that doesn't belong on auth.users
+-- (which Supabase owns and manages via GoTrue) — account status (used for
+-- bans) and a display name today, room for more later without ever
+-- touching the auth schema. No row is required for every user: a missing
+-- row just means the defaults apply (status 'active', no display name),
+-- the same pattern get_all_users_with_roles() already uses for role
+-- resolution below. Defined here (ahead of user_roles/roles) since the
+-- RLS policies right below need is_banned() to already exist.
+create table if not exists public.user_details (
+    user_id           uuid primary key references auth.users(id) on delete cascade,
+    display_name      text,
+    status            text not null default 'active',
+    status_updated_at timestamptz,
+    status_updated_by uuid references auth.users(id) on delete set null,
+    created_at        timestamptz not null default now()
+);
+
+-- Extend this list in a future migration if a new status is ever added.
+alter table public.user_details drop constraint if exists user_details_status_check;
+alter table public.user_details add constraint user_details_status_check
+    check (status in ('active', 'banned'));
+
+alter table public.user_details enable row level security;
+
+-- Each user can read their own details — the client uses the status to
+-- force a sign-out when a banned account is (still) sitting on a session.
+drop policy if exists "user_details select own" on public.user_details;
+create policy "user_details select own"
+    on public.user_details for select
+    to authenticated
+    using (auth.uid() = user_id);
+
+-- One-time migration from the earlier ban-only table, if it was ever
+-- applied — preserves who was banned, and by whom, before dropping it.
+do $$
+begin
+    if to_regclass('public.user_bans') is not null then
+        insert into public.user_details (user_id, status, status_updated_at, status_updated_by)
+        select user_id, 'banned', banned_at, banned_by
+        from public.user_bans
+        on conflict (user_id) do update set
+            status            = excluded.status,
+            status_updated_at = excluded.status_updated_at,
+            status_updated_by = excluded.status_updated_by;
+
+        drop table public.user_bans;
+    end if;
+end
+$$;
+
+create or replace function public.is_banned(uid uuid)
+returns boolean
+language sql
+security definer stable set search_path = public
+as $$
+    select coalesce(
+        (select status = 'banned' from public.user_details where user_id = uid),
+        false
+    )
+$$;
+
 -- =====================================================================
 -- Row Level Security
 -- =====================================================================
@@ -143,20 +204,20 @@ drop policy if exists "races insert own" on public.races;
 create policy "races insert own"
     on public.races for insert
     to authenticated
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "races update own" on public.races;
 create policy "races update own"
     on public.races for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "races delete own" on public.races;
 create policy "races delete own"
     on public.races for delete
     to authenticated
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- Goals: same pattern.
 drop policy if exists "goals select own" on public.goals;
@@ -169,20 +230,20 @@ drop policy if exists "goals insert own" on public.goals;
 create policy "goals insert own"
     on public.goals for insert
     to authenticated
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "goals update own" on public.goals;
 create policy "goals update own"
     on public.goals for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "goals delete own" on public.goals;
 create policy "goals delete own"
     on public.goals for delete
     to authenticated
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- Variation annotations: same pattern as races/goals.
 alter table public.variation_annotations enable row level security;
@@ -197,13 +258,13 @@ drop policy if exists "variation_annotations insert own" on public.variation_ann
 create policy "variation_annotations insert own"
     on public.variation_annotations for insert
     to authenticated
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "variation_annotations delete own" on public.variation_annotations;
 create policy "variation_annotations delete own"
     on public.variation_annotations for delete
     to authenticated
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- =====================================================================
 -- Catalogue seed (tracks, variations, vehicles) lives in supabase/seed.sql.
@@ -349,8 +410,12 @@ end;
 $$;
 
 -- Returns all users with their current role name — admin only.
+-- Adding `banned` changes the return row type, which `create or replace`
+-- can't do for OUT-parameter functions — drop first.
+drop function if exists public.get_all_users_with_roles();
+
 create or replace function public.get_all_users_with_roles()
-returns table(id uuid, email text, role text, created_at timestamptz)
+returns table(id uuid, email text, role text, created_at timestamptz, banned boolean)
 language plpgsql
 security definer set search_path = public
 as $$
@@ -371,7 +436,8 @@ begin
              limit 1),
             'user'
         )::text as role,
-        u.created_at::timestamptz
+        u.created_at::timestamptz,
+        public.is_banned(u.id) as banned
     from auth.users u
     order by u.created_at asc;
 end;
@@ -442,6 +508,34 @@ begin
 end;
 $$;
 
+-- Bans or unbans a target user — admin only. A banned user is blocked at
+-- the RLS/RPC level from posting races, submitting feedback, issuing new
+-- API keys, or using an existing API key to log races (see the policies
+-- and insert_race_with_api_key_wf1 below) — effectively suspending
+-- everything that requires being logged in.
+create or replace function public.set_user_banned(target_user_id uuid, banned boolean)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    if target_user_id = auth.uid() then
+        raise exception 'Cannot ban your own account';
+    end if;
+
+    insert into public.user_details (user_id, status, status_updated_at, status_updated_by)
+    values (target_user_id, case when banned then 'banned' else 'active' end, now(), auth.uid())
+    on conflict (user_id) do update set
+        status            = excluded.status,
+        status_updated_at = excluded.status_updated_at,
+        status_updated_by = excluded.status_updated_by;
+end;
+$$;
+
 -- =====================================================================
 -- Feedback: user-submitted feedback, bugs, and suggestions.
 -- Defined after is_admin so the admin select policy can reference it.
@@ -462,7 +556,7 @@ drop policy if exists "feedback insert own" on public.feedback;
 create policy "feedback insert own"
     on public.feedback for insert
     to authenticated
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- Admins can read all feedback.
 drop policy if exists "feedback select admin" on public.feedback;
@@ -507,13 +601,13 @@ drop policy if exists "api_keys insert own" on public.api_keys;
 create policy "api_keys insert own"
     on public.api_keys for insert
     to authenticated
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 drop policy if exists "api_keys delete own" on public.api_keys;
 create policy "api_keys delete own"
     on public.api_keys for delete
     to authenticated
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- Needed so a user can soft-revoke (set revoked_at) their own key instead
 -- of hard-deleting it.
@@ -522,7 +616,7 @@ create policy "api_keys update own"
     on public.api_keys for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id);
+    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
 
 -- RPC called by the external companion tool: validates the raw API key,
 -- resolves track/variation by exact display-name match and vehicle by
@@ -591,6 +685,13 @@ begin
 
     if v_user_id is null then
         return json_build_object('success', false, 'error', 'Invalid API key');
+    end if;
+
+    -- A banned user can't log races through the companion tool either —
+    -- this RPC is security definer and bypasses the "races insert own" RLS
+    -- check above, so the ban has to be enforced here too.
+    if public.is_banned(v_user_id) then
+        return json_build_object('success', false, 'error', 'Account suspended');
     end if;
 
     if performance_index is not null and performance_index < 0 then
