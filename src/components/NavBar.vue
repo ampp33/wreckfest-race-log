@@ -255,7 +255,6 @@ export default {
         { to: '/settings/api-keys', label: 'API keys' }
       ],
       adminItems: [
-        { to: '/admin/diagnostics', label: 'Diagnostics' },
         { to: '/admin/users', label: 'Users' },
         { to: '/admin/api-keys', label: 'API keys' },
         { to: '/admin/feedback', label: 'Feedback' }

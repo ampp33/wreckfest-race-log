@@ -368,54 +368,24 @@ as $$
     )
 $$;
 
--- Returns aggregate diagnostics — admin only.
-create or replace function public.get_diagnostics()
-returns json
-language plpgsql
-security definer set search_path = public
-as $$
-declare
-    v_total_users int;
-    v_top_users   json;
-begin
-    if not public.is_admin(auth.uid()) then
-        raise exception 'Unauthorized: admin access required';
-    end if;
-
-    select count(*) into v_total_users from auth.users;
-
-    select json_agg(t) into v_top_users
-    from (
-        select
-            u.email,
-            u.created_at,
-            count(distinct rc.id)  as race_count,
-            count(distinct g.id)   as goal_count,
-            count(distinct a.id)   as annotation_count,
-            count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity
-        from auth.users u
-        left join public.races                 rc on rc.user_id = u.id
-        left join public.goals                 g  on g.user_id  = u.id
-        left join public.variation_annotations a  on a.user_id  = u.id
-        group by u.id, u.email, u.created_at
-        order by total_activity desc
-        limit 5
-    ) t;
-
-    return json_build_object(
-        'total_users', v_total_users,
-        'top_users',   coalesce(v_top_users, '[]'::json)
-    );
-end;
-$$;
-
--- Returns all users with their current role name — admin only.
--- Adding `banned` changes the return row type, which `create or replace`
--- can't do for OUT-parameter functions — drop first.
+-- Returns all users with their current role name and activity counts,
+-- sorted by total activity descending — admin only.
+-- `create or replace` can't change an OUT-parameter function's return row
+-- type — drop first.
 drop function if exists public.get_all_users_with_roles();
 
 create or replace function public.get_all_users_with_roles()
-returns table(id uuid, email text, role text, created_at timestamptz, banned boolean)
+returns table(
+    id                uuid,
+    email             text,
+    role              text,
+    created_at        timestamptz,
+    banned            boolean,
+    race_count        bigint,
+    goal_count        bigint,
+    annotation_count  bigint,
+    total_activity    bigint
+)
 language plpgsql
 security definer set search_path = public
 as $$
@@ -437,9 +407,17 @@ begin
             'user'
         )::text as role,
         u.created_at::timestamptz,
-        public.is_banned(u.id) as banned
+        public.is_banned(u.id) as banned,
+        count(distinct rc.id)  as race_count,
+        count(distinct g.id)   as goal_count,
+        count(distinct a.id)   as annotation_count,
+        count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity
     from auth.users u
-    order by u.created_at asc;
+    left join public.races                 rc on rc.user_id = u.id
+    left join public.goals                 g  on g.user_id  = u.id
+    left join public.variation_annotations a  on a.user_id  = u.id
+    group by u.id, u.email, u.created_at
+    order by total_activity desc;
 end;
 $$;
 

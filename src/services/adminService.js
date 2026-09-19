@@ -1,11 +1,5 @@
 import { supabase } from './supabase.js'
 
-export async function getDiagnostics() {
-  const { data, error } = await supabase.rpc('get_diagnostics')
-  if (error) throw error
-  return data
-}
-
 export async function getAllUsers() {
   const { data, error } = await supabase.rpc('get_all_users_with_roles')
   if (error) throw error
