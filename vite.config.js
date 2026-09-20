@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 // `base` lets the app be hosted under a GitHub Pages project path
-// (e.g. https://user.github.io/wreckfest-race-tracker/). It is set via
+// (e.g. https://user.github.io/wreckfest-race-log/). It is set via
 // VITE_BASE_PATH at build time so local dev still serves at /.
 export default defineConfig({
   plugins: [vue()],

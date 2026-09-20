@@ -7,7 +7,6 @@ dist
 .idea
 .claude
 sidecar
-*.traineddata
 
 # local design references (images, not source)
 references/

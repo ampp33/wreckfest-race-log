@@ -2,7 +2,7 @@
 // Absolute URLs (http/https/data) are returned untouched. Relative paths
 // (e.g. "track-images/big-valley-speedway.png") are prefixed with Vite's
 // BASE_URL so they work both at root ("/") and under a project subpath
-// ("/wreckfest-race-tracker/") on GitHub Pages.
+// ("/wreckfest-race-log/") on GitHub Pages.
 export function resolveImageUrl(value) {
   if (!value) return ''
   if (/^(https?:|data:)/i.test(value)) return value
