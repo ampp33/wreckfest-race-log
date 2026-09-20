@@ -34,6 +34,9 @@
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark truncate mt-0.5">{{ key.user_email }}</div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Issued {{ formatDate(key.created_at) }}</div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">
+                Last used {{ key.last_used_at ? formatDate(key.last_used_at) : 'never' }}
+              </div>
+              <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">
                 <router-link
                   :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
                   class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
