@@ -384,7 +384,8 @@ returns table(
     race_count        bigint,
     goal_count        bigint,
     annotation_count  bigint,
-    total_activity    bigint
+    total_activity    bigint,
+    last_race_at      timestamptz
 )
 language plpgsql
 security definer set search_path = public
@@ -411,7 +412,8 @@ begin
         count(distinct rc.id)  as race_count,
         count(distinct g.id)   as goal_count,
         count(distinct a.id)   as annotation_count,
-        count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity
+        count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity,
+        max(rc.datetime)      as last_race_at
     from auth.users u
     left join public.races                 rc on rc.user_id = u.id
     left join public.goals                 g  on g.user_id  = u.id

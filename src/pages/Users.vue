@@ -45,6 +45,7 @@
                     <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
                   </div>
                   <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDate(user.created_at) }}</div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Last race {{ formatDateTime(user.last_race_at) }}</div>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
                   <span
@@ -130,6 +131,7 @@
                 <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
                   <th class="px-4 py-2 font-medium">Email</th>
                   <th class="px-4 py-2 font-medium">Joined</th>
+                  <th class="px-4 py-2 font-medium">Last race</th>
                   <th class="px-4 py-2 font-medium">Role</th>
                   <th class="px-4 py-2 font-medium text-right">Races</th>
                   <th class="px-4 py-2 font-medium text-right">Goals</th>
@@ -151,6 +153,9 @@
                   </td>
                   <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
                     {{ formatDate(user.created_at) }}
+                  </td>
+                  <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
+                    {{ formatDateTime(user.last_race_at) }}
                   </td>
                   <td class="px-4 py-2">
                     <span
@@ -300,7 +305,7 @@ import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { getAllUsers, getUserGrowth, setUserRole, setUserBanned } from '../services/adminService.js'
 import { pushToast } from '../stores/toastStore.js'
-import { formatDate } from '../utils/dateFormat.js'
+import { formatDate, formatDateTime } from '../utils/dateFormat.js'
 import { useChart } from '../composables/useChart.js'
 import { getChartTheme } from '../utils/chartTheme.js'
 import { useEventListener } from '../composables/useEventListener.js'
