@@ -434,26 +434,84 @@ begin
 end;
 $$;
 
--- Returns cumulative user count per day for the last 30 days — admin only.
-create or replace function public.get_user_growth()
+-- Resolves a range keyword ('1d', '7d', '30d', '90d', '1y', 'all') to the
+-- first day of a generate_series(..., current_date, interval '1 day') call.
+-- Shared by get_user_growth() and get_race_log_growth() below.
+create or replace function public.resolve_growth_range_start(p_range text, p_earliest date)
+returns date
+language plpgsql
+set search_path = public
+as $$
+declare
+    start_day date;
+begin
+    start_day := case p_range
+        when '1d'  then (current_date - interval '1 day')::date
+        when '7d'  then (current_date - interval '6 days')::date
+        when '90d' then (current_date - interval '89 days')::date
+        when '1y'  then (current_date - interval '1 year')::date
+        when 'all' then p_earliest
+        else (current_date - interval '29 days')::date -- '30d' and unrecognized values
+    end;
+
+    return coalesce(start_day, current_date);
+end;
+$$;
+
+-- Returns cumulative user count per day for the given range — admin only.
+drop function if exists public.get_user_growth();
+create or replace function public.get_user_growth(p_range text default '30d')
 returns table(day date, user_count bigint)
 language plpgsql
 security definer set search_path = public
 as $$
+declare
+    start_day date;
 begin
     if not public.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
+    start_day := public.resolve_growth_range_start(
+        p_range,
+        (select min(u.created_at)::date from auth.users u)
+    );
+
     return query
     select
         gs::date as day,
         (select count(*) from auth.users u where u.created_at::date <= gs::date) as user_count
-    from generate_series(
-        current_date - interval '29 days',
-        current_date,
-        interval '1 day'
-    ) as gs
+    from generate_series(start_day, current_date, interval '1 day') as gs
+    order by gs asc;
+end;
+$$;
+
+-- Returns the number of races logged per day for the given range — admin
+-- only. Unlike get_user_growth() this is a daily count, not a running total.
+create or replace function public.get_race_log_growth(p_range text default '30d')
+returns table(day date, race_count bigint)
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+    start_day date;
+begin
+    if not public.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    start_day := public.resolve_growth_range_start(
+        p_range,
+        (select min(r.created_at)::date from public.races r)
+    );
+
+    return query
+    select
+        gs::date as day,
+        count(r.id) as race_count
+    from generate_series(start_day, current_date, interval '1 day') as gs
+    left join public.races r on r.created_at::date = gs::date
+    group by gs
     order by gs asc;
 end;
 $$;

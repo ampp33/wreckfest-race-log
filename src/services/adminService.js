@@ -6,8 +6,14 @@ export async function getAllUsers() {
   return data ?? []
 }
 
-export async function getUserGrowth() {
-  const { data, error } = await supabase.rpc('get_user_growth')
+export async function getUserGrowth(range = '30d') {
+  const { data, error } = await supabase.rpc('get_user_growth', { p_range: range })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getRaceLogGrowth(range = '30d') {
+  const { data, error } = await supabase.rpc('get_race_log_growth', { p_range: range })
   if (error) throw error
   return data ?? []
 }

@@ -10,18 +10,41 @@
     <p v-else-if="error" class="text-sm text-red-500">{{ error }}</p>
 
     <div v-else class="space-y-6">
-      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
-        <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Registered users</div>
-        <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ users.length }}</div>
+      <div class="flex flex-wrap gap-4">
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Registered users</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ users.length }}</div>
+        </div>
+
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races logged</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ totalRaces }}</div>
+        </div>
       </div>
 
       <!-- User growth chart -->
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
-        <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
-          User <em class="signal">growth</em> - last 30 days
-        </h2>
+        <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+            User <em class="signal">growth</em>
+          </h2>
+          <ChartRangePicker v-model="usersRange" />
+        </div>
         <div class="relative h-56">
           <canvas ref="growthCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- Races logged chart -->
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+        <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+            Races <em class="signal">logged</em>
+          </h2>
+          <ChartRangePicker v-model="racesRange" />
+        </div>
+        <div class="relative h-56">
+          <canvas ref="racesCanvas"></canvas>
         </div>
       </div>
 
@@ -303,12 +326,14 @@ import {
 } from 'chart.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getUserGrowth, setUserRole, setUserBanned } from '../services/adminService.js'
+import { getAllUsers, getUserGrowth, getRaceLogGrowth, setUserRole, setUserBanned } from '../services/adminService.js'
+import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate, formatDateTime } from '../utils/dateFormat.js'
 import { useChart } from '../composables/useChart.js'
 import { getChartTheme } from '../utils/chartTheme.js'
 import { useEventListener } from '../composables/useEventListener.js'
+import ChartRangePicker from '../components/ChartRangePicker.vue'
 import editIcon from '../assets/icons/edit.svg?raw'
 import banIcon from '../assets/icons/ban.svg?raw'
 import checkIcon from '../assets/icons/check.svg?raw'
@@ -320,6 +345,10 @@ const loading = ref(true)
 const error = ref(null)
 const users = ref([])
 const growthData = ref([])
+const racesData = ref([])
+const totalRaces = ref(0)
+const usersRange = ref('30d')
+const racesRange = ref('30d')
 const saving = ref(false)
 const dialog = ref({ open: false, user: null, selectedRole: null })
 const confirmBanId = ref(null)
@@ -330,24 +359,31 @@ const availableRoles = [
 ]
 
 const growthCanvas = ref(null)
-const { render } = useChart(growthCanvas)
+const { render: renderGrowth } = useChart(growthCanvas)
+const racesCanvas = ref(null)
+const { render: renderRaces } = useChart(racesCanvas)
 
 const isDark = computed(() => prefsStore.darkMode)
 const currentUserId = computed(() => authStore.user?.id ?? null)
 
-function renderChart() {
+// Past a few months of daily points, 3px markers overlap into a solid
+// blob — drop them for dense ranges (1y/all) and let the line carry it.
+const DENSE_POINT_COUNT = 60
+
+function renderGrowthChart() {
   if (!growthCanvas.value || !growthData.value.length) return
 
   const dark = isDark.value
   const theme = getChartTheme(dark)
   const color = dark ? '#E5332F' : '#C41E1E'
+  const dense = growthData.value.length > DENSE_POINT_COUNT
 
   const labels = growthData.value.map(row =>
     new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
   )
   const counts = growthData.value.map(row => Number(row.user_count))
 
-  render({
+  renderGrowth({
     type: 'line',
     data: {
       labels,
@@ -357,8 +393,8 @@ function renderChart() {
         borderColor: color,
         backgroundColor: color + '22',
         borderWidth: 2.5,
-        pointRadius: 3,
-        pointHoverRadius: 6,
+        pointRadius: dense ? 0 : 3,
+        pointHoverRadius: dense ? 4 : 6,
         pointBackgroundColor: color,
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
@@ -400,13 +436,103 @@ function renderChart() {
   })
 }
 
-watch(isDark, () => nextTick(renderChart))
-// The chart's canvas only enters the DOM once `loading` flips false (see the
-// template's v-else), so the first render is triggered from here rather than
-// onMounted, which would run before that.
+function renderRacesChart() {
+  if (!racesCanvas.value || !racesData.value.length) return
+
+  const dark = isDark.value
+  const theme = getChartTheme(dark)
+  const color = dark ? '#E5332F' : '#C41E1E'
+  const dense = racesData.value.length > DENSE_POINT_COUNT
+
+  const labels = racesData.value.map(row =>
+    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  )
+  const counts = racesData.value.map(row => Number(row.race_count))
+
+  renderRaces({
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Races logged',
+        data: counts,
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2.5,
+        pointRadius: dense ? 0 : 3,
+        pointHoverRadius: dense ? 4 : 6,
+        pointBackgroundColor: color,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          ...theme.tooltip,
+          callbacks: {
+            label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: theme.gridColor },
+          border: { display: false },
+          ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: theme.gridColor },
+          border: { display: false },
+          beginAtZero: true,
+          ticks: {
+            color: theme.tickColor,
+            font: { size: 11 },
+            precision: 0
+          }
+        }
+      }
+    }
+  })
+}
+
+function renderCharts() {
+  renderGrowthChart()
+  renderRacesChart()
+}
+
+watch(isDark, () => nextTick(renderCharts))
+// The charts' canvases only enter the DOM once `loading` flips false (see
+// the template's v-else), so the first render is triggered from here rather
+// than onMounted, which would run before that.
 watch(loading, (isLoading) => {
-  if (!isLoading) nextTick(renderChart)
+  if (!isLoading) nextTick(renderCharts)
 })
+
+async function loadGrowth() {
+  try {
+    growthData.value = await getUserGrowth(usersRange.value)
+    nextTick(renderGrowthChart)
+  } catch (err) {
+    pushToast(err.message || 'Failed to load user growth', 'error')
+  }
+}
+async function loadRaceGrowth() {
+  try {
+    racesData.value = await getRaceLogGrowth(racesRange.value)
+    nextTick(renderRacesChart)
+  } catch (err) {
+    pushToast(err.message || 'Failed to load race growth', 'error')
+  }
+}
+watch(usersRange, loadGrowth)
+watch(racesRange, loadRaceGrowth)
 
 function openDialog(user) {
   dialog.value = { open: true, user, selectedRole: user.role }
@@ -459,9 +585,16 @@ useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog()
 
 onMounted(async () => {
   try {
-    const [allUsers, growth] = await Promise.all([getAllUsers(), getUserGrowth()])
+    const [allUsers, growth, racesGrowth, raceCount] = await Promise.all([
+      getAllUsers(),
+      getUserGrowth(usersRange.value),
+      getRaceLogGrowth(racesRange.value),
+      getTotalRaceCount()
+    ])
     users.value = allUsers
     growthData.value = growth
+    racesData.value = racesGrowth
+    totalRaces.value = raceCount
   } catch (err) {
     error.value = err.message || 'Failed to load users'
   } finally {
