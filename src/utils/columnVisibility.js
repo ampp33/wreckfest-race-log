@@ -5,13 +5,13 @@ import { reactive, watch } from 'vue'
 // it on another). Uses `reactive`/`watch` rather than lifecycle hooks, so —
 // like the app's other stores (prefsStore.js, quickAddStore.js) — it works
 // from a plain Options API `data()`/`setup()` just as well as `<script setup>`.
-export function createColumnVisibility(storageKey, columnKeys) {
+export function createColumnVisibility(storageKey, columnKeys, defaultHidden = []) {
   const state = reactive({ hidden: loadHidden() })
 
   function loadHidden() {
     try {
       const raw = localStorage.getItem(storageKey)
-      if (!raw) return []
+      if (!raw) return defaultHidden.filter(k => columnKeys.includes(k))
       const parsed = JSON.parse(raw)
       return Array.isArray(parsed) ? parsed.filter(k => columnKeys.includes(k)) : []
     } catch {

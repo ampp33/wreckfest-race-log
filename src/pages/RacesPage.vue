@@ -160,7 +160,14 @@
               </div>
 
               <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
-                <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
+                <RaceExpandedDetails
+                  :notes="race.notes || ''"
+                  notes-fallback="No notes"
+                  accent
+                  divider
+                  :lap-times="race.lap_times_ms"
+                  :roster="race.results_roster"
+                />
               </div>
             </template>
 
@@ -289,7 +296,14 @@
                 </tr>
                 <tr v-if="!editing[race.id] && expanded[race.id]">
                   <td :colspan="visibleColumnKeys.length + 1" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
-                    <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
+                    <RaceExpandedDetails
+                      :notes="race.notes || ''"
+                      notes-fallback="No notes"
+                      accent
+                      divider
+                      :lap-times="race.lap_times_ms"
+                      :roster="race.results_roster"
+                    />
                   </td>
                 </tr>
               </template>
@@ -380,6 +394,9 @@ const TABLE_COLUMNS = [
   // would remove the row's only in-table way to edit/delete a race.
 ]
 const COLUMN_OPTIONS = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
+// Shown only on a first-ever visit, before the column picker has written
+// anything to localStorage — after that, whatever the user has chosen wins.
+const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'assists']
 
 function trackVariationKey(race) { return race.trackSlug && race.variationSlug ? race.track_variation_id : UNRESOLVED_VARIATION }
 function trackVariationLabel(race) { return race.trackSlug && race.variationSlug ? `${race.trackName} — ${race.variationName}` : '—' }
@@ -403,7 +420,7 @@ export default {
   // TrackDetailPage.vue) is built on `reactive`/`watch`, not lifecycle hooks,
   // so it doesn't need this whole file converted to <script setup>.
   setup() {
-    const columnVisibility = createColumnVisibility('wreckfest:columns:races', TABLE_COLUMNS.map(c => c.key))
+    const columnVisibility = createColumnVisibility('wreckfest:columns:races', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
     return { columnVisibility }
   },
   data() {

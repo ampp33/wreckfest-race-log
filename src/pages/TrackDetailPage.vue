@@ -324,7 +324,10 @@ const TABLE_COLUMNS = [
   // would remove the row's only in-table way to edit/delete a race.
 ]
 const columnOptions = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
-const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key))
+// Shown only on a first-ever visit, before the column picker has written
+// anything to localStorage — after that, whatever the user has chosen wins.
+const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists']
+const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
 const visibleColumnKeys = computed(() => TABLE_COLUMNS.map(c => c.key).filter(columnVisibility.isVisible))
 
 const loading = ref(true)
