@@ -6,10 +6,463 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="google-site-verification" content="yGNd-Z71EAkPJyMcdtaS5nDCtdaLf8zqHOiZ_zmTl3A" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wreckfest Race Log</title>
+    <title>Wreckfest Race Log — Track Races, Lap Times & Notes</title>
+    <meta name="description" content="Free online race log for Wreckfest. Automatically track races with the Telemetry plugin, log lap times and notes per track, and watch your stats improve." />
+    <link rel="canonical" href="https://wfracelog.com/" />
+
+    <!-- Open Graph / Twitter card. og:image is a real screenshot (public/images/getting-started/races-expanded.light.webp),
+         cropped to 1200x630 and re-encoded as JPEG since WebP og:image previews render unreliably on Twitter/X and LinkedIn. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wreckfest Race Log" />
+    <meta property="og:title" content="Wreckfest Race Log — Track Races, Lap Times & Notes" />
+    <meta property="og:description" content="Free online race log for Wreckfest. Automatically track races with the Telemetry plugin, log lap times and notes per track, and watch your stats improve." />
+    <meta property="og:url" content="https://wfracelog.com/" />
+    <meta property="og:image" content="https://wfracelog.com/images/og-preview.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Wreckfest Race Log — Track Races, Lap Times & Notes" />
+    <meta name="twitter:description" content="Free online race log for Wreckfest. Automatically track races with the Telemetry plugin, log lap times and notes per track, and watch your stats improve." />
+    <meta name="twitter:image" content="https://wfracelog.com/images/og-preview.jpg" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Wreckfest Race Log",
+        "url": "https://wfracelog.com/",
+        "description": "An online race log and note-tracking tool for the racing game Wreckfest. Track races automatically with the companion Telemetry plugin, or log them manually, then review lap times, notes per track, and stats over time.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "image": "https://wfracelog.com/images/og-preview.jpg",
+        "about": {
+          "@type": "VideoGame",
+          "name": "Wreckfest"
+        },
+        "creator": {
+          "@type": "Person",
+          "name": "Ampp33"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
   <body class="bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark">
-    <div id="app"></div>
+    <!-- Static snapshot of the signed-out homepage (src/pages/HomePage.vue and
+         its child components), including the real demo data from
+         src/data/homePageDemoData.js, for clients that never run JS at all —
+         most non-Google AI crawlers (GPTBot, ClaudeBot, PerplexityBot, etc.)
+         don't render JS, so without this they'd see an empty div. Uses the
+         real Tailwind classes so it isn't visually distinct from the live app
+         while the JS bundle loads. Vue's mount() clears this out and replaces
+         it for every real, JS-capable visitor — verified this doesn't cause
+         duplicate/flashed content.
+
+         Two spots can't be replicated here: LapSplitsChart and
+         RaceActivityChart render into a <canvas> via Chart.js, which is
+         genuinely blank pixels until JS runs — shown as plain text/omitted
+         below instead of faking a chart.
+
+         Keep this in sync with HomePage.vue and homePageDemoData.js if either
+         changes materially. -->
+    <div id="app">
+      <header class="border-b border-brand-border dark:border-brand-border-dark">
+        <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
+          <span class="flex items-baseline gap-2.5">
+            <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
+            <span class="ov-lg whitespace-nowrap text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
+          </span>
+          <div class="flex items-center gap-2">
+            <a href="/#/plugin" class="ov min-h-[44px] px-4 hidden sm:inline-flex items-center whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">Install Telemetry</a>
+            <a href="/#/login" class="ov min-h-[44px] px-5 inline-flex items-center whitespace-nowrap bg-brand-accent dark:bg-brand-accent-dark text-white">Sign in</a>
+          </div>
+        </div>
+      </header>
+
+      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
+        <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
+          Track every race.<br /><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
+        </h1>
+        <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
+          <strong>Wreckfest Race Log</strong> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <a href="/#/plugin" class="font-bold hover:underline">Telemetry plugin</a>, or manually log them yourself here — then use the site to watch your stats improve, take notes track by track, and work toward mastering the game.
+        </p>
+        <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-4">
+          <em>I built this site because I wanted a pretty and simple way to log my races and take notes, and I hope it helps you as much as it's helped me.</em> — Ampp33
+        </p>
+      </section>
+
+      <main>
+        <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+          <h2 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
+            Everything, on <em class="font-heading font-normal tracking-normal signal">record</em>.
+          </h2>
+          <div class="mt-5 max-w-3xl space-y-3">
+            <div>
+              <h3 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">A Complete History of All Your Races</h3>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Full details about every race you've joined, all logged in one place.</p>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Revisit car details, tunings, lap times, race rosters, best laps, and positions.</p>
+            </div>
+            <div>
+              <h3 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Notes and Annotations</h3>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Forgot your brake points? Where hazards are? Or how to take tricky turns? Not anymore.</p>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Keep notes on every track, every variation, and even add annotations to track maps.</p>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Jot down what works, what doesn't, shortcuts, and everything in between.</p>
+            </div>
+            <div>
+              <h3 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Stats, Stats, Stats</h3>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">With all your data in one place, you can run the numbers to see the metrics that matter.</p>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Total number of races, most used vehicle, favorite track, races per week/month/year, goal lap time deltas, biggest improvements, and more.</p>
+            </div>
+            <div>
+              <h3 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">More on the Horizon</h3>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">This site is actively being developed — expect more features and fixes in the near future.</p>
+              <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark italic">Don't see a feature you want? Hit the Feedback button and leave a comment.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+          <h2 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
+            <em class="font-heading font-normal tracking-normal signal">How</em> to get started.
+          </h2>
+
+          <div class="space-y-10">
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">1. Create an account.</h3>
+              <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark mb-3">Email or Google — either works, takes about ten seconds, no credit card, no personal info (we don't need it anyway).</p>
+              <a href="/#/login" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Create your account →</a>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-1">
+                <a href="/#/plugin" class="hover:underline">2. Install the Telemetry plugin.</a>
+              </h3>
+              <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">Install it once. It runs quietly alongside Wreckfest and reads your results straight out of the game's own memory the instant a race ends — then posts them here automatically.</p>
+              <a href="/#/plugin" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Install Telemetry →</a>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">3. Race in Wreckfest.</h3>
+              <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark">Any track, any variation, any car. This part happens in the game, not here.</p>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-1">4. Annotate.</h3>
+              <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">View your latest logs on the Races screen, annotate the track diagram or add notes. Did you forget that rock at the first corner? Now's the time to make a note of that.</p>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-3">5. Set your goals and chase them.</h3>
+              <div class="grid grid-cols-2 gap-6 max-w-md">
+                <div class="rule-top pt-3">
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
+                  <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">1:08.055</div>
+                </div>
+                <div class="rule-top pt-3">
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
+                  <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">1:08.000</div>
+                </div>
+                <div class="pt-3 border-t-2 border-brand-accent dark:border-brand-accent-dark">
+                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
+                  <div class="font-display font-black tracking-tightest text-display-sm tabular mt-2 text-brand-accent dark:text-brand-accent-dark">+0:00.055</div>
+                </div>
+                <div class="rule-top pt-3">
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
+                  <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">10</div>
+                </div>
+              </div>
+              <p class="font-body text-[13px] text-brand-muted dark:text-brand-muted-dark mt-3">Savolax Sandpit — Main Route</p>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-3">6. Review your races, track your goals and progress.</h3>
+              <div class="relative overflow-x-auto">
+                <table class="w-full min-w-[720px] border-collapse">
+                  <thead>
+                    <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+                      <th class="px-3.5 pb-2.5 font-medium">Date</th>
+                      <th class="px-3.5 pb-2.5 font-medium">Track / Variation</th>
+                      <th class="px-3.5 pb-2.5 font-medium">Vehicle</th>
+                      <th class="px-3.5 pb-2.5 font-medium">Class (PI)</th>
+                      <th class="px-3.5 pb-2.5 font-medium text-right">Place</th>
+                      <th class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
+                      <th class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
+                      <th class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
+                    </tr>
+                  </thead>
+                  <tbody class="border-b border-brand-border dark:border-brand-border-dark">
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Savolax Sandpit</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Route Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Raiden RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">2</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">1:09.013</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5:52.547</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Fire Rock Raceway</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Circuit Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Boomer RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">1</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:58.090</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5:01.180</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Northland Raceway</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Outer Route Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Boomer RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">1</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">1:05.045</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5:37.214</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Firwood Motocenter</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Short Circuit Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Boomer RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">2</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">8</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:35.207</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4:52.131</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Sandstone Raceway</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Route</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">RoadSlayer</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">2</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">1:04.130</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5:37.800</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Espedalen Raceway</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Short Circuit Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">RoadSlayer</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular">4</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">8</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:35.059</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5:01.279</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Boulder Bank Circuit</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Route Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Boomer RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular">6</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">1:23.447</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">6:16.720</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/11/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Dirt Devil Stadium</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Dirt Speedway</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Nexus RX</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">1</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">8</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:32.563</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4:35.326</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/10/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Rattlesnake Racepark</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Circuit Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">RoadSlayer</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:59.621</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4:04.072</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/10/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Hellride</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Circuit</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Nexus RX</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">2</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">6</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:43.359</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">4:50.588</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/10/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Drytown Desert Circuit</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Main Circuit Reverse</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">Raiden RS</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-bold">3</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:37.472</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">3:15.981</td>
+            </tr>
+            <tr class="border-t border-brand-border dark:border-brand-border-dark">
+              <td class="px-3.5 py-2 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">09/10/26</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-semibold text-brand-text dark:text-brand-text-dark">Mudford Motorpark</span> <span class="text-brand-muted dark:text-brand-muted-dark">— Mud Oval</span></td>
+              <td class="px-3.5 py-2 text-[13px] text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">RoadSlayer</td>
+              <td class="px-3.5 py-2 text-[13px] whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular">6</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">3</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular font-semibold text-brand-text dark:text-brand-text-dark">0:17.420</td>
+              <td class="px-3.5 py-2 text-right text-[13px] tabular text-brand-muted dark:text-brand-muted-dark">0:56.030</td>
+            </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="mt-4 p-4 sm:p-5 bg-brand-surface dark:bg-brand-surface-dark">
+                <div class="ov text-brand-muted dark:text-brand-muted-dark mb-1.5">Fire Rock Raceway — Main Circuit Reverse</div>
+                <div class="ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Notes</div>
+                <p class="font-body text-[13px] italic text-brand-muted dark:text-brand-muted-dark">Private — visible only to you, never shown here.</p>
+                <div class="mt-3 ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Lap times</div>
+                <p class="font-body text-[13px] tabular text-brand-secondary dark:text-brand-secondary-dark">Lap 1: 1:05.902 · Lap 2: 0:58.090 · Lap 3: 0:59.454 · Lap 4: 0:58.936 · Lap 5: 0:58.798</p>
+                <div class="mt-3 ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Roster</div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm border-collapse">
+                    <thead>
+                      <tr class="ov text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
+                        <th class="py-2 pr-3 text-left font-medium">Pos</th>
+                        <th class="py-2 pr-3 text-left font-medium">Name</th>
+                        <th class="py-2 pr-3 text-left font-medium">Car</th>
+                        <th class="py-2 pr-3 text-left font-medium">Class</th>
+                        <th class="py-2 pr-3 text-right font-medium">Best lap</th>
+                        <th class="py-2 pr-3 text-right font-medium">Total</th>
+                        <th class="py-2 pr-3 text-right font-medium">Laps</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">1</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">Ampp33</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Boomer RS</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-accent dark:text-brand-accent-dark font-semibold">0:58.090</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:01.180</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">2</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">speedgamer5</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Venom</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">0:59.873</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:03.628</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">3</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">DonCobra</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Rebelrat</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">0:59.978</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:09.457</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">4</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">CeoKeanan</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Super Venom</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">0:59.376</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:15.032</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">5</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">Throat Clogger</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Rocket</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">163</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">1:00.559</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:16.571</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">6</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">TRACANGUS</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Rocket</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">1:00.792</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:18.205</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+              <tr class="border-t border-brand-border dark:border-brand-border-dark">
+                <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">7</td>
+                <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark">ColeTrickle2709</td>
+                <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark">Rocket Rx</td>
+                <td class="py-1.5 pr-3 whitespace-nowrap"><span class="font-extrabold" style="color:#22c55e">C</span> <span class="ml-1 tabular text-brand-muted dark:text-brand-muted-dark">164</span></td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-text dark:text-brand-text-dark">0:59.516</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5:20.610</td>
+                <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">5</td>
+              </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h3 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-3">7. Explore your stats.</h3>
+              <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark mb-4">Real numbers, rolled up across this account's whole history:</p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+                  <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Most used vehicle</div>
+                  <div class="mt-1 font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark">Raiden RS</div>
+                  <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">72 races</div>
+                </div>
+                <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+                  <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Most raced variation</div>
+                  <a href="/#/track/clayridge-circuit/main-circuit" class="block mt-1 font-display font-black tracking-tight text-2xl text-brand-accent hover:underline">
+                    Clayridge Circuit
+                    <span class="font-body font-normal text-base text-brand-muted dark:text-brand-muted-dark">— Main Circuit</span>
+                  </a>
+                  <div class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">18 races</div>
+                </div>
+                <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+                  <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races</div>
+                  <div class="mt-1 font-display font-black tracking-tight text-2xl text-brand-text dark:text-brand-text-dark">211</div>
+                </div>
+              </div>
+
+              <p class="font-body text-[13px] text-brand-muted dark:text-brand-muted-dark mt-4">Plus race-activity charts broken down by day, week, month, and year.</p>
+
+              <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 mt-4">
+                <h4 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
+                  Biggest <em class="signal">improvements</em> (oldest → newest lap)
+                </h4>
+                <ul class="space-y-2 text-sm">
+                  <li class="flex items-center justify-between"><a href="/#/track/kingston-raceway/asphalt-oval" class="text-brand-accent hover:underline font-body">Kingston Raceway — Asphalt Oval</a><span class="font-mono text-green-600">-0:09.854</span></li>
+                  <li class="flex items-center justify-between"><a href="/#/track/boulder-bank-circuit/short-route" class="text-brand-accent hover:underline font-body">Boulder Bank Circuit — Short Route</a><span class="font-mono text-green-600">-0:04.220</span></li>
+                  <li class="flex items-center justify-between"><a href="/#/track/devil-s-canyon/race-track" class="text-brand-accent hover:underline font-body">Devil's Canyon — Race Track</a><span class="font-mono text-green-600">-0:03.147</span></li>
+                  <li class="flex items-center justify-between"><a href="/#/track/savolax-sandpit/main-route-reverse" class="text-brand-accent hover:underline font-body">Savolax Sandpit — Main Route Reverse</a><span class="font-mono text-green-600">-0:01.653</span></li>
+                  <li class="flex items-center justify-between"><a href="/#/track/northfolk-ring/main-circuit-reverse" class="text-brand-accent hover:underline font-body">Northfolk Ring — Main Circuit Reverse</a><span class="font-mono text-green-600">-0:01.602</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
+          <div class="relative bg-brand-accent dark:bg-brand-accent-dark text-center py-10 px-6">
+            <p class="font-heading font-normal tracking-normal leading-none text-white text-[clamp(28px,8vw,56px)] mb-6">What are you waiting for?</p>
+            <div class="relative flex flex-wrap justify-center gap-3">
+              <a href="/#/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px]">Create an Account</a>
+              <a href="/#/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</a>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
