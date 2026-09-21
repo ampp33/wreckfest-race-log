@@ -57,6 +57,8 @@ convention — field names must exactly match the SQL parameter names):
 | `lap_count`          | integer | no       | Number of laps in the race. Defaults to the length of `lap_times_ms` when omitted. |
 | `lap_times_ms`       | array   | no       | JSON array of per-lap times in milliseconds, in lap order — first entry is lap 1, second is lap 2, and so on (e.g. `[19160, 18994, 19340]`). Stored as a JSON object on the race and charted in the race's expand drawer on the track page. |
 | `results_roster`     | array   | no       | JSON array of all racers in finishing order. Each entry is an object with the fields described below. Stored verbatim and intended for display as a structured results table in the app. |
+| `assists`            | object  | no       | Driving-assist difficulty settings in effect for the race, as a single JSON object — see shape below. Stored verbatim as `jsonb`. |
+| `vehicle_weight_kg`  | integer | no       | Vehicle weight in kg at race time. Must be `>= 0`. |
 
 #### `results_roster` entry shape
 
@@ -75,6 +77,21 @@ If all four tuning fields are provided, they're combined server-side into
 a single `tuning` code as `suspension*1000 + gear_ratio*100 +
 differential*10 + brake_balance` (e.g. `3, 2, 4, 1` → `3241`). If any are
 omitted, `tuning` is left `null`.
+
+#### `assists` shape
+
+Unlike the tuning dials, `assists` is not combined into a code — it's
+stored as-is. All four keys are optional; a key that's missing or unknown
+is simply absent from the stored object.
+
+| Key                    | Value                                 |
+|-------------------------|----------------------------------------|
+| `shifting`              | `"automatic"`, `"manual"`, or `"manual_clutch"` |
+| `abs`                   | `"off"`, `"half"`, or `"full"` |
+| `traction_control`      | `"off"`, `"half"`, or `"full"` |
+| `stability_control`     | `"off"`, `"half"`, or `"full"` |
+
+Example: `{"shifting": "manual", "abs": "half", "traction_control": "off", "stability_control": "half"}`.
 
 The race's timestamp is always set to the server's current time — there
 is no way to submit a backdated race through this endpoint.
@@ -99,7 +116,14 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
     "lap_time_ms": 19160,
     "total_time_ms": 42154,
     "lap_count": 3,
-    "lap_times_ms": [19160, 18994, 19340]
+    "lap_times_ms": [19160, 18994, 19340],
+    "assists": {
+      "shifting": "manual",
+      "abs": "half",
+      "traction_control": "off",
+      "stability_control": "half"
+    },
+    "vehicle_weight_kg": 1069
   }'
 ```
 
@@ -140,9 +164,19 @@ error).
 { "success": false, "error": "results_roster must be a JSON array" }
 ```
 
+**`assists` sent as something other than a JSON object:**
+```json
+{ "success": false, "error": "assists must be a JSON object" }
+```
+
 **Negative lap count:**
 ```json
 { "success": false, "error": "lap_count must be >= 0" }
+```
+
+**Negative vehicle weight:**
+```json
+{ "success": false, "error": "vehicle_weight_kg must be >= 0" }
 ```
 
 **Unknown vehicle name:** not an error — the race is still inserted with

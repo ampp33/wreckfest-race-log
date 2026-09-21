@@ -31,8 +31,16 @@
           <div><PerformanceIndexBadge :value="race.performance_index" /></div>
         </div>
         <div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Weight</div>
+          <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
+        </div>
+        <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
           <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+        </div>
+        <div>
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Assists</div>
+          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
         </div>
         <div>
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
@@ -108,7 +116,9 @@
       <td class="py-2 pr-3 whitespace-nowrap">
         <PerformanceIndexBadge :value="race.performance_index" />
       </td>
+      <td class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
       <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
+      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
       <td class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
       <td class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
       <td
@@ -131,7 +141,7 @@
       </td>
     </template>
 
-    <td v-else colspan="11" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
+    <td v-else colspan="13" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceForm
         :vehicles="vehicles"
         :defaults="editDefaults"
@@ -144,7 +154,7 @@
   </tr>
 
   <tr v-if="layout === 'table' && !editing && expanded">
-    <td colspan="11" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
+    <td colspan="13" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceExpandedDetails
         :notes="race.notes || ''"
         notes-fallback="No notes"
@@ -173,6 +183,7 @@ import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
+import { formatAssists } from '../utils/assistsFormat.js'
 import apiIcon from '../assets/icons/api.svg?raw'
 
 function toLocalIsoMinute(isoString) {
@@ -290,7 +301,8 @@ export default {
     },
     toggleExpanded() {
       this.expanded = !this.expanded
-    }
+    },
+    formatAssists
   }
 }
 </script>

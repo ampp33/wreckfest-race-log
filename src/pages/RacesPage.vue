@@ -113,6 +113,18 @@
                   <div><PerformanceIndexBadge :value="race.performance_index" /></div>
                 </div>
                 <div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Weight</div>
+                  <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
+                </div>
+                <div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
+                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+                </div>
+                <div>
+                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Assists</div>
+                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
+                </div>
+                <div>
                   <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
                   <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
                 </div>
@@ -156,6 +168,9 @@
                 <th class="px-3.5 pb-2.5 font-medium">Track / Variation</th>
                 <th class="px-3.5 pb-2.5 font-medium">Vehicle</th>
                 <th class="px-3.5 pb-2.5 font-medium">Class (PI)</th>
+                <th class="px-3.5 pb-2.5 font-medium text-right">Weight</th>
+                <th class="px-3.5 pb-2.5 font-medium text-center">Tune</th>
+                <th class="px-3.5 pb-2.5 font-medium text-center">Assists</th>
                 <th class="px-3.5 pb-2.5 font-medium text-right">Place</th>
                 <th class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
                 <th class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
@@ -194,6 +209,15 @@
                   <td class="px-3.5 py-2 whitespace-nowrap">
                     <PerformanceIndexBadge :value="race.performance_index" />
                   </td>
+                  <td class="px-3.5 py-2 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">
+                    {{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}
+                  </td>
+                  <td class="px-3.5 py-2 text-center text-brand-secondary dark:text-brand-secondary-dark">
+                    {{ race.tuning ?? '—' }}
+                  </td>
+                  <td class="px-3.5 py-2 text-center text-brand-secondary dark:text-brand-secondary-dark">
+                    {{ formatAssists(race.assists) }}
+                  </td>
                   <td class="px-3.5 py-2 text-right tabular-nums">
                     {{ race.place != null ? race.place : '—' }}
                   </td>
@@ -217,7 +241,7 @@
                   </td>
                 </tr>
                 <tr v-else>
-                  <td colspan="9" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td colspan="12" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceForm
                       :vehicles="vehicles"
                       :defaults="editDefaultsFor(race)"
@@ -229,7 +253,7 @@
                   </td>
                 </tr>
                 <tr v-if="!editing[race.id] && expanded[race.id]">
-                  <td colspan="9" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td colspan="12" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
                   </td>
                 </tr>
@@ -286,6 +310,7 @@ import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDateTime } from '../utils/dateFormat.js'
+import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
 import RaceResultsRoster from '../components/RaceResultsRoster.vue'
@@ -432,6 +457,7 @@ export default {
       }
     },
     formatDateTime,
+    formatAssists,
     formatMs(ms) {
       return formatMsToTime(ms)
     },

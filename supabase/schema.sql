@@ -74,6 +74,17 @@ alter table public.races add column if not exists lap_count integer;
 alter table public.races add column if not exists lap_times_ms jsonb;
 alter table public.races add column if not exists results_roster jsonb;
 
+-- Driving-assist difficulty settings in effect for the race, e.g.
+-- {"shifting": "manual", "abs": "half", "traction_control": "off",
+-- "stability_control": "half"}. null for races logged before this existed,
+-- or where the companion tool couldn't resolve them.
+alter table public.races add column if not exists assists jsonb;
+
+-- Vehicle weight in kg at race time (computed from equipped performance
+-- parts). null for races logged before this existed, or where the
+-- companion tool couldn't resolve it.
+alter table public.races add column if not exists vehicle_weight_kg integer;
+
 -- Where the race was logged from: the web UI, or the external API (see
 -- api_key_id below, added once the api_keys table exists further down).
 alter table public.races add column if not exists source text not null default 'web';
@@ -620,6 +631,11 @@ drop function if exists public.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb
 );
+-- Drop the pre-vehicle_weight_kg version (16 params).
+drop function if exists public.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb, jsonb
+);
 
 create or replace function public.insert_race_with_api_key_wf1(
     api_key            text,
@@ -637,7 +653,9 @@ create or replace function public.insert_race_with_api_key_wf1(
     notes              text default null,
     lap_count          integer default null,
     lap_times_ms       jsonb default null,
-    results_roster     jsonb default null
+    results_roster     jsonb default null,
+    assists            jsonb default null,
+    vehicle_weight_kg  integer default null
 )
 returns json
 language plpgsql
@@ -686,8 +704,16 @@ begin
         return json_build_object('success', false, 'error', 'results_roster must be a JSON array');
     end if;
 
+    if assists is not null and jsonb_typeof(assists) <> 'object' then
+        return json_build_object('success', false, 'error', 'assists must be a JSON object');
+    end if;
+
     if lap_count is not null and lap_count < 0 then
         return json_build_object('success', false, 'error', 'lap_count must be >= 0');
+    end if;
+
+    if vehicle_weight_kg is not null and vehicle_weight_kg < 0 then
+        return json_build_object('success', false, 'error', 'vehicle_weight_kg must be >= 0');
     end if;
 
     -- Fall back to the length of the lap array when lap_count isn't sent.
@@ -735,12 +761,12 @@ begin
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
         performance_index, tuning, notes, lap_count, lap_times_ms, results_roster,
-        source, api_key_id
+        assists, vehicle_weight_kg, source, api_key_id
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
         performance_index, v_tuning, notes, v_lap_count, lap_times_ms, results_roster,
-        'api', v_key_id
+        assists, vehicle_weight_kg, 'api', v_key_id
     )
     returning id into v_race_id;
 
