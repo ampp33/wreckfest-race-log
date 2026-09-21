@@ -63,10 +63,27 @@
               @click="pageSize = size; currentPage = 1"
             >{{ size }}</button>
           </div>
+          <span class="hidden sm:inline-flex">
+            <ColumnFilterMenu
+              label="Columns"
+              heading="Columns to Display"
+              title="Filter Columns"
+              :icon="columnsIcon"
+              icon-size="w-5 h-5"
+              :searchable="false"
+              :highlight-when-active="false"
+              v-model="columnVisibility.state.hidden"
+              :options="columnOptions"
+            />
+          </span>
         </div>
       </div>
 
-      <p v-if="total === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
+      <p v-if="totalUnfiltered === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
+      <p v-else-if="total === 0" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+        No races match the current filter.
+        <button type="button" class="text-brand-accent dark:text-brand-accent-dark underline" @click="resetColumnFilters">Clear filters</button>
+      </p>
 
       <div v-else>
         <!-- Card layout (mobile) -->
@@ -152,21 +169,39 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
-                <th class="px-3.5 pb-2.5 font-medium">Date</th>
-                <th class="px-3.5 pb-2.5 font-medium">Track / Variation</th>
-                <th class="px-3.5 pb-2.5 font-medium">Vehicle</th>
-                <th class="px-3.5 pb-2.5 font-medium">Class (PI)</th>
-                <th class="px-3.5 pb-2.5 font-medium text-right">Place</th>
-                <th class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
-                <th class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
-                <th class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
+                <th v-if="columnVisibility.isVisible('date')" class="px-3.5 pb-2.5 font-medium">Date</th>
+                <th v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 pb-2.5 font-medium">
+                  <span class="inline-flex items-center gap-1">Track / Variation
+                    <ColumnFilterMenu label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('vehicle')" class="px-3.5 pb-2.5 font-medium">
+                  <span class="inline-flex items-center gap-1">Vehicle
+                    <ColumnFilterMenu label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('pi')" class="px-3.5 pb-2.5 font-medium">
+                  <span class="inline-flex items-center gap-1">Class (PI)
+                    <ColumnFilterMenu label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+                      <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
+                    </ColumnFilterMenu>
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('place')" class="px-3.5 pb-2.5 font-medium text-right">
+                  <span class="inline-flex items-center justify-end gap-1">Place
+                    <ColumnFilterMenu label="Place" v-model="columnFilters.place" :options="placeOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('laps')" class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
+                <th v-if="columnVisibility.isVisible('lapTime')" class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
+                <th v-if="columnVisibility.isVisible('totalTime')" class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
                 <th class="px-3.5 pb-2.5 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
               <template v-for="race in pageRows" :key="race.id">
                 <tr v-if="!editing[race.id]" class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
-                  <td class="px-3.5 py-2 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
+                  <td v-if="columnVisibility.isVisible('date')" class="px-3.5 py-2 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
                     <span class="inline-flex items-center gap-1">
                       {{ formatDateTime(race.datetime) }}
                       <span
@@ -177,7 +212,7 @@
                       ></span>
                     </span>
                   </td>
-                  <td class="px-3.5 py-2">
+                  <td v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 py-2">
                     <router-link
                       v-if="race.trackSlug && race.variationSlug"
                       :to="`/track/${race.trackSlug}/${race.variationSlug}`"
@@ -188,22 +223,22 @@
                     </router-link>
                     <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
                   </td>
-                  <td class="px-3.5 py-2 text-brand-secondary dark:text-brand-secondary-dark">
+                  <td v-if="columnVisibility.isVisible('vehicle')" class="px-3.5 py-2 text-brand-secondary dark:text-brand-secondary-dark">
                     {{ race.vehicleName }}
                   </td>
-                  <td class="px-3.5 py-2 whitespace-nowrap">
+                  <td v-if="columnVisibility.isVisible('pi')" class="px-3.5 py-2 whitespace-nowrap">
                     <PerformanceIndexBadge :value="race.performance_index" />
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular-nums">
+                  <td v-if="columnVisibility.isVisible('place')" class="px-3.5 py-2 text-right tabular-nums">
                     {{ race.place != null ? race.place : '—' }}
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
+                  <td v-if="columnVisibility.isVisible('laps')" class="px-3.5 py-2 text-right tabular-nums text-brand-secondary dark:text-brand-secondary-dark">
                     {{ lapCount(race) }}
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular">
+                  <td v-if="columnVisibility.isVisible('lapTime')" class="px-3.5 py-2 text-right tabular">
                     {{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular text-brand-muted dark:text-brand-muted-dark">
+                  <td v-if="columnVisibility.isVisible('totalTime')" class="px-3.5 py-2 text-right tabular text-brand-muted dark:text-brand-muted-dark">
                     {{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}
                   </td>
                   <td class="px-3.5 py-2 text-right whitespace-nowrap">
@@ -217,7 +252,7 @@
                   </td>
                 </tr>
                 <tr v-else>
-                  <td colspan="9" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td :colspan="visibleColumnKeys.length + 1" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceForm
                       :vehicles="vehicles"
                       :defaults="editDefaultsFor(race)"
@@ -229,7 +264,7 @@
                   </td>
                 </tr>
                 <tr v-if="!editing[race.id] && expanded[race.id]">
-                  <td colspan="9" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td :colspan="visibleColumnKeys.length + 1" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceExpandedDetails :notes="race.notes || ''" :lap-times="race.lap_times_ms" :roster="race.results_roster" />
                   </td>
                 </tr>
@@ -294,8 +329,38 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
+import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
+import { buildOptions, sortOptions } from '../utils/filterOptions.js'
+import { createColumnVisibility } from '../utils/columnVisibility.js'
 import apiIcon from '../assets/icons/api.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
+import columnsIcon from '../assets/icons/columns.svg?raw'
+
+const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
+const UNRESOLVED_VARIATION = '__unresolved_variation__'
+
+const TABLE_COLUMNS = [
+  { key: 'date', label: 'Date' },
+  { key: 'trackVariation', label: 'Track / Variation' },
+  { key: 'vehicle', label: 'Vehicle' },
+  { key: 'pi', label: 'Class (PI)' },
+  { key: 'place', label: 'Place' },
+  { key: 'laps', label: 'Laps' },
+  { key: 'lapTime', label: 'Lap time' },
+  { key: 'totalTime', label: 'Total time' }
+  // 'Actions' is intentionally left out — it's always shown, since hiding it
+  // would remove the row's only in-table way to edit/delete a race.
+]
+const COLUMN_OPTIONS = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
+
+function trackVariationKey(race) { return race.trackSlug && race.variationSlug ? race.track_variation_id : UNRESOLVED_VARIATION }
+function trackVariationLabel(race) { return race.trackSlug && race.variationSlug ? `${race.trackName} — ${race.variationName}` : '—' }
+// Bucket by whether vehicleName resolved, not just a null vehicle_id — a
+// vehicle_id pointing at a deleted vehicle also displays as '—' (RacesPage
+// load()'s `vehicleMap[r.vehicle_id] ?? '—'`) and must land in the same bucket.
+function vehicleKey(race) { return race.vehicleName === '—' ? UNRESOLVED_VEHICLE : race.vehicle_id }
+function piKey(race) { return race.performance_index != null ? race.performance_index : null }
+function placeKey(race) { return race.place != null ? race.place : '—' }
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -305,7 +370,14 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu },
+  // A small Composition API bridge — `createColumnVisibility` (shared with
+  // TrackDetailPage.vue) is built on `reactive`/`watch`, not lifecycle hooks,
+  // so it doesn't need this whole file converted to <script setup>.
+  setup() {
+    const columnVisibility = createColumnVisibility('wreckfest:columns:races', TABLE_COLUMNS.map(c => c.key))
+    return { columnVisibility }
+  },
   data() {
     return {
       loading: true,
@@ -319,8 +391,11 @@ export default {
       editing: {},
       saving: {},
       confirmDeleteRace: null,
+      columnFilters: { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
+      columnOptions: COLUMN_OPTIONS,
       apiIcon,
-      refreshIcon
+      refreshIcon,
+      columnsIcon
     }
   },
   computed: {
@@ -335,15 +410,43 @@ export default {
     isFiltered() {
       return !!(this.sourceFilter || this.apiKeyIdFilter)
     },
-    total() {
+    visibleColumnKeys() {
+      return TABLE_COLUMNS.map(c => c.key).filter(this.columnVisibility.isVisible)
+    },
+    trackVariationOptions() {
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'trackVariationId')), trackVariationKey, trackVariationLabel))
+    },
+    vehicleOptions() {
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'vehicleId')), vehicleKey, r => r.vehicleName))
+    },
+    piOptions() {
+      return sortOptions(
+        buildOptions(
+          this.rows.filter(r => this.matchesFilters(r, 'performanceIndex')),
+          piKey,
+          r => r.performance_index != null ? String(r.performance_index) : '—'
+        ),
+        { numeric: true }
+      )
+    },
+    placeOptions() {
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'place')), placeKey, placeKey), { numeric: true })
+    },
+    filteredRows() {
+      return this.rows.filter(race => this.matchesFilters(race))
+    },
+    totalUnfiltered() {
       return this.rows.length
+    },
+    total() {
+      return this.filteredRows.length
     },
     totalPages() {
       return Math.max(1, Math.ceil(this.total / this.pageSize))
     },
     pageRows() {
       const start = (this.currentPage - 1) * this.pageSize
-      return this.rows.slice(start, start + this.pageSize)
+      return this.filteredRows.slice(start, start + this.pageSize)
     },
     rangeStart() {
       return this.total === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
@@ -368,11 +471,34 @@ export default {
   },
   watch: {
     '$route.query'() {
+      this.resetColumnFilters()
       this.currentPage = 1
       this.load()
+    },
+    columnFilters: {
+      deep: true,
+      handler() {
+        this.currentPage = 1
+      }
     }
   },
   methods: {
+    resetColumnFilters() {
+      this.columnFilters = { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] }
+    },
+    // Matches a race against every column filter except `exceptKey` — used
+    // to build each column's own option list off what's visible once every
+    // *other* filter is applied (real cross-filtering, like Excel's
+    // AutoFilter), while never narrowing a column by its own selection so
+    // its own checked/unchecked values don't vanish from its own list.
+    matchesFilters(race, exceptKey) {
+      const f = this.columnFilters
+      if (exceptKey !== 'trackVariationId' && f.trackVariationId.includes(trackVariationKey(race))) return false
+      if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
+      if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
+      if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
+      return true
+    },
     // Shared by the initial mount and the header's refresh button. A refresh
     // only raises `refreshing`, never `loading`/`error` — the table stays on
     // screen (keeping expanded rows, page and page size), and a refresh that

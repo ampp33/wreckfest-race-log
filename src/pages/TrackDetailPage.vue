@@ -136,31 +136,50 @@
         </div>
       </div>
 
-      <LapTimeChart :races="races" :vehicles="vehicles" />
+      <LapTimeChart :races="filteredRaces" :vehicles="vehicles" />
 
       <div>
         <div class="flex items-end justify-between border-b-2 border-brand-strong dark:border-brand-strong-dark pb-2.5 mb-1">
           <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
             Logged races
           </h2>
-          <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ races.length }} at this variation</span>
+          <div class="hidden sm:flex items-center gap-3">
+            <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ filteredRaces.length }} at this variation</span>
+            <ColumnFilterMenu
+              label="Columns"
+              heading="Columns to Display"
+              title="Filter Columns"
+              :icon="columnsIcon"
+              icon-size="w-5 h-5"
+              :searchable="false"
+              :highlight-when-active="false"
+              v-model="columnVisibility.state.hidden"
+              :options="columnOptions"
+            />
+          </div>
+          <span class="sm:hidden ov text-brand-muted dark:text-brand-muted-dark">{{ filteredRaces.length }} at this variation</span>
         </div>
 
         <!-- Card layout (mobile) -->
         <div class="sm:hidden">
           <RaceRow
-            v-for="race in races"
+            v-for="race in filteredRaces"
             :key="race.id"
             layout="card"
             :race="race"
             :vehicles="vehicles"
             :goal-lap-time-ms="goalLapTimeMs"
             :personal-best-ms="personalBestMs"
+            :visible-columns="visibleColumnKeys"
             @update="onUpdateRace"
             @delete="onDeleteRace"
           />
           <p v-if="!races.length" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
             No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
+          </p>
+          <p v-else-if="!filteredRaces.length" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+            No races match the current filter.
+            <button type="button" class="text-brand-accent dark:text-brand-accent-dark underline" @click="resetColumnFilters">Clear filters</button>
           </p>
         </div>
 
@@ -169,33 +188,58 @@
           <table class="min-w-full text-sm">
             <thead class="text-left ov text-brand-muted dark:text-brand-muted-dark">
               <tr>
-                <th class="py-2.5 pl-0 pr-3">When</th>
-                <th class="py-2 pr-3">Vehicle</th>
-                <th class="py-2 pr-3">Class (PI)</th>
-                <th class="py-2 pr-3 text-center">Tune</th>
-                <th class="py-2 pr-3 text-center">Place</th>
-                <th class="py-2 pr-3 text-center">Laps</th>
-                <th class="py-2 pr-3">Lap</th>
-                <th class="py-2 pr-3">Δ goal</th>
-                <th class="py-2 pr-3">Total</th>
-                <th class="py-2 pr-3">Notes</th>
+                <th v-if="columnVisibility.isVisible('when')" class="py-2.5 pl-0 pr-3">When</th>
+                <th v-if="columnVisibility.isVisible('vehicle')" class="py-2 pr-3">
+                  <span class="inline-flex items-center gap-1">Vehicle
+                    <ColumnFilterMenu label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('pi')" class="py-2 pr-3">
+                  <span class="inline-flex items-center gap-1">Class (PI)
+                    <ColumnFilterMenu label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+                      <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
+                    </ColumnFilterMenu>
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('tune')" class="py-2 pr-3 text-center">
+                  <span class="inline-flex items-center justify-center gap-1">Tune
+                    <ColumnFilterMenu label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('place')" class="py-2 pr-3 text-center">
+                  <span class="inline-flex items-center justify-center gap-1">Place
+                    <ColumnFilterMenu label="Place" v-model="columnFilters.place" :options="placeOptions" />
+                  </span>
+                </th>
+                <th v-if="columnVisibility.isVisible('laps')" class="py-2 pr-3 text-center">Laps</th>
+                <th v-if="columnVisibility.isVisible('lap')" class="py-2 pr-3">Lap</th>
+                <th v-if="columnVisibility.isVisible('gap')" class="py-2 pr-3">Δ goal</th>
+                <th v-if="columnVisibility.isVisible('total')" class="py-2 pr-3">Total</th>
+                <th v-if="columnVisibility.isVisible('notes')" class="py-2 pr-3">Notes</th>
                 <th class="py-2 pr-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <RaceRow
-                v-for="race in races"
+                v-for="race in filteredRaces"
                 :key="race.id"
                 :race="race"
                 :vehicles="vehicles"
                 :goal-lap-time-ms="goalLapTimeMs"
                 :personal-best-ms="personalBestMs"
+                :visible-columns="visibleColumnKeys"
                 @update="onUpdateRace"
                 @delete="onDeleteRace"
               />
               <tr v-if="!races.length">
-                <td colspan="11" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                <td :colspan="visibleColumnKeys.length + 1" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
                   No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
+                </td>
+              </tr>
+              <tr v-else-if="!filteredRaces.length">
+                <td :colspan="visibleColumnKeys.length + 1" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                  No races match the current filter.
+                  <button type="button" class="text-brand-accent dark:text-brand-accent-dark underline" @click="resetColumnFilters">Clear filters</button>
                 </td>
               </tr>
             </tbody>
@@ -237,6 +281,8 @@ import { useRoute } from 'vue-router'
 import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
+import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
+import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { getRacesByVariation, updateRace, deleteRace } from '../services/raceService.js'
@@ -253,8 +299,29 @@ import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 import { useEventListener } from '../composables/useEventListener.js'
+import { buildOptions, sortOptions } from '../utils/filterOptions.js'
+import { createColumnVisibility } from '../utils/columnVisibility.js'
+import columnsIcon from '../assets/icons/columns.svg?raw'
 
 const route = useRoute()
+
+const TABLE_COLUMNS = [
+  { key: 'when', label: 'When' },
+  { key: 'vehicle', label: 'Vehicle' },
+  { key: 'pi', label: 'Class (PI)' },
+  { key: 'tune', label: 'Tune' },
+  { key: 'place', label: 'Place' },
+  { key: 'laps', label: 'Laps' },
+  { key: 'lap', label: 'Lap' },
+  { key: 'gap', label: 'Δ goal' },
+  { key: 'total', label: 'Total' },
+  { key: 'notes', label: 'Notes' }
+  // 'Actions' is intentionally left out — it's always shown, since hiding it
+  // would remove the row's only in-table way to edit/delete a race.
+]
+const columnOptions = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
+const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key))
+const visibleColumnKeys = computed(() => TABLE_COLUMNS.map(c => c.key).filter(columnVisibility.isVisible))
 
 const loading = ref(true)
 const track = ref(null)
@@ -269,6 +336,9 @@ const notesEditMode = ref(false)
 const notesInput = ref('')
 const notesTextarea = ref(null)
 
+const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
+const columnFilters = ref({ vehicleId: [], performanceIndex: [], tuning: [], place: [] })
+
 // Non-reactive: just tracks whether *this page* was the one that opened the
 // quick-add modal, so its "saved" callback below only refreshes races when
 // closing a modal it opened itself (not one opened from somewhere else).
@@ -277,7 +347,10 @@ let quickAddOpenedHere = false
 const trackImage = computed(() => track.value ? trackImageUrl(track.value.slug) : '')
 const goalLapTimeMs = computed(() => goal.value ? goal.value.goal_lap_time_ms : null)
 const personalBestMs = computed(() => {
-  const valid = races.value.map(r => r.lap_time_ms).filter(v => v != null)
+  // A 0 lap_time_ms means no completed lap was recorded (same convention
+  // LapTimeChart.vue uses), not an actual zero-millisecond lap — treat it
+  // like a missing time rather than letting it win every "personal best".
+  const valid = filteredRaces.value.map(r => r.lap_time_ms).filter(v => !!v)
   if (!valid.length) return null
   return Math.min(...valid)
 })
@@ -295,6 +368,70 @@ const variationMapImage = computed(() => (
     : ''
 ))
 
+// These mirror RaceRow's own display fallbacks exactly (`??` for tuning,
+// `||` for place, and vehicle lookup falling back to '—' for both a null
+// vehicle_id and one that no longer resolves against `vehicles`), so a race
+// bucketed under "—" here is always one that visually shows "—" in the table.
+function vehicleKey(race) {
+  const v = vehicles.value.find(x => x.id === race.vehicle_id)
+  return v ? v.id : UNRESOLVED_VEHICLE
+}
+function vehicleLabel(race) {
+  const v = vehicles.value.find(x => x.id === race.vehicle_id)
+  return v ? v.name : '—'
+}
+function piKey(race) {
+  return race.performance_index != null ? race.performance_index : null
+}
+function tuneKey(race) {
+  // `tuning` is a numeric slider-config code (see RaceForm.vue), not text —
+  // stringify it so it sorts/compares consistently with the other columns.
+  return race.tuning != null ? String(race.tuning) : '—'
+}
+function placeKey(race) {
+  return race.place || '—'
+}
+
+// Matches a race against every column filter except `exceptKey` — used to
+// build each column's own option list off what's visible once every *other*
+// filter is applied (real cross-filtering, like Excel's AutoFilter), while
+// never narrowing a column by its own selection so its own checked/unchecked
+// values don't vanish from its own list.
+function matchesFilters(race, exceptKey) {
+  const f = columnFilters.value
+  if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
+  if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
+  if (exceptKey !== 'tuning' && f.tuning.includes(tuneKey(race))) return false
+  if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
+  return true
+}
+
+const vehicleOptions = computed(() => sortOptions(
+  buildOptions(races.value.filter(r => matchesFilters(r, 'vehicleId')), vehicleKey, vehicleLabel)
+))
+const piOptions = computed(() => sortOptions(
+  buildOptions(
+    races.value.filter(r => matchesFilters(r, 'performanceIndex')),
+    piKey,
+    race => race.performance_index != null ? String(race.performance_index) : '—'
+  ),
+  { numeric: true }
+))
+const tuningOptions = computed(() => sortOptions(
+  buildOptions(races.value.filter(r => matchesFilters(r, 'tuning')), tuneKey, tuneKey),
+  { numeric: true }
+))
+const placeOptions = computed(() => sortOptions(
+  buildOptions(races.value.filter(r => matchesFilters(r, 'place')), placeKey, placeKey),
+  { numeric: true }
+))
+
+const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
+
+function resetColumnFilters() {
+  columnFilters.value = { vehicleId: [], performanceIndex: [], tuning: [], place: [] }
+}
+
 async function loadRaces() {
   races.value = await getRacesByVariation(currentVariation.value.id)
 }
@@ -307,6 +444,7 @@ async function loadAnnotations() {
 }
 async function loadAll() {
   loading.value = true
+  resetColumnFilters()
   const slug = route.params.trackSlug
   const variationSlug = route.params.variationSlug
   try {
