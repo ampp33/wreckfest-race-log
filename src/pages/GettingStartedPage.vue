@@ -91,12 +91,17 @@
             Every race you've logged, newest first — <b><i>the screen to open right after a race or session</i></b>, while you still remember what went right (or wrong).
           </p>
           <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 mb-6 max-w-2xl">
-            <li><b class="text-brand-text dark:text-brand-text-dark text-xl">+</b> expands the race to show additional details: your notes, the lap-by-lap chart, and the full roster with everyone's best lap and finishing time.</li>
-            <li><b class="text-brand-text dark:text-brand-text-dark">Pencil</b> turns the row into a form in place — the fastest way to add the note.</li>
-            <li><b class="text-brand-text dark:text-brand-text-dark">Trash</b> deletes the entry, after a confirm.</li>
+            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="expandIcon"></span>Expands the race to show additional details: your notes, the lap-by-lap chart, and the full roster with everyone's best lap and finishing time.</li>
+            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="editIcon"></span>Edits the race entry in place — the fastest way to add a note or make a change.</li>
+            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="trashIcon"></span>Deletes the entry, after a confirm.</li>
             <li>Track names link to that track and variation page.</li>
+            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="filterIcon"></span>On a column header, lets you filter the table by that column's values — uncheck what you don't want, search the list, or click a value's name to jump filter by that one value.</li>
+            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="columnsIcon"></span>Top right of the table, picks which columns are shown. Weight, Tune, Assists and Δ goal start hidden to keep the table tidy, but they're one click away — and your choice is remembered next time you visit.</li>
           </ul>
-          <AppShot name="races-expanded" alt="The Races table with one row expanded: notes, lap time chart and finishing roster" caption="One race, expanded" />
+          <div class="space-y-6">
+            <AppShot name="races-expanded" alt="The Races table with one row expanded: notes, lap time chart and finishing roster" caption="One race, expanded" />
+            <AppShot name="races-filters" alt="The Track/Variation filter popup open, with a search box and checked values narrowing the Races table down to one track" caption="Filtering by Track / Variation" />
+          </div>
         </section>
 
         <section id="track" class="scroll-mt-8">
@@ -148,7 +153,7 @@
         <section id="track-races" class="scroll-mt-8">
           <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Logged races</h3>
           <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Every run at this exact track and variation, with a <b class="text-brand-text dark:text-brand-text-dark">Δ goal</b> per race, a ★ on your personal best and the notes previewed inline. Same expand / edit / delete controls as the Races page.
+            Every run at this exact track and variation, with a <b class="text-brand-text dark:text-brand-text-dark">Δ goal</b> per race, a ★ on your personal best and the notes previewed inline. Same expand / edit / delete / filter / column controls as the Races page.
           </p>
           <AppShot name="track-races" alt="Logged races for one variation with a delta-to-goal column" />
         </section>
@@ -196,7 +201,7 @@
             <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
             Send feedback
           </button>
-          <AppShot name="feedback" alt="The send feedback dialog with a feature request typed in" img-class="border border-brand-border dark:border-brand-border-dark max-w-md" />
+          <AppShot name="feedback" alt="The send feedback dialog" img-class="border border-brand-border dark:border-brand-border-dark max-w-md" />
         </section>
       </div>
     </div>
@@ -207,6 +212,11 @@
 import AppShot from '../components/AppShot.vue'
 import { openFeedback } from '../stores/feedbackStore.js'
 import feedbackIcon from '../assets/icons/feedback.svg?raw'
+import expandIcon from '../assets/icons/expand.svg?raw'
+import editIcon from '../assets/icons/edit.svg?raw'
+import trashIcon from '../assets/icons/trash.svg?raw'
+import filterIcon from '../assets/icons/filter.svg?raw'
+import columnsIcon from '../assets/icons/columns.svg?raw'
 
 export default {
   name: 'GettingStartedPage',
@@ -215,6 +225,11 @@ export default {
     return {
       active: 'shortcuts',
       feedbackIcon,
+      expandIcon,
+      editIcon,
+      trashIcon,
+      filterIcon,
+      columnsIcon,
       toc: [
         { id: 'shortcuts',   label: 'Shortcuts' },
         { id: 'telemetry',   label: 'Telemetry' },

@@ -31,6 +31,16 @@ export default {
     return {
       entries: [
         {
+          id: 2,
+          title: 'Car weight & assists tracking, plus table filters and column picking',
+          date: '2026-09-21',
+          items: [
+            '<b class="text-brand-text dark:text-brand-text-dark">Telemetry:</b> the plugin now also captures your car\'s weight and its assist settings (shifting, ABS, traction control, stability control) — both now show up on the site alongside everything else it already tracks.  <br><i>NOTE:</i> These columns are hidden by default but can be toggled via the Column picker.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Table filters:</b> races tables now have a funnel icon on select column headers — click it to check or uncheck values, search the list, or click a value\'s name to filter by just that value.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Column picker:</b> a new Columns icon in the upper right corner of the table lets you choose which columns are shown. Weight, Tune, Assists and Δ goal are hidden by default to keep things tidy, but they\'re one click away.'
+          ]
+        },
+        {
           id: 1,
           title: 'News page, Getting Started, UI tweaks, and bans',
           date: '2026-09-17',
