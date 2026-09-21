@@ -47,8 +47,12 @@ function computeBiggestImprovements(races, tracks) {
   const improvements = []
 
   for (const variationId of Object.keys(grouped)) {
+    // A 0 lap_time_ms means no completed lap was recorded (same convention
+    // as LapTimeChart.vue and TrackDetailPage.vue's personal-best calc), not
+    // an actual zero-millisecond lap — exclude it rather than letting it
+    // masquerade as the fastest (or, here, the most recent) lap.
     const sorted = grouped[variationId]
-      .filter(r => r.lap_time_ms != null)
+      .filter(r => !!r.lap_time_ms)
       .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
     if (sorted.length < 2) continue
 
@@ -69,7 +73,9 @@ function computeBiggestImprovements(races, tracks) {
 function computeGoalProgress(races, tracks, goals) {
   const pbByVariation = {}
   for (const race of races) {
-    if (race.lap_time_ms == null) continue
+    // Same 0-means-no-lap convention as above — a 0 would otherwise win
+    // every "personal best" comparison since it's always the smallest.
+    if (!race.lap_time_ms) continue
     const vid = race.track_variation_id
     if (pbByVariation[vid] == null || race.lap_time_ms < pbByVariation[vid]) {
       pbByVariation[vid] = race.lap_time_ms

@@ -150,7 +150,8 @@ Defined in [`../supabase/schema.sql`](../supabase/schema.sql), seeded by
 **Per-user data** (RLS: you can only ever see `user_id = auth.uid()`):
 
 - `races` — the core table. `datetime`, `track_variation_id`, `vehicle_id`,
-  `tuning`, `place`, `lap_time_ms`, `total_time_ms`, `performance_index`,
+  `tuning`, `assists` (jsonb — shifting/abs/traction_control/stability_control),
+  `vehicle_weight_kg`, `place`, `lap_time_ms`, `total_time_ms`, `performance_index`,
   `lap_count`, `lap_times_ms` (jsonb), `results_roster` (jsonb),
   `notes`, `source` (`'web'` or `'api'`), `api_key_id`
 - `goals` — target lap time + notes per variation
