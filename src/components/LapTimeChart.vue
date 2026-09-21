@@ -106,21 +106,27 @@ const chartData = computed(() => {
   })
 
   const fastestLapColor = isDark.value ? '#FFFFFF' : '#000000'
-  datasets.push({
-    label: 'Fastest Lap',
-    data: sortedDates.map(d => byDate[d] ?? null),
-    borderColor: fastestLapColor,
-    backgroundColor: fastestLapColor + '18',
-    borderWidth: 2.5,
-    pointRadius: 4,
-    pointHoverRadius: 7,
-    pointBackgroundColor: fastestLapColor,
-    pointBorderColor: '#fff',
-    pointBorderWidth: 2,
-    tension: 0.35,
-    fill: false,
-    spanGaps: true
-  })
+  let fastestLapMs = null
+  for (const ms of Object.values(byDate)) {
+    if (ms != null && (fastestLapMs == null || ms < fastestLapMs)) fastestLapMs = ms
+  }
+  if (fastestLapMs != null) {
+    datasets.push({
+      label: 'Fastest Lap',
+      data: sortedDates.map(() => fastestLapMs),
+      borderColor: fastestLapColor,
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderDash: [10, 6],
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointHitRadius: 6,
+      pointBackgroundColor: fastestLapColor,
+      tension: 0,
+      fill: false,
+      spanGaps: true
+    })
+  }
 
   return { labels, datasets }
 })

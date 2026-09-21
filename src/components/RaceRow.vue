@@ -101,7 +101,7 @@
     class="border-t border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
   >
     <template v-if="!editing">
-      <td class="py-2 pl-0 pr-3 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
+      <td v-if="isColVisible('when')" class="py-2 pl-0 pr-3 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
         <span class="inline-flex items-center gap-1">
           {{ formattedDate }}
           <span
@@ -112,22 +112,23 @@
           ></span>
         </span>
       </td>
-      <td class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
-      <td class="py-2 pr-3 whitespace-nowrap">
+      <td v-if="isColVisible('vehicle')" class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
+      <td v-if="isColVisible('pi')" class="py-2 pr-3 whitespace-nowrap">
         <PerformanceIndexBadge :value="race.performance_index" />
       </td>
-      <td class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
-      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
-      <td class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
-      <td class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
-      <td class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
+      <td v-if="isColVisible('weight')" class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
+      <td v-if="isColVisible('tune')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
+      <td v-if="isColVisible('assists')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
+      <td v-if="isColVisible('place')" class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
+      <td v-if="isColVisible('laps')" class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
       <td
+        v-if="isColVisible('lap')"
         class="py-2 pr-3 tabular font-semibold"
         :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
       >{{ formatLap }}</td>
-      <td class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
-      <td class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
-      <td class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
+      <td v-if="isColVisible('gap')" class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
+      <td v-if="isColVisible('total')" class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
+      <td v-if="isColVisible('notes')" class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
         <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '—' }}</span>
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
@@ -141,7 +142,7 @@
       </td>
     </template>
 
-    <td v-else colspan="13" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
+    <td v-else :colspan="rowColspan" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceForm
         :vehicles="vehicles"
         :defaults="editDefaults"
@@ -154,7 +155,7 @@
   </tr>
 
   <tr v-if="layout === 'table' && !editing && expanded">
-    <td colspan="13" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
+    <td :colspan="rowColspan" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceExpandedDetails
         :notes="race.notes || ''"
         notes-fallback="No notes"
@@ -200,7 +201,11 @@ export default {
     vehicles: { type: Array, required: true },
     goalLapTimeMs: { type: Number, default: null },
     personalBestMs: { type: Number, default: null },
-    layout: { type: String, default: 'table' }
+    layout: { type: String, default: 'table' },
+    // Table layout only (the card layout always shows every field) — the
+    // set of toggleable column keys currently visible, per TrackDetailPage's
+    // column-visibility picker. 'actions' isn't included since it's always shown.
+    visibleColumns: { type: Array, required: true }
   },
   emits: ['update', 'delete'],
   data() {
@@ -213,6 +218,9 @@ export default {
     }
   },
   computed: {
+    rowColspan() {
+      return this.visibleColumns.length + 1 // +1 for the always-shown Actions column
+    },
     apiSourceTitle() {
       return this.race.api_key?.name
         ? `Logged via API — key: ${this.race.api_key.name}`
@@ -283,6 +291,9 @@ export default {
     }
   },
   methods: {
+    isColVisible(key) {
+      return this.visibleColumns.includes(key)
+    },
     async onSave(payload) {
       this.saving = true
       try {
