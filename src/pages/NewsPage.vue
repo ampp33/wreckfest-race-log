@@ -34,7 +34,10 @@ export default {
           id: 3,
           title: 'Top 3, 5, and 10 finish percentages',
           date: '2026-09-21',
-          body: 'Added Top 3, Top 5, and Top 10 finish percentage stats to the Track Detail and Stats pages, so you can see how often you land on the podium — or better — at a glance.'
+          items: [
+            'Added Top 3, Top 5, and Top 10 finish percentage stats to the Track Detail and Stats pages, so you can see how often you land on the podium — or better — at a glance.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Telemetry:</b> v1.1.0 of the telemetry tool was re-released after a bug was accidentally re-introduced, causing certain stats to not be logged for non-Steam users.  <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases/tag/v1.1.0" target="_blank" rel="noopener" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Download it here</a>.'
+          ]
         },
         {
           id: 2,
