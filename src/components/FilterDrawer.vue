@@ -14,13 +14,37 @@
       <span class="text-xs font-semibold uppercase tracking-wide [writing-mode:vertical-rl]">Filters</span>
     </button>
 
-    <div
-      v-if="open"
-      class="sm:hidden fixed inset-0 z-40 flex justify-end bg-black/70 backdrop-blur-sm"
-      @mousedown.self="close"
+    <!-- The dim fog and the panel are separate sibling elements, each with
+         its own Transition, rather than the panel nesting inside the fog —
+         nesting them made a single translate-x move both together, sliding
+         the fog off with the panel instead of just fading in place. As
+         siblings, the fog fades and the panel slides, independently. -->
+    <Transition
+      enter-active-class="transition-opacity duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition-opacity duration-200 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
     >
       <div
-        class="w-[85vw] max-w-xs h-full bg-brand-bg dark:bg-brand-bg-dark border-l border-brand-border dark:border-brand-border-dark flex flex-col"
+        v-if="open"
+        class="sm:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+        @mousedown="close"
+      ></div>
+    </Transition>
+
+    <Transition
+      enter-active-class="transition-transform duration-300 ease-out"
+      enter-from-class="translate-x-full"
+      enter-to-class="translate-x-0"
+      leave-active-class="transition-transform duration-200 ease-in"
+      leave-from-class="translate-x-0"
+      leave-to-class="translate-x-full"
+    >
+      <div
+        v-if="open"
+        class="sm:hidden fixed inset-y-0 right-0 z-40 w-[85vw] max-w-xs h-full bg-brand-bg dark:bg-brand-bg-dark border-l border-brand-border dark:border-brand-border-dark flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-label="Filters"
@@ -40,7 +64,7 @@
           <slot />
         </div>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>
 

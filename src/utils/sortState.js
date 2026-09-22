@@ -32,7 +32,14 @@ export function createSortState() {
     return `Sort by ${label} (${status})`
   }
 
-  return { state, toggle, directionFor, titleFor }
+  // Drops straight to unsorted in one step — for SortMenu.vue's "Clear sort"
+  // button, where cycling toggle() up to three times would be tedious.
+  function clear() {
+    state.key = null
+    state.direction = null
+  }
+
+  return { state, toggle, directionFor, titleFor, clear }
 }
 
 // Missing values (null/undefined, or the display fallback '—' for columns

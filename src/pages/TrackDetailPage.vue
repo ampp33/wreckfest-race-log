@@ -163,6 +163,7 @@
            nowhere to live once the table becomes cards, so they're
            reproduced here (inline, not popup) behind a side tab. -->
       <FilterDrawer>
+        <SortMenu :columns="sortableColumns" :sort="sort" />
         <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
         <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
           <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
@@ -401,6 +402,7 @@ import { placementRate } from '../utils/raceStats.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 import SortCaret from '../components/SortCaret.vue'
+import SortMenu from '../components/SortMenu.vue'
 
 const route = useRoute()
 
@@ -427,6 +429,10 @@ const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists']
 const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
 const visibleColumnKeys = computed(() => TABLE_COLUMNS.map(c => c.key).filter(columnVisibility.isVisible))
 const sort = createSortState()
+// Feeds the mobile filter drawer's SortMenu — only currently-visible,
+// sortable columns (Notes isn't sortable, and a hidden column shouldn't be
+// pickable either).
+const sortableColumns = computed(() => TABLE_COLUMNS.filter(c => c.key !== 'notes' && columnVisibility.isVisible(c.key)))
 
 const loading = ref(true)
 const track = ref(null)

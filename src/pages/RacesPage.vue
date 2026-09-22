@@ -34,6 +34,7 @@
            nowhere to live once the table becomes cards, so they're
            reproduced here (inline, not popup) behind a side tab. -->
       <FilterDrawer>
+        <SortMenu :columns="sortableColumns" :sort="sort" />
         <ColumnFilterMenu inline label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
         <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
         <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
@@ -453,6 +454,7 @@ import { buildOptions, sortOptions } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import { createSortState, sortRows } from '../utils/sortState.js'
 import SortCaret from '../components/SortCaret.vue'
+import SortMenu from '../components/SortMenu.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
@@ -520,7 +522,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer, SortCaret },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
   // A small Composition API bridge — `createColumnVisibility`/`createSortState`
   // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
   // lifecycle hooks, so they don't need this whole file converted to
@@ -564,6 +566,11 @@ export default {
     },
     visibleColumnKeys() {
       return TABLE_COLUMNS.map(c => c.key).filter(this.columnVisibility.isVisible)
+    },
+    // Feeds the mobile filter drawer's SortMenu — only currently-visible
+    // columns, so it can't be pointed at a field the column picker has hidden.
+    sortableColumns() {
+      return TABLE_COLUMNS.filter(c => this.columnVisibility.isVisible(c.key))
     },
     trackVariationOptions() {
       return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'trackVariationId')), trackVariationKey, trackVariationLabel))
