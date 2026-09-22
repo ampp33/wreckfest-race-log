@@ -112,7 +112,9 @@
         @save="onSaveAnnotations"
       />
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <LapTimeChart :races="filteredRaces" :vehicles="vehicles" />
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div class="rule-top pt-3">
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
           <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ pbDisplay }}</div>
@@ -136,7 +138,26 @@
         </div>
       </div>
 
-      <LapTimeChart :races="filteredRaces" :vehicles="vehicles" />
+      <div class="grid grid-cols-3 gap-6">
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 3 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top3Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top3Rate.count }} / {{ top3Rate.total }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 5 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top5Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top5Rate.count }} / {{ top5Rate.total }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 10 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top10Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top10Rate.count }} / {{ top10Rate.total }}</div>
+        </div>
+      </div>
+      <p class="text-xs text-brand-muted dark:text-brand-muted-dark italic mt-2 mb-12">
+        Excludes lone races (a race with a roster, but only one racer) and races with no place logged.
+      </p>
 
       <!-- Mobile filter drawer — the table's column-header filters have
            nowhere to live once the table becomes cards, so they're
@@ -324,6 +345,7 @@ import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 import { useEventListener } from '../composables/useEventListener.js'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
+import { placementRate } from '../utils/raceStats.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 
 const route = useRoute()
@@ -455,6 +477,10 @@ const placeOptions = computed(() => sortOptions(
 ))
 
 const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
+
+const top3Rate = computed(() => placementRate(filteredRaces.value, 3))
+const top5Rate = computed(() => placementRate(filteredRaces.value, 5))
+const top10Rate = computed(() => placementRate(filteredRaces.value, 10))
 
 function resetColumnFilters() {
   columnFilters.value = { vehicleId: [], performanceIndex: [], tuning: [], place: [] }

@@ -31,9 +31,15 @@ export default {
     return {
       entries: [
         {
+          id: 3,
+          title: 'Top 3, 5, and 10 finish percentages',
+          date: '2026-09-21',
+          body: 'Added Top 3, Top 5, and Top 10 finish percentage stats to the Track Detail and Stats pages, so you can see how often you land on the podium — or better — at a glance.'
+        },
+        {
           id: 2,
           title: 'Car weight & assists tracking, plus table filters and column picking',
-          date: '2026-09-21',
+          date: '2026-09-20',
           items: [
             '<b class="text-brand-text dark:text-brand-text-dark">Telemetry:</b> the plugin now also captures your car\'s weight and its assist settings (shifting, ABS, traction control, stability control) — both now show up on the site alongside everything else it already tracks.  <br><i>NOTE:</i> These columns are hidden by default but can be toggled via the Column picker.',
             '<b class="text-brand-text dark:text-brand-text-dark">Table filters:</b> races tables now have a funnel icon on select column headers — click it to check or uncheck values, search the list, or click a value\'s name to filter by just that value.',

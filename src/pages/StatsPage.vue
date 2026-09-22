@@ -12,6 +12,27 @@
     <div v-else class="space-y-6">
       <StatsSummaryTiles :stats="stats" />
 
+      <div class="grid grid-cols-3 gap-6">
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 3 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top3Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top3Rate.count }} / {{ stats.top3Rate.total }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 5 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top5Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top5Rate.count }} / {{ stats.top5Rate.total }}</div>
+        </div>
+        <div class="rule-top pt-3">
+          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 10 finishes</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top10Rate.pct }}</div>
+          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top10Rate.count }} / {{ stats.top10Rate.total }}</div>
+        </div>
+      </div>
+      <p class="text-xs text-brand-muted dark:text-brand-muted-dark italic mt-2">
+        Excludes lone races (a race with a roster, but only one racer) and races with no place logged.
+      </p>
+
       <RaceActivityChart
         :hourly-counts="stats.raceCounts.hourlyCounts"
         :daily-counts="stats.raceCounts.dailyCounts"
@@ -91,7 +112,10 @@ export default {
         totalRaces: 0,
         goalProgress: [],
         raceCounts: { hourlyCounts: new Array(24).fill(0), dailyCounts: {} },
-        recentRaces: []
+        recentRaces: [],
+        top3Rate: { count: 0, total: 0, pct: '—' },
+        top5Rate: { count: 0, total: 0, pct: '—' },
+        top10Rate: { count: 0, total: 0, pct: '—' }
       }
     }
   },

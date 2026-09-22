@@ -3,7 +3,7 @@
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       Races
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10">
+    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
       <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
       <template v-if="isFiltered">
         — filtered to races logged {{ apiKeyIdFilter ? 'with this API key' : `via the ${sourceFilter === 'api' ? 'Telemetry API' : 'web app'}` }}.

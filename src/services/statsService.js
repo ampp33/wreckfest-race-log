@@ -2,6 +2,7 @@ import { getAllRaces } from './raceService.js'
 import { getVehicles } from './vehicleService.js'
 import { getTracks } from './trackService.js'
 import { getAllGoals } from './goalService.js'
+import { placementRate } from '../utils/raceStats.js'
 
 // Aggregate stats for the Stats page. We pull everything client-side because
 // the dataset per user is small (hundreds of races at most) and avoids round
@@ -21,7 +22,10 @@ export async function getStats() {
     totalRaces: races.length,
     goalProgress: computeGoalProgress(races, tracks, goals),
     raceCounts: computeRaceCounts(races),
-    recentRaces: computeRecentRaces(races, tracks, vehicles)
+    recentRaces: computeRecentRaces(races, tracks, vehicles),
+    top3Rate: placementRate(races, 3),
+    top5Rate: placementRate(races, 5),
+    top10Rate: placementRate(races, 10)
   }
 }
 
