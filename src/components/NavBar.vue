@@ -124,86 +124,100 @@
       </button>
     </div>
 
-    <!-- Mobile menu: a red slab, full bleed, squared off. -->
-    <div v-if="mobileMenuOpen" class="sm:hidden bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
-      <div class="max-w-7xl mx-auto px-6 py-2">
-        <router-link
-          to="/getting-started"
-          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-          active-class="font-bold"
-          @click="mobileMenuOpen = false"
-        >Getting Started</router-link>
+    <!-- Mobile menu: a red slab, full bleed, squared off. Slides open/closed
+         via a grid-template-rows 0fr->1fr transition rather than height,
+         since height:auto can't be animated directly and this content's
+         height varies (e.g. whether the Admin section is present). -->
+    <Transition
+      enter-active-class="transition-[grid-template-rows] duration-300 ease-out"
+      enter-from-class="grid-rows-[0fr]"
+      enter-to-class="grid-rows-[1fr]"
+      leave-active-class="transition-[grid-template-rows] duration-200 ease-in"
+      leave-from-class="grid-rows-[1fr]"
+      leave-to-class="grid-rows-[0fr]"
+    >
+      <div v-if="mobileMenuOpen" class="sm:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
+        <div class="overflow-hidden">
+          <div class="max-w-7xl mx-auto px-6 py-2">
+            <router-link
+              to="/getting-started"
+              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+              active-class="font-bold"
+              @click="mobileMenuOpen = false"
+            >Getting Started</router-link>
 
-        <router-link
-          to="/news"
-          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-          active-class="font-bold"
-          @click="mobileMenuOpen = false"
-        >News</router-link>
+            <router-link
+              to="/news"
+              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+              active-class="font-bold"
+              @click="mobileMenuOpen = false"
+            >News</router-link>
 
-        <router-link
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-          active-class="font-bold"
-          :class="{ 'font-bold': item.to === '/tracks' && isTrackListRoute }"
-          @click="mobileMenuOpen = false"
-        >{{ item.label }}</router-link>
+            <router-link
+              v-for="item in navItems"
+              :key="item.to"
+              :to="item.to"
+              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+              active-class="font-bold"
+              :class="{ 'font-bold': item.to === '/tracks' && isTrackListRoute }"
+              @click="mobileMenuOpen = false"
+            >{{ item.label }}</router-link>
 
-        <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
-        <router-link
-          v-for="item in telemetryItems"
-          :key="item.to"
-          :to="item.to"
-          class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-          active-class="font-bold"
-          @click="mobileMenuOpen = false"
-        >{{ item.label }}</router-link>
+            <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
+            <router-link
+              v-for="item in telemetryItems"
+              :key="item.to"
+              :to="item.to"
+              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+              active-class="font-bold"
+              @click="mobileMenuOpen = false"
+            >{{ item.label }}</router-link>
 
-        <template v-if="auth.isAdmin">
-          <div class="ov text-white/70 pt-4 pb-2">Admin</div>
-          <router-link
-            v-for="item in adminItems"
-            :key="item.to"
-            :to="item.to"
-            class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-            active-class="font-bold"
-            @click="mobileMenuOpen = false"
-          >{{ item.label }}</router-link>
-        </template>
+            <template v-if="auth.isAdmin">
+              <div class="ov text-white/70 pt-4 pb-2">Admin</div>
+              <router-link
+                v-for="item in adminItems"
+                :key="item.to"
+                :to="item.to"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenuOpen = false"
+              >{{ item.label }}</router-link>
+            </template>
 
-        <div class="flex gap-2 pt-3 pb-2">
-          <button
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
-            @click="onToggleDark"
-            :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
-          >
-            <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
-          </button>
+            <div class="flex gap-2 pt-3 pb-2">
+              <button
+                type="button"
+                class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
+                @click="onToggleDark"
+                :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+              >
+                <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+              </button>
 
-          <button
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
-            aria-label="Send feedback"
-            @click="onOpenFeedback"
-          >
-            <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
-          </button>
+              <button
+                type="button"
+                class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
+                aria-label="Send feedback"
+                @click="onOpenFeedback"
+              >
+                <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
+              </button>
 
-          <button
-            v-if="auth.isAuthenticated"
-            type="button"
-            class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
-            @click="onSignOut"
-          >
-            <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
-            Sign out
-          </button>
+              <button
+                v-if="auth.isAuthenticated"
+                type="button"
+                class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
+                @click="onSignOut"
+              >
+                <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
+                Sign out
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </Transition>
   </nav>
 </template>
 
