@@ -204,7 +204,7 @@
         <!-- Card layout (mobile) -->
         <div class="sm:hidden">
           <RaceRow
-            v-for="race in filteredRaces"
+            v-for="race in sortedRaces"
             :key="race.id"
             layout="card"
             :race="race"
@@ -227,44 +227,95 @@
         <!-- Table layout (desktop) -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="text-left ov text-brand-accent dark:text-brand-accent-dark">
+            <thead class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark">
               <tr>
-                <th v-if="columnVisibility.isVisible('when')" class="py-2.5 pl-0 pr-3">Date</th>
+                <th v-if="columnVisibility.isVisible('when')" class="py-2.5 pl-0 pr-3">
+                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('when', 'Date')" :aria-label="sort.titleFor('when', 'Date')" @click="sort.toggle('when')">
+                    Date
+                    <SortCaret :direction="sort.directionFor('when')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('vehicle')" class="py-2 pr-3">
-                  <span class="inline-flex items-center gap-1">Vehicle
-                    <ColumnFilterMenu label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('vehicle', 'Vehicle')" :aria-label="sort.titleFor('vehicle', 'Vehicle')" @click="sort.toggle('vehicle')">
+                      Vehicle
+                      <SortCaret :direction="sort.directionFor('vehicle')" />
+                    </button>
+                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('pi')" class="py-2 pr-3">
-                  <span class="inline-flex items-center gap-1">Class (PI)
-                    <ColumnFilterMenu label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('pi', 'Class (PI)')" :aria-label="sort.titleFor('pi', 'Class (PI)')" @click="sort.toggle('pi')">
+                      Class (PI)
+                      <SortCaret :direction="sort.directionFor('pi')" />
+                    </button>
+                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="piOptions">
                       <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
                     </ColumnFilterMenu>
                   </span>
                 </th>
-                <th v-if="columnVisibility.isVisible('weight')" class="py-2 pr-3 text-right">Weight</th>
+                <th v-if="columnVisibility.isVisible('weight')" class="py-2 pr-3 text-right">
+                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('weight', 'Weight')" :aria-label="sort.titleFor('weight', 'Weight')" @click="sort.toggle('weight')">
+                    Weight
+                    <SortCaret :direction="sort.directionFor('weight')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('tune')" class="py-2 pr-3 text-center">
-                  <span class="inline-flex items-center justify-center gap-1">Tune
-                    <ColumnFilterMenu label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
+                  <span class="inline-flex items-center justify-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('tune', 'Tune')" :aria-label="sort.titleFor('tune', 'Tune')" @click="sort.toggle('tune')">
+                      Tune
+                      <SortCaret :direction="sort.directionFor('tune')" />
+                    </button>
+                    <ColumnFilterMenu label="Tune" icon-size="w-4 h-4" v-model="columnFilters.tuning" :options="tuningOptions" />
                   </span>
                 </th>
-                <th v-if="columnVisibility.isVisible('assists')" class="py-2 pr-3 text-center">Assists</th>
+                <th v-if="columnVisibility.isVisible('assists')" class="py-2 pr-3 text-center">
+                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('assists', 'Assists')" :aria-label="sort.titleFor('assists', 'Assists')" @click="sort.toggle('assists')">
+                    Assists
+                    <SortCaret :direction="sort.directionFor('assists')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('place')" class="py-2 pr-3 text-center">
-                  <span class="inline-flex items-center justify-center gap-1">Place
-                    <ColumnFilterMenu label="Place" v-model="columnFilters.place" :options="placeOptions" />
+                  <span class="inline-flex items-center justify-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('place', 'Place')" :aria-label="sort.titleFor('place', 'Place')" @click="sort.toggle('place')">
+                      Place
+                      <SortCaret :direction="sort.directionFor('place')" />
+                    </button>
+                    <ColumnFilterMenu label="Place" icon-size="w-4 h-4" v-model="columnFilters.place" :options="placeOptions" />
                   </span>
                 </th>
-                <th v-if="columnVisibility.isVisible('laps')" class="py-2 pr-3 text-center">Laps</th>
-                <th v-if="columnVisibility.isVisible('lap')" class="py-2 pr-3">Lap time</th>
-                <th v-if="columnVisibility.isVisible('gap')" class="py-2 pr-3">Δ goal</th>
-                <th v-if="columnVisibility.isVisible('total')" class="py-2 pr-3">Total time</th>
+                <th v-if="columnVisibility.isVisible('laps')" class="py-2 pr-3 text-center">
+                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('laps', 'Laps')" :aria-label="sort.titleFor('laps', 'Laps')" @click="sort.toggle('laps')">
+                    Laps
+                    <SortCaret :direction="sort.directionFor('laps')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('lap')" class="py-2 pr-3">
+                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('lap', 'Lap time')" :aria-label="sort.titleFor('lap', 'Lap time')" @click="sort.toggle('lap')">
+                    Lap time
+                    <SortCaret :direction="sort.directionFor('lap')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('gap')" class="py-2 pr-3">
+                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('gap', 'Δ goal')" :aria-label="sort.titleFor('gap', 'Δ goal')" @click="sort.toggle('gap')">
+                    Δ goal
+                    <SortCaret :direction="sort.directionFor('gap')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('total')" class="py-2 pr-3">
+                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('total', 'Total time')" :aria-label="sort.titleFor('total', 'Total time')" @click="sort.toggle('total')">
+                    Total time
+                    <SortCaret :direction="sort.directionFor('total')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('notes')" class="py-2 pr-3">Notes</th>
                 <th class="py-2 pr-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               <RaceRow
-                v-for="race in filteredRaces"
+                v-for="race in sortedRaces"
                 :key="race.id"
                 :race="race"
                 :vehicles="vehicles"
@@ -345,8 +396,11 @@ import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 import { useEventListener } from '../composables/useEventListener.js'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
+import { createSortState, sortRows } from '../utils/sortState.js'
 import { placementRate } from '../utils/raceStats.js'
+import { formatAssists } from '../utils/assistsFormat.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
+import SortCaret from '../components/SortCaret.vue'
 
 const route = useRoute()
 
@@ -372,6 +426,7 @@ const columnOptions = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
 const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists']
 const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
 const visibleColumnKeys = computed(() => TABLE_COLUMNS.map(c => c.key).filter(columnVisibility.isVisible))
+const sort = createSortState()
 
 const loading = ref(true)
 const track = ref(null)
@@ -442,6 +497,29 @@ function placeKey(race) {
   return race.place || '—'
 }
 
+// One value-getter per sortable column (everything but Notes/Actions), fed
+// to sortRows() — each returns either a number (or a date's timestamp) or a
+// display string, so sortRows can compare by the right datatype instead of
+// always doing a string compare.
+function lapCountValue(race) {
+  if (race.lap_count != null) return race.lap_count
+  if (Array.isArray(race.lap_times_ms)) return race.lap_times_ms.length
+  return null
+}
+const SORT_VALUE_GETTERS = {
+  when: race => new Date(race.datetime).getTime(),
+  vehicle: vehicleLabel,
+  pi: race => race.performance_index,
+  weight: race => race.vehicle_weight_kg,
+  tune: race => race.tuning,
+  assists: race => formatAssists(race.assists),
+  place: race => race.place,
+  laps: lapCountValue,
+  lap: race => race.lap_time_ms,
+  gap: race => (race.lap_time_ms != null && goalLapTimeMs.value != null) ? race.lap_time_ms - goalLapTimeMs.value : null,
+  total: race => race.total_time_ms
+}
+
 // Matches a race against every column filter except `exceptKey` — used to
 // build each column's own option list off what's visible once every *other*
 // filter is applied (real cross-filtering, like Excel's AutoFilter), while
@@ -477,6 +555,7 @@ const placeOptions = computed(() => sortOptions(
 ))
 
 const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
+const sortedRaces = computed(() => sortRows(filteredRaces.value, sort.state, SORT_VALUE_GETTERS))
 
 const top3Rate = computed(() => placementRate(filteredRaces.value, 3))
 const top5Rate = computed(() => placementRate(filteredRaces.value, 5))

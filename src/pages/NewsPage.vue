@@ -31,6 +31,12 @@ export default {
     return {
       entries: [
         {
+          id: 4,
+          title: 'Sortable Races and Track Detail tables',
+          date: '2026-09-22',
+          body: 'Column headers on the Races and Track Detail tables are now sortable — click a header to sort ascending, click again for descending, and a third click clears it. A caret icon next to each header shows whether that column is sorted and which way.'
+        },
+        {
           id: 3,
           title: 'Top 3, 5, and 10 finish percentages',
           date: '2026-09-21',

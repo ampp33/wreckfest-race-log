@@ -215,36 +215,87 @@
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-left ov text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
-                <th v-if="columnVisibility.isVisible('date')" class="px-3.5 pb-2.5 font-medium">Date</th>
+              <tr class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+                <th v-if="columnVisibility.isVisible('date')" class="px-3.5 pb-2.5 font-medium">
+                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('date', 'Date')" :aria-label="sort.titleFor('date', 'Date')" @click="sort.toggle('date')">
+                    Date
+                    <SortCaret :direction="sort.directionFor('date')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 pb-2.5 font-medium">
-                  <span class="inline-flex items-center gap-1">Track / Variation
-                    <ColumnFilterMenu label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('trackVariation', 'Track / Variation')" :aria-label="sort.titleFor('trackVariation', 'Track / Variation')" @click="sort.toggle('trackVariation')">
+                      Track / Variation
+                      <SortCaret :direction="sort.directionFor('trackVariation')" />
+                    </button>
+                    <ColumnFilterMenu label="Track / Variation" icon-size="w-4 h-4" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('vehicle')" class="px-3.5 pb-2.5 font-medium">
-                  <span class="inline-flex items-center gap-1">Vehicle
-                    <ColumnFilterMenu label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('vehicle', 'Vehicle')" :aria-label="sort.titleFor('vehicle', 'Vehicle')" @click="sort.toggle('vehicle')">
+                      Vehicle
+                      <SortCaret :direction="sort.directionFor('vehicle')" />
+                    </button>
+                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('pi')" class="px-3.5 pb-2.5 font-medium">
-                  <span class="inline-flex items-center gap-1">Class (PI)
-                    <ColumnFilterMenu label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('pi', 'Class (PI)')" :aria-label="sort.titleFor('pi', 'Class (PI)')" @click="sort.toggle('pi')">
+                      Class (PI)
+                      <SortCaret :direction="sort.directionFor('pi')" />
+                    </button>
+                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="piOptions">
                       <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
                     </ColumnFilterMenu>
                   </span>
                 </th>
-                <th v-if="columnVisibility.isVisible('weight')" class="px-3.5 pb-2.5 font-medium text-right">Weight</th>
-                <th v-if="columnVisibility.isVisible('tune')" class="px-3.5 pb-2.5 font-medium text-center">Tune</th>
-                <th v-if="columnVisibility.isVisible('assists')" class="px-3.5 pb-2.5 font-medium text-center">Assists</th>
+                <th v-if="columnVisibility.isVisible('weight')" class="px-3.5 pb-2.5 font-medium text-right">
+                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('weight', 'Weight')" :aria-label="sort.titleFor('weight', 'Weight')" @click="sort.toggle('weight')">
+                    Weight
+                    <SortCaret :direction="sort.directionFor('weight')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('tune')" class="px-3.5 pb-2.5 font-medium text-center">
+                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('tune', 'Tune')" :aria-label="sort.titleFor('tune', 'Tune')" @click="sort.toggle('tune')">
+                    Tune
+                    <SortCaret :direction="sort.directionFor('tune')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('assists')" class="px-3.5 pb-2.5 font-medium text-center">
+                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('assists', 'Assists')" :aria-label="sort.titleFor('assists', 'Assists')" @click="sort.toggle('assists')">
+                    Assists
+                    <SortCaret :direction="sort.directionFor('assists')" />
+                  </button>
+                </th>
                 <th v-if="columnVisibility.isVisible('place')" class="px-3.5 pb-2.5 font-medium text-right">
-                  <span class="inline-flex items-center justify-end gap-1">Place
-                    <ColumnFilterMenu label="Place" v-model="columnFilters.place" :options="placeOptions" />
+                  <span class="inline-flex items-center justify-end gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('place', 'Place')" :aria-label="sort.titleFor('place', 'Place')" @click="sort.toggle('place')">
+                      Place
+                      <SortCaret :direction="sort.directionFor('place')" />
+                    </button>
+                    <ColumnFilterMenu label="Place" icon-size="w-4 h-4" v-model="columnFilters.place" :options="placeOptions" />
                   </span>
                 </th>
-                <th v-if="columnVisibility.isVisible('laps')" class="px-3.5 pb-2.5 font-medium text-right">Laps</th>
-                <th v-if="columnVisibility.isVisible('lapTime')" class="px-3.5 pb-2.5 font-medium text-right">Lap time</th>
-                <th v-if="columnVisibility.isVisible('totalTime')" class="px-3.5 pb-2.5 font-medium text-right">Total time</th>
+                <th v-if="columnVisibility.isVisible('laps')" class="px-3.5 pb-2.5 font-medium text-right">
+                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('laps', 'Laps')" :aria-label="sort.titleFor('laps', 'Laps')" @click="sort.toggle('laps')">
+                    Laps
+                    <SortCaret :direction="sort.directionFor('laps')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('lapTime')" class="px-3.5 pb-2.5 font-medium text-right">
+                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('lapTime', 'Lap time')" :aria-label="sort.titleFor('lapTime', 'Lap time')" @click="sort.toggle('lapTime')">
+                    Lap time
+                    <SortCaret :direction="sort.directionFor('lapTime')" />
+                  </button>
+                </th>
+                <th v-if="columnVisibility.isVisible('totalTime')" class="px-3.5 pb-2.5 font-medium text-right">
+                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('totalTime', 'Total time')" :aria-label="sort.titleFor('totalTime', 'Total time')" @click="sort.toggle('totalTime')">
+                    Total time
+                    <SortCaret :direction="sort.directionFor('totalTime')" />
+                  </button>
+                </th>
                 <th class="px-3.5 pb-2.5 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -400,6 +451,8 @@ import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
+import { createSortState, sortRows } from '../utils/sortState.js'
+import SortCaret from '../components/SortCaret.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
@@ -436,6 +489,29 @@ function vehicleKey(race) { return race.vehicleName === '—' ? UNRESOLVED_VEHIC
 function piKey(race) { return race.performance_index != null ? race.performance_index : null }
 function placeKey(race) { return race.place != null ? race.place : '—' }
 
+// One value-getter per sortable column (everything but Actions), fed to
+// sortRows() — each returns either a number (or a date's timestamp) or a
+// display string, so sortRows can compare by the right datatype instead of
+// always doing a string compare.
+function lapCountValue(race) {
+  if (race.lap_count != null) return race.lap_count
+  if (Array.isArray(race.lap_times_ms)) return race.lap_times_ms.length
+  return null
+}
+const SORT_VALUE_GETTERS = {
+  date: race => new Date(race.datetime).getTime(),
+  trackVariation: trackVariationLabel,
+  vehicle: race => race.vehicleName,
+  pi: race => race.performance_index,
+  weight: race => race.vehicle_weight_kg,
+  tune: race => race.tuning,
+  assists: race => formatAssists(race.assists),
+  place: race => race.place,
+  laps: lapCountValue,
+  lapTime: race => race.lap_time_ms,
+  totalTime: race => race.total_time_ms
+}
+
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
   const tzOffset = d.getTimezoneOffset() * 60_000
@@ -444,13 +520,15 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer },
-  // A small Composition API bridge — `createColumnVisibility` (shared with
-  // TrackDetailPage.vue) is built on `reactive`/`watch`, not lifecycle hooks,
-  // so it doesn't need this whole file converted to <script setup>.
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer, SortCaret },
+  // A small Composition API bridge — `createColumnVisibility`/`createSortState`
+  // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
+  // lifecycle hooks, so they don't need this whole file converted to
+  // `<script setup>`.
   setup() {
     const columnVisibility = createColumnVisibility('wreckfest:columns:races', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
-    return { columnVisibility }
+    const sort = createSortState()
+    return { columnVisibility, sort }
   },
   data() {
     return {
@@ -509,6 +587,9 @@ export default {
     filteredRows() {
       return this.rows.filter(race => this.matchesFilters(race))
     },
+    sortedRows() {
+      return sortRows(this.filteredRows, this.sort.state, SORT_VALUE_GETTERS)
+    },
     totalUnfiltered() {
       return this.rows.length
     },
@@ -520,7 +601,7 @@ export default {
     },
     pageRows() {
       const start = (this.currentPage - 1) * this.pageSize
-      return this.filteredRows.slice(start, start + this.pageSize)
+      return this.sortedRows.slice(start, start + this.pageSize)
     },
     rangeStart() {
       return this.total === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
@@ -550,6 +631,12 @@ export default {
       this.load()
     },
     columnFilters: {
+      deep: true,
+      handler() {
+        this.currentPage = 1
+      }
+    },
+    'sort.state': {
       deep: true,
       handler() {
         this.currentPage = 1
