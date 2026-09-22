@@ -30,6 +30,26 @@
     </div>
 
     <div v-else>
+      <!-- Mobile filter drawer — the table's column-header filters have
+           nowhere to live once the table becomes cards, so they're
+           reproduced here (inline, not popup) behind a side tab. -->
+      <FilterDrawer>
+        <ColumnFilterMenu inline label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
+        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+          <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
+        </ColumnFilterMenu>
+        <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
+        <ColumnFilterMenu
+          inline
+          label="Columns"
+          heading="Columns to Display"
+          :searchable="false"
+          v-model="columnVisibility.state.hidden"
+          :options="columnOptions"
+        />
+      </FilterDrawer>
+
       <!-- Controls row -->
       <div class="flex items-end justify-between mb-6 gap-4 flex-wrap">
         <div class="ov text-brand-muted dark:text-brand-muted-dark">
@@ -90,18 +110,20 @@
         <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
           <div v-for="race in pageRows" :key="race.id" class="p-3">
             <template v-if="!editing[race.id]">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <router-link
-                    v-if="race.trackSlug && race.variationSlug"
-                    :to="`/track/${race.trackSlug}/${race.variationSlug}`"
-                    class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
-                  >
-                    {{ race.trackName }}
-                    <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
-                  </router-link>
-                  <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
-                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
+              <div class="flex items-start gap-2">
+                <div class="min-w-0 flex-1">
+                  <template v-if="columnVisibility.isVisible('trackVariation')">
+                    <router-link
+                      v-if="race.trackSlug && race.variationSlug"
+                      :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                      class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
+                    >
+                      {{ race.trackName }}
+                      <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
+                    </router-link>
+                    <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
+                  </template>
+                  <div v-if="columnVisibility.isVisible('date')" class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
                     {{ formatDateTime(race.datetime) }}
                     <span
                       v-if="race.source === 'api'"
@@ -110,53 +132,59 @@
                       v-html="apiIcon"
                     ></span>
                   </div>
+
+                  <!-- Same fields, in the same order, as the desktop table columns —
+                       each gated by the same column-visibility picker so a card
+                       shows only what the table would, instead of always
+                       showing everything. -->
+                  <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
+                    <div v-if="columnVisibility.isVisible('vehicle')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Vehicle</div>
+                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('pi')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
+                      <div><PerformanceIndexBadge :value="race.performance_index" /></div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('weight')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Weight</div>
+                      <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('tune')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
+                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('assists')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
+                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('place')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
+                      <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('laps')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Laps</div>
+                      <div class="tabular-nums">{{ lapCount(race) }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('lapTime')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Lap time</div>
+                      <div class="tabular">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
+                    </div>
+                    <div v-if="columnVisibility.isVisible('totalTime')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Total time</div>
+                      <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
+                    </div>
+                  </div>
                 </div>
+
                 <RaceRowActions
+                  vertical
                   :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
                   :expanded="!!expanded[race.id]"
                   @toggle-expand="toggleExpanded(race.id)"
                   @edit="editing[race.id] = true"
                   @delete="onDelete(race)"
                 />
-              </div>
-
-              <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Vehicle</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
-                  <div><PerformanceIndexBadge :value="race.performance_index" /></div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Weight</div>
-                  <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Assists</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
-                  <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Laps</div>
-                  <div class="tabular-nums">{{ lapCount(race) }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Lap time</div>
-                  <div class="tabular">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-muted dark:text-brand-muted-dark">Total time</div>
-                  <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
-                </div>
               </div>
 
               <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
@@ -187,7 +215,7 @@
         <div class="hidden sm:block overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="text-left ov text-brand-muted dark:text-brand-muted-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+              <tr class="text-left ov text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
                 <th v-if="columnVisibility.isVisible('date')" class="px-3.5 pb-2.5 font-medium">Date</th>
                 <th v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 pb-2.5 font-medium">
                   <span class="inline-flex items-center gap-1">Track / Variation
@@ -369,6 +397,7 @@ import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
+import FilterDrawer from '../components/FilterDrawer.vue'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import apiIcon from '../assets/icons/api.svg?raw'
@@ -415,7 +444,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer },
   // A small Composition API bridge — `createColumnVisibility` (shared with
   // TrackDetailPage.vue) is built on `reactive`/`watch`, not lifecycle hooks,
   // so it doesn't need this whole file converted to <script setup>.

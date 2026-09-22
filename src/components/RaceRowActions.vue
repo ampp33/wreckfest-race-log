@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-flex items-center gap-1 shrink-0">
+  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0' : 'inline-flex items-center gap-1 shrink-0'">
     <button
       v-if="showExpand"
       type="button"
@@ -38,7 +38,11 @@ export default {
   name: 'RaceRowActions',
   props: {
     showExpand: { type: Boolean, default: false },
-    expanded: { type: Boolean, default: false }
+    expanded: { type: Boolean, default: false },
+    // Stacks the buttons in a column instead of a row — used on mobile
+    // cards, where the actions sit beside the card's content rather than
+    // in its header row.
+    vertical: { type: Boolean, default: false }
   },
   emits: ['toggle-expand', 'edit', 'delete'],
   data() {

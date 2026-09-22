@@ -138,6 +138,26 @@
 
       <LapTimeChart :races="filteredRaces" :vehicles="vehicles" />
 
+      <!-- Mobile filter drawer — the table's column-header filters have
+           nowhere to live once the table becomes cards, so they're
+           reproduced here (inline, not popup) behind a side tab. -->
+      <FilterDrawer>
+        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+          <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
+        </ColumnFilterMenu>
+        <ColumnFilterMenu inline label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
+        <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
+        <ColumnFilterMenu
+          inline
+          label="Columns"
+          heading="Columns to Display"
+          :searchable="false"
+          v-model="columnVisibility.state.hidden"
+          :options="columnOptions"
+        />
+      </FilterDrawer>
+
       <div>
         <div class="flex items-end justify-between border-b-2 border-brand-strong dark:border-brand-strong-dark pb-2.5 mb-1">
           <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
@@ -186,9 +206,9 @@
         <!-- Table layout (desktop) -->
         <div class="hidden sm:block overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="text-left ov text-brand-muted dark:text-brand-muted-dark">
+            <thead class="text-left ov text-brand-accent dark:text-brand-accent-dark">
               <tr>
-                <th v-if="columnVisibility.isVisible('when')" class="py-2.5 pl-0 pr-3">When</th>
+                <th v-if="columnVisibility.isVisible('when')" class="py-2.5 pl-0 pr-3">Date</th>
                 <th v-if="columnVisibility.isVisible('vehicle')" class="py-2 pr-3">
                   <span class="inline-flex items-center gap-1">Vehicle
                     <ColumnFilterMenu label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
@@ -214,9 +234,9 @@
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('laps')" class="py-2 pr-3 text-center">Laps</th>
-                <th v-if="columnVisibility.isVisible('lap')" class="py-2 pr-3">Lap</th>
+                <th v-if="columnVisibility.isVisible('lap')" class="py-2 pr-3">Lap time</th>
                 <th v-if="columnVisibility.isVisible('gap')" class="py-2 pr-3">Δ goal</th>
-                <th v-if="columnVisibility.isVisible('total')" class="py-2 pr-3">Total</th>
+                <th v-if="columnVisibility.isVisible('total')" class="py-2 pr-3">Total time</th>
                 <th v-if="columnVisibility.isVisible('notes')" class="py-2 pr-3">Notes</th>
                 <th class="py-2 pr-3 text-right">Actions</th>
               </tr>
@@ -284,6 +304,7 @@ import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
+import FilterDrawer from '../components/FilterDrawer.vue'
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
@@ -308,7 +329,7 @@ import columnsIcon from '../assets/icons/columns.svg?raw'
 const route = useRoute()
 
 const TABLE_COLUMNS = [
-  { key: 'when', label: 'When' },
+  { key: 'when', label: 'Date' },
   { key: 'vehicle', label: 'Vehicle' },
   { key: 'pi', label: 'Class (PI)' },
   { key: 'weight', label: 'Weight' },
@@ -316,9 +337,9 @@ const TABLE_COLUMNS = [
   { key: 'assists', label: 'Assists' },
   { key: 'place', label: 'Place' },
   { key: 'laps', label: 'Laps' },
-  { key: 'lap', label: 'Lap' },
+  { key: 'lap', label: 'Lap time' },
   { key: 'gap', label: 'Δ goal' },
-  { key: 'total', label: 'Total' },
+  { key: 'total', label: 'Total time' },
   { key: 'notes', label: 'Notes' }
   // 'Actions' is intentionally left out — it's always shown, since hiding it
   // would remove the row's only in-table way to edit/delete a race.

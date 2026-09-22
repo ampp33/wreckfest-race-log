@@ -2,10 +2,10 @@
   <!-- Card layout (mobile) -->
   <div v-if="layout === 'card'" class="p-3 border-b border-brand-border dark:border-brand-border-dark last:border-b-0">
     <template v-if="!editing">
-      <div class="flex items-start justify-between gap-2">
-        <div class="min-w-0">
-          <div class="font-bold text-brand-text dark:text-brand-text-dark truncate">{{ vehicleName }}</div>
-          <div class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
+      <div class="flex items-start gap-2">
+        <div class="min-w-0 flex-1">
+          <div v-if="isColVisible('vehicle')" class="font-bold text-brand-text dark:text-brand-text-dark truncate">{{ vehicleName }}</div>
+          <div v-if="isColVisible('when')" class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
             {{ formattedDate }}
             <span
               v-if="race.source === 'api'"
@@ -14,63 +14,67 @@
               v-html="apiIcon"
             ></span>
           </div>
+
+          <!-- Same fields, in the same order, as the desktop table columns —
+               each gated by the same column-visibility picker so a card shows
+               only what the table would, instead of always showing everything. -->
+          <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
+            <div v-if="isColVisible('pi')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
+              <div><PerformanceIndexBadge :value="race.performance_index" /></div>
+            </div>
+            <div v-if="isColVisible('weight')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Weight</div>
+              <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
+            </div>
+            <div v-if="isColVisible('tune')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
+              <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+            </div>
+            <div v-if="isColVisible('assists')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
+              <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
+            </div>
+            <div v-if="isColVisible('place')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
+              <div>{{ race.place || '—' }}</div>
+            </div>
+            <div v-if="isColVisible('laps')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Laps</div>
+              <div>{{ lapCount }}</div>
+            </div>
+            <div v-if="isColVisible('lap')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Lap time</div>
+              <div
+                class="tabular"
+                :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
+              >{{ formatLap }}</div>
+            </div>
+            <div v-if="isColVisible('gap')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Δ goal</div>
+              <div class="tabular" :class="deltaColor">{{ deltaLabel || '—' }}</div>
+            </div>
+            <div v-if="isColVisible('total')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Total time</div>
+              <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</div>
+            </div>
+          </div>
+
+          <!-- Notes preview, expanded/collapsed via the icon in the button cluster to the right. -->
+          <div v-if="isColVisible('notes') && (race.notes || hasLapTimes || hasRoster)" class="mt-3">
+            <div class="ov text-brand-accent dark:text-brand-accent-dark">Notes</div>
+            <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
+          </div>
         </div>
+
         <RaceRowActions
+          vertical
           :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
           :expanded="expanded"
           @toggle-expand="toggleExpanded"
           @edit="editing = true"
           @delete="onDelete"
         />
-      </div>
-
-      <!-- Same fields, in the same order, as the desktop table columns. -->
-      <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Class (PI)</div>
-          <div><PerformanceIndexBadge :value="race.performance_index" /></div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Weight</div>
-          <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Tune</div>
-          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Assists</div>
-          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Place</div>
-          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.place || '—' }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Laps</div>
-          <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Lap</div>
-          <div
-            class="tabular font-semibold"
-            :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
-          >{{ formatLap }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Δ goal</div>
-          <div class="tabular" :class="deltaColor">{{ deltaLabel || '—' }}</div>
-        </div>
-        <div>
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Total</div>
-          <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</div>
-        </div>
-      </div>
-
-      <!-- Notes preview, expanded/collapsed via the icon in the button cluster above. -->
-      <div v-if="race.notes || hasLapTimes || hasRoster" class="mt-3">
-        <div class="ov text-brand-muted dark:text-brand-muted-dark">Notes</div>
-        <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
       </div>
 
       <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
@@ -112,18 +116,18 @@
           ></span>
         </span>
       </td>
-      <td v-if="isColVisible('vehicle')" class="py-2 pr-3 text-brand-muted dark:text-brand-muted-dark">{{ vehicleName }}</td>
+      <td v-if="isColVisible('vehicle')" class="py-2 pr-3 text-brand-secondary dark:text-brand-secondary-dark">{{ vehicleName }}</td>
       <td v-if="isColVisible('pi')" class="py-2 pr-3 whitespace-nowrap">
         <PerformanceIndexBadge :value="race.performance_index" />
       </td>
       <td v-if="isColVisible('weight')" class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
       <td v-if="isColVisible('tune')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
       <td v-if="isColVisible('assists')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
-      <td v-if="isColVisible('place')" class="py-2 pr-3 text-center tabular font-semibold">{{ race.place || '—' }}</td>
-      <td v-if="isColVisible('laps')" class="py-2 pr-3 text-center tabular text-brand-muted dark:text-brand-muted-dark">{{ lapCount }}</td>
+      <td v-if="isColVisible('place')" class="py-2 pr-3 text-center tabular">{{ race.place || '—' }}</td>
+      <td v-if="isColVisible('laps')" class="py-2 pr-3 text-center tabular text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</td>
       <td
         v-if="isColVisible('lap')"
-        class="py-2 pr-3 tabular font-semibold"
+        class="py-2 pr-3 tabular"
         :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
       >{{ formatLap }}</td>
       <td v-if="isColVisible('gap')" class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
@@ -202,9 +206,9 @@ export default {
     goalLapTimeMs: { type: Number, default: null },
     personalBestMs: { type: Number, default: null },
     layout: { type: String, default: 'table' },
-    // Table layout only (the card layout always shows every field) — the
-    // set of toggleable column keys currently visible, per TrackDetailPage's
-    // column-visibility picker. 'actions' isn't included since it's always shown.
+    // The set of toggleable column keys currently visible, per
+    // TrackDetailPage's column-visibility picker — used by both the table
+    // and card layouts. 'actions' isn't included since it's always shown.
     visibleColumns: { type: Array, required: true }
   },
   emits: ['update', 'delete'],
