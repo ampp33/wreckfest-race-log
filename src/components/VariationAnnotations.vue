@@ -72,7 +72,7 @@ export default {
   emits: ['save'],
   data() {
     return {
-      collapsed: true,
+      collapsed: false,
       editMode: false,
       selectedId: null,
       workingAnnotations: [],
