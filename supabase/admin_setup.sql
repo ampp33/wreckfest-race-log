@@ -5,19 +5,19 @@
 -- =====================================================================
 
 -- Replace whatever role ampp33@gmail.com currently holds with 'admin'.
-delete from public.user_roles
+delete from wf1.user_roles
 where user_id = (select id from auth.users where email = 'ampp33@gmail.com');
 
-insert into public.user_roles (user_id, role_id)
+insert into wf1.user_roles (user_id, role_id)
 select u.id, r.id
 from auth.users u
-cross join public.roles r
+cross join wf1.roles r
 where u.email = 'ampp33@gmail.com'
   and r.name  = 'admin';
 
 -- Verify the result.
 select u.email, r.name as role
 from auth.users u
-join public.user_roles ur on ur.user_id = u.id
-join public.roles r on r.id = ur.role_id
+join wf1.user_roles ur on ur.user_id = u.id
+join wf1.roles r on r.id = ur.role_id
 where u.email = 'ampp33@gmail.com';

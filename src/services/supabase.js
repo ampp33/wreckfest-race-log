@@ -16,6 +16,10 @@ export const supabaseUrl = url
 export const supabaseAnonKey = anonKey
 
 export const supabase = createClient(url, anonKey, {
+  db: {
+    // All app tables/RPCs live in wf1, not public — see supabase/schema.sql.
+    schema: 'wf1'
+  },
   auth: {
     persistSession: true,
     autoRefreshToken: true,

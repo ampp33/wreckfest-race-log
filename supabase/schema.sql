@@ -3,8 +3,14 @@
 -- Run this in the Supabase SQL editor on a fresh project.
 -- =====================================================================
 
+-- All tables/functions below live in wf1, not public — `public` gets its
+-- schema-level and table-level grants for anon/authenticated automatically
+-- from Supabase's project defaults; a custom schema doesn't, so the grants
+-- block at the bottom of this file spells them out explicitly.
+create schema if not exists wf1;
+
 -- Tracks: shared catalogue (no user_id — same set for everyone).
-create table if not exists public.tracks (
+create table if not exists wf1.tracks (
     id uuid primary key default gen_random_uuid(),
     name text not null unique,
     slug text not null unique,
@@ -12,9 +18,9 @@ create table if not exists public.tracks (
 );
 
 -- Track variations: routes/configurations of a track.
-create table if not exists public.track_variations (
+create table if not exists wf1.track_variations (
     id uuid primary key default gen_random_uuid(),
-    track_id uuid not null references public.tracks(id) on delete cascade,
+    track_id uuid not null references wf1.tracks(id) on delete cascade,
     name text not null,
     slug text not null,
     created_at timestamptz not null default now(),
@@ -22,7 +28,7 @@ create table if not exists public.track_variations (
 );
 
 -- Vehicles: shared catalogue.
-create table if not exists public.vehicles (
+create table if not exists wf1.vehicles (
     id uuid primary key default gen_random_uuid(),
     name text not null unique,
     class text,
@@ -32,13 +38,13 @@ create table if not exists public.vehicles (
 
 -- For projects upgrading from an earlier schema version: add the columns
 -- if they're missing. Safe to leave in even on a fresh install.
-alter table public.vehicles add column if not exists image_url text;
+alter table wf1.vehicles add column if not exists image_url text;
 
 -- Goals: per-user lap-time goal and notes for a track variation.
-create table if not exists public.goals (
+create table if not exists wf1.goals (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
-    track_variation_id uuid not null references public.track_variations(id) on delete cascade,
+    track_variation_id uuid not null references wf1.track_variations(id) on delete cascade,
     goal_lap_time_ms integer check (goal_lap_time_ms is null or goal_lap_time_ms > 0),
     notes text,
     updated_at timestamptz not null default now(),
@@ -46,18 +52,18 @@ create table if not exists public.goals (
 );
 
 -- For existing installs: migrate goals table to new shape.
-alter table public.goals alter column goal_lap_time_ms drop not null;
-alter table public.goals add column if not exists notes text;
-drop table if exists public.track_variation_notes;
+alter table wf1.goals alter column goal_lap_time_ms drop not null;
+alter table wf1.goals add column if not exists notes text;
+drop table if exists wf1.track_variation_notes;
 
 -- Races: the core record.
 -- Times stored as integer milliseconds for precise comparisons.
-create table if not exists public.races (
+create table if not exists wf1.races (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     datetime timestamptz not null default now(),
-    track_variation_id uuid not null references public.track_variations(id) on delete cascade,
-    vehicle_id uuid references public.vehicles(id) on delete set null,
+    track_variation_id uuid not null references wf1.track_variations(id) on delete cascade,
+    vehicle_id uuid references wf1.vehicles(id) on delete set null,
     tuning integer,
     place text,
     lap_time_ms integer,
@@ -66,42 +72,42 @@ create table if not exists public.races (
     created_at timestamptz not null default now()
 );
 
-alter table public.races add column if not exists performance_index integer;
+alter table wf1.races add column if not exists performance_index integer;
 
 -- Number of laps in the race, and the individual lap times in milliseconds
 -- stored as a JSON array ordered by lap (first entry = lap 1).
-alter table public.races add column if not exists lap_count integer;
-alter table public.races add column if not exists lap_times_ms jsonb;
-alter table public.races add column if not exists results_roster jsonb;
+alter table wf1.races add column if not exists lap_count integer;
+alter table wf1.races add column if not exists lap_times_ms jsonb;
+alter table wf1.races add column if not exists results_roster jsonb;
 
 -- Driving-assist difficulty settings in effect for the race, e.g.
 -- {"shifting": "manual", "abs": "half", "traction_control": "off",
 -- "stability_control": "half"}. null for races logged before this existed,
 -- or where the companion tool couldn't resolve them.
-alter table public.races add column if not exists assists jsonb;
+alter table wf1.races add column if not exists assists jsonb;
 
 -- Vehicle weight in kg at race time (computed from equipped performance
 -- parts). null for races logged before this existed, or where the
 -- companion tool couldn't resolve it.
-alter table public.races add column if not exists vehicle_weight_kg integer;
+alter table wf1.races add column if not exists vehicle_weight_kg integer;
 
 -- Where the race was logged from: the web UI, or the external API (see
 -- api_key_id below, added once the api_keys table exists further down).
-alter table public.races add column if not exists source text not null default 'web';
-alter table public.races drop constraint if exists races_source_check;
-alter table public.races add constraint races_source_check check (source in ('web', 'api'));
+alter table wf1.races add column if not exists source text not null default 'web';
+alter table wf1.races drop constraint if exists races_source_check;
+alter table wf1.races add constraint races_source_check check (source in ('web', 'api'));
 
 create index if not exists races_user_track_idx
-    on public.races (user_id, track_variation_id, datetime desc);
+    on wf1.races (user_id, track_variation_id, datetime desc);
 
 create index if not exists races_user_datetime_idx
-    on public.races (user_id, datetime desc);
+    on wf1.races (user_id, datetime desc);
 
 -- Variation annotations: per-user turn notes pinned to a map image position.
-create table if not exists public.variation_annotations (
+create table if not exists wf1.variation_annotations (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
-    track_variation_id uuid not null references public.track_variations(id) on delete cascade,
+    track_variation_id uuid not null references wf1.track_variations(id) on delete cascade,
     x numeric(6,3) not null,
     y numeric(6,3) not null,
     number integer not null default 1,
@@ -110,7 +116,7 @@ create table if not exists public.variation_annotations (
 );
 
 create index if not exists variation_annotations_user_track_idx
-    on public.variation_annotations (user_id, track_variation_id);
+    on wf1.variation_annotations (user_id, track_variation_id);
 
 -- User details: extensible per-user data that doesn't belong on auth.users
 -- (which Supabase owns and manages via GoTrue) — account status (used for
@@ -120,7 +126,7 @@ create index if not exists variation_annotations_user_track_idx
 -- the same pattern get_all_users_with_roles() already uses for role
 -- resolution below. Defined here (ahead of user_roles/roles) since the
 -- RLS policies right below need is_banned() to already exist.
-create table if not exists public.user_details (
+create table if not exists wf1.user_details (
     user_id           uuid primary key references auth.users(id) on delete cascade,
     display_name      text,
     status            text not null default 'active',
@@ -130,17 +136,17 @@ create table if not exists public.user_details (
 );
 
 -- Extend this list in a future migration if a new status is ever added.
-alter table public.user_details drop constraint if exists user_details_status_check;
-alter table public.user_details add constraint user_details_status_check
+alter table wf1.user_details drop constraint if exists user_details_status_check;
+alter table wf1.user_details add constraint user_details_status_check
     check (status in ('active', 'banned'));
 
-alter table public.user_details enable row level security;
+alter table wf1.user_details enable row level security;
 
 -- Each user can read their own details — the client uses the status to
 -- force a sign-out when a banned account is (still) sitting on a session.
-drop policy if exists "user_details select own" on public.user_details;
+drop policy if exists "user_details select own" on wf1.user_details;
 create policy "user_details select own"
-    on public.user_details for select
+    on wf1.user_details for select
     to authenticated
     using (auth.uid() = user_id);
 
@@ -148,27 +154,27 @@ create policy "user_details select own"
 -- applied — preserves who was banned, and by whom, before dropping it.
 do $$
 begin
-    if to_regclass('public.user_bans') is not null then
-        insert into public.user_details (user_id, status, status_updated_at, status_updated_by)
+    if to_regclass('wf1.user_bans') is not null then
+        insert into wf1.user_details (user_id, status, status_updated_at, status_updated_by)
         select user_id, 'banned', banned_at, banned_by
-        from public.user_bans
+        from wf1.user_bans
         on conflict (user_id) do update set
             status            = excluded.status,
             status_updated_at = excluded.status_updated_at,
             status_updated_by = excluded.status_updated_by;
 
-        drop table public.user_bans;
+        drop table wf1.user_bans;
     end if;
 end
 $$;
 
-create or replace function public.is_banned(uid uuid)
+create or replace function wf1.is_banned(uid uuid)
 returns boolean
 language sql
-security definer stable set search_path = public
+security definer stable set search_path = wf1
 as $$
     select coalesce(
-        (select status = 'banned' from public.user_details where user_id = uid),
+        (select status = 'banned' from wf1.user_details where user_id = uid),
         false
     )
 $$;
@@ -177,105 +183,105 @@ $$;
 -- Row Level Security
 -- =====================================================================
 
-alter table public.tracks enable row level security;
-alter table public.track_variations enable row level security;
-alter table public.vehicles enable row level security;
-alter table public.races enable row level security;
-alter table public.goals enable row level security;
+alter table wf1.tracks enable row level security;
+alter table wf1.track_variations enable row level security;
+alter table wf1.vehicles enable row level security;
+alter table wf1.races enable row level security;
+alter table wf1.goals enable row level security;
 
 -- Catalogue tables: anyone signed in can read.
 -- Postgres 15 has no `create policy if not exists`, so we drop-then-create
 -- to keep this script safe to re-run.
-drop policy if exists "tracks readable by authenticated" on public.tracks;
+drop policy if exists "tracks readable by authenticated" on wf1.tracks;
 create policy "tracks readable by authenticated"
-    on public.tracks for select
+    on wf1.tracks for select
     to authenticated
     using (true);
 
-drop policy if exists "track_variations readable by authenticated" on public.track_variations;
+drop policy if exists "track_variations readable by authenticated" on wf1.track_variations;
 create policy "track_variations readable by authenticated"
-    on public.track_variations for select
+    on wf1.track_variations for select
     to authenticated
     using (true);
 
-drop policy if exists "vehicles readable by authenticated" on public.vehicles;
+drop policy if exists "vehicles readable by authenticated" on wf1.vehicles;
 create policy "vehicles readable by authenticated"
-    on public.vehicles for select
+    on wf1.vehicles for select
     to authenticated
     using (true);
 
 -- Races: users only see/touch their own.
-drop policy if exists "races select own" on public.races;
+drop policy if exists "races select own" on wf1.races;
 create policy "races select own"
-    on public.races for select
+    on wf1.races for select
     to authenticated
     using (auth.uid() = user_id);
 
-drop policy if exists "races insert own" on public.races;
+drop policy if exists "races insert own" on wf1.races;
 create policy "races insert own"
-    on public.races for insert
+    on wf1.races for insert
     to authenticated
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "races update own" on public.races;
+drop policy if exists "races update own" on wf1.races;
 create policy "races update own"
-    on public.races for update
+    on wf1.races for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "races delete own" on public.races;
+drop policy if exists "races delete own" on wf1.races;
 create policy "races delete own"
-    on public.races for delete
+    on wf1.races for delete
     to authenticated
-    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- Goals: same pattern.
-drop policy if exists "goals select own" on public.goals;
+drop policy if exists "goals select own" on wf1.goals;
 create policy "goals select own"
-    on public.goals for select
+    on wf1.goals for select
     to authenticated
     using (auth.uid() = user_id);
 
-drop policy if exists "goals insert own" on public.goals;
+drop policy if exists "goals insert own" on wf1.goals;
 create policy "goals insert own"
-    on public.goals for insert
+    on wf1.goals for insert
     to authenticated
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "goals update own" on public.goals;
+drop policy if exists "goals update own" on wf1.goals;
 create policy "goals update own"
-    on public.goals for update
+    on wf1.goals for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "goals delete own" on public.goals;
+drop policy if exists "goals delete own" on wf1.goals;
 create policy "goals delete own"
-    on public.goals for delete
+    on wf1.goals for delete
     to authenticated
-    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- Variation annotations: same pattern as races/goals.
-alter table public.variation_annotations enable row level security;
+alter table wf1.variation_annotations enable row level security;
 
-drop policy if exists "variation_annotations select own" on public.variation_annotations;
+drop policy if exists "variation_annotations select own" on wf1.variation_annotations;
 create policy "variation_annotations select own"
-    on public.variation_annotations for select
+    on wf1.variation_annotations for select
     to authenticated
     using (auth.uid() = user_id);
 
-drop policy if exists "variation_annotations insert own" on public.variation_annotations;
+drop policy if exists "variation_annotations insert own" on wf1.variation_annotations;
 create policy "variation_annotations insert own"
-    on public.variation_annotations for insert
+    on wf1.variation_annotations for insert
     to authenticated
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "variation_annotations delete own" on public.variation_annotations;
+drop policy if exists "variation_annotations delete own" on wf1.variation_annotations;
 create policy "variation_annotations delete own"
-    on public.variation_annotations for delete
+    on wf1.variation_annotations for delete
     to authenticated
-    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- =====================================================================
 -- Catalogue seed (tracks, variations, vehicles) lives in supabase/seed.sql.
@@ -289,11 +295,11 @@ create policy "variation_annotations delete own"
 -- =====================================================================
 
 -- Clean up previous schema versions that had user_profiles.
-drop table if exists public.user_roles cascade;
-drop table if exists public.user_profiles cascade;
+drop table if exists wf1.user_roles cascade;
+drop table if exists wf1.user_profiles cascade;
 
 -- Roles catalogue: the set of valid roles.
-create table if not exists public.roles (
+create table if not exists wf1.roles (
     id          uuid primary key default gen_random_uuid(),
     name        text not null unique,
     description text,
@@ -301,45 +307,45 @@ create table if not exists public.roles (
 );
 
 -- Seed the two built-in roles (idempotent).
-insert into public.roles (name, description) values
+insert into wf1.roles (name, description) values
     ('user',  'Standard user'),
     ('admin', 'Administrator with access to admin pages')
 on conflict (name) do nothing;
 
-alter table public.roles enable row level security;
+alter table wf1.roles enable row level security;
 
-drop policy if exists "roles readable by authenticated" on public.roles;
+drop policy if exists "roles readable by authenticated" on wf1.roles;
 create policy "roles readable by authenticated"
-    on public.roles for select
+    on wf1.roles for select
     to authenticated
     using (true);
 
 -- User roles: links auth.users directly to roles.
-create table if not exists public.user_roles (
+create table if not exists wf1.user_roles (
     user_id    uuid not null references auth.users(id) on delete cascade,
-    role_id    uuid not null references public.roles(id) on delete cascade,
+    role_id    uuid not null references wf1.roles(id) on delete cascade,
     created_at timestamptz not null default now(),
     primary key (user_id, role_id)
 );
 
-alter table public.user_roles enable row level security;
+alter table wf1.user_roles enable row level security;
 
 -- Each user can read their own role assignments.
-drop policy if exists "user_roles select own" on public.user_roles;
+drop policy if exists "user_roles select own" on wf1.user_roles;
 create policy "user_roles select own"
-    on public.user_roles for select
+    on wf1.user_roles for select
     to authenticated
     using (auth.uid() = user_id);
 
 -- Assign the 'user' role to new sign-ups automatically.
-create or replace function public.handle_new_user()
+create or replace function wf1.handle_new_user()
 returns trigger
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    insert into public.user_roles (user_id, role_id)
-    select new.id, r.id from public.roles r where r.name = 'user'
+    insert into wf1.user_roles (user_id, role_id)
+    select new.id, r.id from wf1.roles r where r.name = 'user'
     on conflict (user_id, role_id) do nothing;
     return new;
 end;
@@ -348,16 +354,16 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
     after insert on auth.users
-    for each row execute procedure public.handle_new_user();
+    for each row execute procedure wf1.handle_new_user();
 
 -- Backfill: assign 'user' role to any existing users without a role assignment.
-insert into public.user_roles (user_id, role_id)
+insert into wf1.user_roles (user_id, role_id)
 select u.id, r.id
 from auth.users u
-cross join public.roles r
+cross join wf1.roles r
 where r.name = 'user'
   and not exists (
-      select 1 from public.user_roles ur where ur.user_id = u.id
+      select 1 from wf1.user_roles ur where ur.user_id = u.id
   )
 on conflict (user_id, role_id) do nothing;
 
@@ -366,15 +372,15 @@ on conflict (user_id, role_id) do nothing;
 -- =====================================================================
 
 -- Internal helper: true if the given user holds the admin role.
-create or replace function public.is_admin(uid uuid)
+create or replace function wf1.is_admin(uid uuid)
 returns boolean
 language sql
-security definer stable set search_path = public
+security definer stable set search_path = wf1
 as $$
     select exists (
         select 1
-        from public.user_roles ur
-        join public.roles r on r.id = ur.role_id
+        from wf1.user_roles ur
+        join wf1.roles r on r.id = ur.role_id
         where ur.user_id = uid and r.name = 'admin'
     )
 $$;
@@ -383,9 +389,9 @@ $$;
 -- sorted by total activity descending — admin only.
 -- `create or replace` can't change an OUT-parameter function's return row
 -- type — drop first.
-drop function if exists public.get_all_users_with_roles();
+drop function if exists wf1.get_all_users_with_roles();
 
-create or replace function public.get_all_users_with_roles()
+create or replace function wf1.get_all_users_with_roles()
 returns table(
     id                uuid,
     email             text,
@@ -399,10 +405,10 @@ returns table(
     last_race_at      timestamptz
 )
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
@@ -412,35 +418,35 @@ begin
         u.email::text,
         coalesce(
             (select r.name
-             from public.user_roles ur
-             join public.roles r on r.id = ur.role_id
+             from wf1.user_roles ur
+             join wf1.roles r on r.id = ur.role_id
              where ur.user_id = u.id
              limit 1),
             'user'
         )::text as role,
         u.created_at::timestamptz,
-        public.is_banned(u.id) as banned,
+        wf1.is_banned(u.id) as banned,
         count(distinct rc.id)  as race_count,
         count(distinct g.id)   as goal_count,
         count(distinct a.id)   as annotation_count,
         count(distinct rc.id) + count(distinct g.id) + count(distinct a.id) as total_activity,
         max(rc.datetime)      as last_race_at
     from auth.users u
-    left join public.races                 rc on rc.user_id = u.id
-    left join public.goals                 g  on g.user_id  = u.id
-    left join public.variation_annotations a  on a.user_id  = u.id
+    left join wf1.races                 rc on rc.user_id = u.id
+    left join wf1.goals                 g  on g.user_id  = u.id
+    left join wf1.variation_annotations a  on a.user_id  = u.id
     group by u.id, u.email, u.created_at
     order by total_activity desc;
 end;
 $$;
 
 -- Resolves a range keyword ('1d', '7d', '30d', '90d', '1y', 'all') to the
--- first day of a generate_series(..., current_date, interval '1 day') call.
--- Shared by get_user_growth() and get_race_log_growth() below.
-create or replace function public.resolve_growth_range_start(p_range text, p_earliest date)
+-- first day of the window. Only get_race_log_times() needs it now, but the
+-- keywords keep one definition here rather than drifting between callers.
+create or replace function wf1.resolve_growth_range_start(p_range text, p_earliest date)
 returns date
 language plpgsql
-set search_path = public
+set search_path = wf1
 as $$
 declare
     start_day date;
@@ -458,79 +464,61 @@ begin
 end;
 $$;
 
--- Returns cumulative user count per day for the given range — admin only.
-drop function if exists public.get_user_growth();
-create or replace function public.get_user_growth(p_range text default '30d')
-returns table(day date, user_count bigint)
+-- The growth charts used to be aggregated here, one row per day. They no
+-- longer are: this session runs in UTC, so a database-side `::date` files a
+-- race logged at 8pm Central under the next day, and the chart disagrees with
+-- the timestamps in the users table right above it. Only the browser knows
+-- where the viewer's midnight falls, so it now does the bucketing — user
+-- growth from the created_at values get_all_users_with_roles() already
+-- returns, and races from the raw instants below.
+drop function if exists wf1.get_user_growth();
+drop function if exists wf1.get_user_growth(text);
+drop function if exists wf1.get_race_log_growth(text);
+
+-- Returns when each race in the range was logged — admin only. Unaggregated
+-- on purpose (see above). The extra day on the start covers viewers east of
+-- UTC, whose first local day opens before the UTC day the range resolves to;
+-- the browser trims the window back to the days it actually plots.
+create or replace function wf1.get_race_log_times(p_range text default '30d')
+returns table(logged_at timestamptz)
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 declare
     start_day date;
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
-    start_day := public.resolve_growth_range_start(
+    start_day := wf1.resolve_growth_range_start(
         p_range,
-        (select min(u.created_at)::date from auth.users u)
-    );
+        (select min(r.created_at)::date from wf1.races r)
+    ) - 1;
 
     return query
-    select
-        gs::date as day,
-        (select count(*) from auth.users u where u.created_at::date <= gs::date) as user_count
-    from generate_series(start_day, current_date, interval '1 day') as gs
-    order by gs asc;
-end;
-$$;
-
--- Returns the number of races logged per day for the given range — admin
--- only. Unlike get_user_growth() this is a daily count, not a running total.
-create or replace function public.get_race_log_growth(p_range text default '30d')
-returns table(day date, race_count bigint)
-language plpgsql
-security definer set search_path = public
-as $$
-declare
-    start_day date;
-begin
-    if not public.is_admin(auth.uid()) then
-        raise exception 'Unauthorized: admin access required';
-    end if;
-
-    start_day := public.resolve_growth_range_start(
-        p_range,
-        (select min(r.created_at)::date from public.races r)
-    );
-
-    return query
-    select
-        gs::date as day,
-        count(r.id) as race_count
-    from generate_series(start_day, current_date, interval '1 day') as gs
-    left join public.races r on r.created_at::date = gs::date
-    group by gs
-    order by gs asc;
+    select r.created_at
+    from wf1.races r
+    where r.created_at >= start_day::timestamptz
+    order by r.created_at;
 end;
 $$;
 
 -- Sets the role of a target user — admin only.
 -- Replaces all current role assignments with the single new role.
-create or replace function public.set_user_role(target_user_id uuid, new_role text)
+create or replace function wf1.set_user_role(target_user_id uuid, new_role text)
 returns void
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 declare
     v_role_id uuid;
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
-    select id into v_role_id from public.roles where name = new_role;
+    select id into v_role_id from wf1.roles where name = new_role;
     if v_role_id is null then
         raise exception 'Unknown role: %', new_role;
     end if;
@@ -539,21 +527,21 @@ begin
     if new_role <> 'admin' then
         if (
             select count(*)
-            from public.user_roles ur
-            join public.roles r on r.id = ur.role_id
+            from wf1.user_roles ur
+            join wf1.roles r on r.id = ur.role_id
             where r.name = 'admin' and ur.user_id = target_user_id
         ) > 0 and (
             select count(*)
-            from public.user_roles ur
-            join public.roles r on r.id = ur.role_id
+            from wf1.user_roles ur
+            join wf1.roles r on r.id = ur.role_id
             where r.name = 'admin'
         ) = 1 then
             raise exception 'Cannot remove the last admin';
         end if;
     end if;
 
-    delete from public.user_roles where user_id = target_user_id;
-    insert into public.user_roles (user_id, role_id) values (target_user_id, v_role_id);
+    delete from wf1.user_roles where user_id = target_user_id;
+    insert into wf1.user_roles (user_id, role_id) values (target_user_id, v_role_id);
 end;
 $$;
 
@@ -562,13 +550,13 @@ $$;
 -- API keys, or using an existing API key to log races (see the policies
 -- and insert_race_with_api_key_wf1 below) — effectively suspending
 -- everything that requires being logged in.
-create or replace function public.set_user_banned(target_user_id uuid, banned boolean)
+create or replace function wf1.set_user_banned(target_user_id uuid, banned boolean)
 returns void
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
@@ -576,7 +564,7 @@ begin
         raise exception 'Cannot ban your own account';
     end if;
 
-    insert into public.user_details (user_id, status, status_updated_at, status_updated_by)
+    insert into wf1.user_details (user_id, status, status_updated_at, status_updated_by)
     values (target_user_id, case when banned then 'banned' else 'active' end, now(), auth.uid())
     on conflict (user_id) do update set
         status            = excluded.status,
@@ -590,7 +578,7 @@ $$;
 -- Defined after is_admin so the admin select policy can reference it.
 -- =====================================================================
 
-create table if not exists public.feedback (
+create table if not exists wf1.feedback (
     id            uuid primary key default gen_random_uuid(),
     user_id       uuid not null references auth.users(id) on delete cascade,
     url           text not null,
@@ -598,28 +586,28 @@ create table if not exists public.feedback (
     created_at    timestamptz not null default now()
 );
 
-alter table public.feedback enable row level security;
+alter table wf1.feedback enable row level security;
 
 -- Users can insert their own feedback.
-drop policy if exists "feedback insert own" on public.feedback;
+drop policy if exists "feedback insert own" on wf1.feedback;
 create policy "feedback insert own"
-    on public.feedback for insert
+    on wf1.feedback for insert
     to authenticated
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- Admins can read all feedback.
-drop policy if exists "feedback select admin" on public.feedback;
+drop policy if exists "feedback select admin" on wf1.feedback;
 create policy "feedback select admin"
-    on public.feedback for select
+    on wf1.feedback for select
     to authenticated
-    using (public.is_admin(auth.uid()));
+    using (wf1.is_admin(auth.uid()));
 
 -- =====================================================================
 -- API keys: per-user tokens for the external companion tool.
 -- Raw keys are never stored — only a SHA-256 hex digest.
 -- =====================================================================
 
-create table if not exists public.api_keys (
+create table if not exists wf1.api_keys (
     id           uuid primary key default gen_random_uuid(),
     user_id      uuid not null references auth.users(id) on delete cascade,
     key_hash     text not null unique,
@@ -631,41 +619,41 @@ create table if not exists public.api_keys (
 -- Soft-revocation: "deleting" a key from the UI sets this instead of
 -- removing the row, so races.api_key_id (below) keeps resolving to the
 -- real key/owner forever, even after the key stops working.
-alter table public.api_keys add column if not exists revoked_at timestamptz;
+alter table wf1.api_keys add column if not exists revoked_at timestamptz;
 
 -- Now that api_keys exists, link races to the key that logged them (for
 -- source = 'api' rows). "on delete set null" mirrors vehicle_id on races
 -- above — revoking/removing a key never deletes or orphans its races.
-alter table public.races add column if not exists api_key_id uuid references public.api_keys(id) on delete set null;
+alter table wf1.races add column if not exists api_key_id uuid references wf1.api_keys(id) on delete set null;
 
-alter table public.api_keys enable row level security;
+alter table wf1.api_keys enable row level security;
 
-drop policy if exists "api_keys select own" on public.api_keys;
+drop policy if exists "api_keys select own" on wf1.api_keys;
 create policy "api_keys select own"
-    on public.api_keys for select
+    on wf1.api_keys for select
     to authenticated
     using (auth.uid() = user_id);
 
-drop policy if exists "api_keys insert own" on public.api_keys;
+drop policy if exists "api_keys insert own" on wf1.api_keys;
 create policy "api_keys insert own"
-    on public.api_keys for insert
+    on wf1.api_keys for insert
     to authenticated
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
-drop policy if exists "api_keys delete own" on public.api_keys;
+drop policy if exists "api_keys delete own" on wf1.api_keys;
 create policy "api_keys delete own"
-    on public.api_keys for delete
+    on wf1.api_keys for delete
     to authenticated
-    using (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- Needed so a user can soft-revoke (set revoked_at) their own key instead
 -- of hard-deleting it.
-drop policy if exists "api_keys update own" on public.api_keys;
+drop policy if exists "api_keys update own" on wf1.api_keys;
 create policy "api_keys update own"
-    on public.api_keys for update
+    on wf1.api_keys for update
     to authenticated
     using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not public.is_banned(auth.uid()));
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
 -- RPC called by the external companion tool: validates the raw API key,
 -- resolves track/variation by exact display-name match and vehicle by
@@ -680,22 +668,22 @@ create policy "api_keys update own"
 -- dropped explicitly — `create or replace` would leave them in place and
 -- PostgREST could no longer resolve which to call.
 -- Drop the pre-lap_count/lap_times_ms version (13 params).
-drop function if exists public.insert_race_with_api_key_wf1(
+drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text
 );
 -- Drop the pre-results_roster version (15 params).
-drop function if exists public.insert_race_with_api_key_wf1(
+drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb
 );
 -- Drop the pre-vehicle_weight_kg version (16 params).
-drop function if exists public.insert_race_with_api_key_wf1(
+drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb, jsonb
 );
 
-create or replace function public.insert_race_with_api_key_wf1(
+create or replace function wf1.insert_race_with_api_key_wf1(
     api_key            text,
     track              text,
     variant            text,
@@ -717,7 +705,7 @@ create or replace function public.insert_race_with_api_key_wf1(
 )
 returns json
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 declare
     v_user_id            uuid;
@@ -736,7 +724,7 @@ begin
     -- unrecognized one, but the row itself is left in place (see
     -- api_keys.revoked_at) so past races still resolve back to it.
     select id, user_id into v_key_id, v_user_id
-    from public.api_keys
+    from wf1.api_keys
     where key_hash = v_key_hash and revoked_at is null;
 
     if v_user_id is null then
@@ -746,7 +734,7 @@ begin
     -- A banned user can't log races through the companion tool either —
     -- this RPC is security definer and bypasses the "races insert own" RLS
     -- check above, so the ban has to be enforced here too.
-    if public.is_banned(v_user_id) then
+    if wf1.is_banned(v_user_id) then
         return json_build_object('success', false, 'error', 'Account suspended');
     end if;
 
@@ -778,19 +766,19 @@ begin
     v_lap_count := coalesce(lap_count, jsonb_array_length(lap_times_ms));
 
     -- Stamp last-used.
-    update public.api_keys
+    update wf1.api_keys
     set last_used_at = now()
     where key_hash = v_key_hash;
 
     -- Resolve track, then variation scoped to that track — both by exact
     -- case-insensitive name match.
     select t.id into v_track_id
-    from public.tracks t
+    from wf1.tracks t
     where lower(t.name) = lower(track);
 
     if v_track_id is not null then
         select tv.id into v_track_variation_id
-        from public.track_variations tv
+        from wf1.track_variations tv
         where tv.track_id = v_track_id and lower(tv.name) = lower(variant);
     end if;
 
@@ -804,7 +792,7 @@ begin
     -- Resolve vehicle (optional — null is fine).
     if vehicle is not null and vehicle <> '' then
         select id into v_vehicle_id
-        from public.vehicles
+        from wf1.vehicles
         where lower(name) = lower(vehicle);
     end if;
 
@@ -815,7 +803,7 @@ begin
     end if;
 
     -- Insert race bypassing RLS (security definer).
-    insert into public.races (
+    insert into wf1.races (
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
         performance_index, tuning, notes, lap_count, lap_times_ms, results_roster,
@@ -834,14 +822,14 @@ $$;
 
 -- Allow the anon key (used by the external tool) to call this function.
 -- Identity is verified inside via the API key hash — no session needed.
-grant execute on function public.insert_race_with_api_key_wf1 to anon, authenticated;
+grant execute on function wf1.insert_race_with_api_key_wf1 to anon, authenticated;
 
 -- Returns the current user's own active (non-revoked) API keys along with
 -- how many races each has logged. A plain select() from the client can't
 -- do the count/join, so this RPC does it — security definer so it can
 -- read races by api_key_id without a "races select by api_key" RLS policy,
 -- but scoped to auth.uid() so it never exposes another user's keys.
-create or replace function public.get_api_keys_with_counts()
+create or replace function wf1.get_api_keys_with_counts()
 returns table(
     id           uuid,
     name         text,
@@ -850,7 +838,7 @@ returns table(
     race_count   bigint
 )
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
     return query
@@ -860,15 +848,15 @@ begin
         k.created_at,
         k.last_used_at,
         count(r.id) as race_count
-    from public.api_keys k
-    left join public.races r on r.api_key_id = k.id
+    from wf1.api_keys k
+    left join wf1.races r on r.api_key_id = k.id
     where k.user_id = auth.uid() and k.revoked_at is null
     group by k.id, k.name, k.created_at, k.last_used_at
     order by k.created_at desc;
 end;
 $$;
 
-grant execute on function public.get_api_keys_with_counts to authenticated;
+grant execute on function wf1.get_api_keys_with_counts to authenticated;
 
 -- =====================================================================
 -- Admin RPCs: API keys and feedback overview.
@@ -880,9 +868,9 @@ grant execute on function public.get_api_keys_with_counts to authenticated;
 -- number of races logged with it — admin only. Adding revoked_at/race_count
 -- changes the returned row type, which `create or replace` can't do for
 -- OUT-parameter functions — drop first.
-drop function if exists public.get_all_api_keys();
+drop function if exists wf1.get_all_api_keys();
 
-create or replace function public.get_all_api_keys()
+create or replace function wf1.get_all_api_keys()
 returns table(
     id           uuid,
     name         text,
@@ -894,10 +882,10 @@ returns table(
     race_count   bigint
 )
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
@@ -911,9 +899,9 @@ begin
         k.user_id,
         u.email::text as user_email,
         count(r.id) as race_count
-    from public.api_keys k
+    from wf1.api_keys k
     join auth.users u on u.id = k.user_id
-    left join public.races r on r.api_key_id = k.id
+    left join wf1.races r on r.api_key_id = k.id
     group by k.id, k.name, k.created_at, k.last_used_at, k.revoked_at, k.user_id, u.email
     order by k.created_at desc;
 end;
@@ -924,17 +912,17 @@ $$;
 -- key, so admin revocation needs a security-definer RPC. This sets
 -- revoked_at rather than deleting the row, so races logged with the key
 -- keep resolving back to it (see races.api_key_id).
-create or replace function public.admin_delete_api_key(key_id uuid)
+create or replace function wf1.admin_delete_api_key(key_id uuid)
 returns void
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
-    update public.api_keys set revoked_at = now()
+    update wf1.api_keys set revoked_at = now()
     where id = key_id and revoked_at is null;
 end;
 $$;
@@ -944,21 +932,21 @@ $$;
 -- page to show a live "races logged" count to signed-out visitors, who
 -- can't otherwise see into the `races` table (its RLS policies are all
 -- `to authenticated ... using (auth.uid() = user_id)` — see above).
-create or replace function public.get_total_race_count()
+create or replace function wf1.get_total_race_count()
 returns bigint
 language sql
-security definer stable set search_path = public
+security definer stable set search_path = wf1
 as $$
-    select count(*) from public.races
+    select count(*) from wf1.races
 $$;
 
-grant execute on function public.get_total_race_count to anon, authenticated;
+grant execute on function wf1.get_total_race_count to anon, authenticated;
 
 -- Returns all feedback entries with the submitting user's email, newest
 -- first — admin only. The "feedback select admin" RLS policy already
 -- lets an admin select these rows directly, but a plain select() from
 -- the client can't join auth.users, so this RPC does the join.
-create or replace function public.get_all_feedback()
+create or replace function wf1.get_all_feedback()
 returns table(
     id            uuid,
     url           text,
@@ -968,10 +956,10 @@ returns table(
     user_email    text
 )
 language plpgsql
-security definer set search_path = public
+security definer set search_path = wf1
 as $$
 begin
-    if not public.is_admin(auth.uid()) then
+    if not wf1.is_admin(auth.uid()) then
         raise exception 'Unauthorized: admin access required';
     end if;
 
@@ -983,8 +971,20 @@ begin
         f.created_at,
         f.user_id,
         u.email::text as user_email
-    from public.feedback f
+    from wf1.feedback f
     join auth.users u on u.id = f.user_id
     order by f.created_at desc;
 end;
 $$;
+
+-- =====================================================================
+-- Schema-level grants: `public` gets these from Supabase's project
+-- defaults, but `wf1` is a custom schema and needs them explicitly. RLS
+-- policies (above) still govern row-level access on top of this — these
+-- grants only make the schema/tables reachable at all.
+-- =====================================================================
+
+grant usage on schema wf1 to anon, authenticated, service_role;
+grant select, insert, update, delete on all tables in schema wf1 to anon, authenticated;
+alter default privileges in schema wf1
+    grant select, insert, update, delete on tables to anon, authenticated;
