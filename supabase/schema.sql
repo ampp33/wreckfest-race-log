@@ -978,6 +978,125 @@ end;
 $$;
 
 -- =====================================================================
+-- Alerts: site-wide announcements written by admins, surfaced through the
+-- bullhorn in the nav bar. Read state is tracked per alert (not as a
+-- single "last seen" timestamp) so previewing the newest few in the
+-- popover doesn't silently mark older unseen ones as read too.
+-- =====================================================================
+
+create table if not exists wf1.alerts (
+    id         uuid primary key default gen_random_uuid(),
+    title      text not null,
+    body       text not null,
+    -- Optional "read more" target: an in-app path ('/news') or a full URL.
+    link       text,
+    created_at timestamptz not null default now(),
+    created_by uuid references auth.users(id) on delete set null
+);
+
+create index if not exists alerts_created_at_idx on wf1.alerts (created_at desc);
+
+-- Links are rendered as hrefs, so only allow in-app paths and http(s) URLs
+-- (no javascript: etc.). Mirrored client-side in AdminAlertsPage.
+alter table wf1.alerts drop constraint if exists alerts_link_check;
+alter table wf1.alerts add constraint alerts_link_check
+    check (link is null or link ~ '^/($|[^/])' or link ~* '^https?://');
+
+alter table wf1.alerts drop constraint if exists alerts_title_length_check;
+alter table wf1.alerts add constraint alerts_title_length_check
+    check (char_length(title) between 1 and 120);
+
+create table if not exists wf1.alert_reads (
+    user_id  uuid not null references auth.users(id) on delete cascade,
+    alert_id uuid not null references wf1.alerts(id) on delete cascade,
+    read_at  timestamptz not null default now(),
+    primary key (user_id, alert_id)
+);
+
+alter table wf1.alerts enable row level security;
+alter table wf1.alert_reads enable row level security;
+
+drop policy if exists "alerts readable by authenticated" on wf1.alerts;
+create policy "alerts readable by authenticated"
+    on wf1.alerts for select
+    to authenticated
+    using (true);
+
+drop policy if exists "alerts insert admin" on wf1.alerts;
+create policy "alerts insert admin"
+    on wf1.alerts for insert
+    to authenticated
+    with check (wf1.is_admin(auth.uid()));
+
+drop policy if exists "alerts update admin" on wf1.alerts;
+create policy "alerts update admin"
+    on wf1.alerts for update
+    to authenticated
+    using (wf1.is_admin(auth.uid()))
+    with check (wf1.is_admin(auth.uid()));
+
+drop policy if exists "alerts delete admin" on wf1.alerts;
+create policy "alerts delete admin"
+    on wf1.alerts for delete
+    to authenticated
+    using (wf1.is_admin(auth.uid()));
+
+drop policy if exists "alert_reads select own" on wf1.alert_reads;
+create policy "alert_reads select own"
+    on wf1.alert_reads for select
+    to authenticated
+    using (auth.uid() = user_id);
+
+drop policy if exists "alert_reads insert own" on wf1.alert_reads;
+create policy "alert_reads insert own"
+    on wf1.alert_reads for insert
+    to authenticated
+    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+
+-- Alerts with the caller's read state, newest first; pass
+-- p_unread_only => true for just the unread ones (the nav bar bell).
+-- Alerts posted before the account existed count as read, so a new user
+-- doesn't sign up to a pile of stale announcements — they're still listed
+-- on the alerts page, just not flagged. Security definer only so it can
+-- read the caller's signup time from auth.users; every row is scoped to
+-- auth.uid().
+drop function if exists wf1.get_alerts(boolean);
+
+create or replace function wf1.get_alerts(p_unread_only boolean default false)
+returns table(
+    id         uuid,
+    title      text,
+    body       text,
+    link       text,
+    created_at timestamptz,
+    is_read    boolean
+)
+language sql
+security definer stable set search_path = wf1
+as $$
+    with me as (
+        select u.id, u.created_at from auth.users u where u.id = auth.uid()
+    ),
+    marked as (
+        select
+            a.*,
+            (
+                a.created_at < me.created_at
+                or exists (
+                    select 1 from wf1.alert_reads r
+                    where r.alert_id = a.id and r.user_id = me.id
+                )
+            ) as is_read
+        from wf1.alerts a
+        cross join me
+    )
+    select m.id, m.title, m.body, m.link, m.created_at, m.is_read
+    from marked m
+    where not (p_unread_only and m.is_read)
+    order by m.created_at desc
+$$;
+
+-- =====================================================================
 -- Schema-level grants: `public` gets these from Supabase's project
 -- defaults, but `wf1` is a custom schema and needs them explicitly. RLS
 -- policies (above) still govern row-level access on top of this — these

@@ -16,6 +16,8 @@ import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
 import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
 import GettingStartedPage from '../pages/GettingStartedPage.vue'
 import NewsPage from '../pages/NewsPage.vue'
+import AlertsPage from '../pages/AlertsPage.vue'
+import AdminAlertsPage from '../pages/AdminAlertsPage.vue'
 
 const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { public: true } },
@@ -23,6 +25,7 @@ const routes = [
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/getting-started', name: 'getting-started', component: GettingStartedPage },
   { path: '/news', name: 'news', component: NewsPage },
+  { path: '/alerts', name: 'alerts', component: AlertsPage },
   { path: '/tracks', name: 'tracks', component: TrackListPage },
   {
     path: '/track/:trackSlug/:variationSlug',
@@ -35,6 +38,7 @@ const routes = [
   { path: '/admin/users', name: 'admin-users', component: UsersPage, meta: { requiresAdmin: true } },
   { path: '/admin/api-keys', name: 'admin-api-keys', component: AdminApiKeysPage, meta: { requiresAdmin: true } },
   { path: '/admin/feedback', name: 'admin-feedback', component: AdminFeedbackPage, meta: { requiresAdmin: true } },
+  { path: '/admin/alerts', name: 'admin-alerts', component: AdminAlertsPage, meta: { requiresAdmin: true } },
 
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]

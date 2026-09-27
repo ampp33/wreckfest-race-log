@@ -77,8 +77,10 @@
 
         <!-- Icon-only control cluster, same sun/moon + door icons as
              PublicHeader's compact controls, grouped with a tighter gap than
-             the text links so the three tiles read as one set. -->
+             the text links so the tiles read as one set. -->
         <div class="flex items-center gap-2">
+          <AlertBell />
+
           <button
             type="button"
             class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
@@ -109,19 +111,26 @@
         </div>
       </div>
 
-      <!-- Mobile hamburger -->
-      <button
-        type="button"
-        class="sm:hidden min-h-[44px] min-w-[44px] flex items-center justify-center border shrink-0"
-        :class="mobileMenuOpen
-          ? 'bg-brand-accent dark:bg-brand-accent-dark border-brand-accent dark:border-brand-accent-dark text-white'
-          : 'border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'"
-        :aria-expanded="mobileMenuOpen"
-        aria-label="Toggle menu"
-        @click="mobileMenuOpen = !mobileMenuOpen"
-      >
-        <span class="w-5 h-5 inline-block" v-html="mobileMenuOpen ? closeIcon : menuIcon"></span>
-      </button>
+      <!-- Mobile: the alerts bell stays on the bar beside the hamburger
+           rather than inside the drawer, so its unread badge is visible
+           without opening the menu. -->
+      <div class="sm:hidden flex items-center gap-2 shrink-0">
+        <AlertBell variant="mobile" @open="mobileMenuOpen = false" />
+
+        <!-- Mobile hamburger -->
+        <button
+          type="button"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center border shrink-0"
+          :class="mobileMenuOpen
+            ? 'bg-brand-accent dark:bg-brand-accent-dark border-brand-accent dark:border-brand-accent-dark text-white'
+            : 'border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'"
+          :aria-expanded="mobileMenuOpen"
+          aria-label="Toggle menu"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+        >
+          <span class="w-5 h-5 inline-block" v-html="mobileMenuOpen ? closeIcon : menuIcon"></span>
+        </button>
+      </div>
     </div>
 
     <!-- Mobile menu: a red slab, full bleed, squared off. Slides open/closed
@@ -227,6 +236,7 @@ import { prefsStore } from '../stores/prefsStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { openFeedback } from '../stores/feedbackStore.js'
+import AlertBell from './AlertBell.vue'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
 import signOutIcon from '../assets/icons/sign-out.svg?raw'
@@ -246,6 +256,7 @@ const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
+  components: { AlertBell },
   data() {
     return {
       auth: authStore,
@@ -271,7 +282,8 @@ export default {
       adminItems: [
         { to: '/admin/users', label: 'Users' },
         { to: '/admin/api-keys', label: 'API keys' },
-        { to: '/admin/feedback', label: 'Feedback' }
+        { to: '/admin/feedback', label: 'Feedback' },
+        { to: '/admin/alerts', label: 'Alerts' }
       ]
     }
   },

@@ -29,3 +29,15 @@ export function formatCompactDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: '2-digit' })
 }
+
+// "just now" / "5m ago" / "3h ago" / "2d ago", falling back to the full
+// date past a week — for compact lists like the alerts popover.
+export function formatRelativeDate(iso) {
+  if (!iso) return '—'
+  const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+  if (seconds < 7 * 86400) return `${Math.floor(seconds / 86400)}d ago`
+  return formatDate(iso)
+}
