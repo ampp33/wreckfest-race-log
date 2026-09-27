@@ -31,6 +31,14 @@ export default {
     return {
       entries: [
         {
+          id: 5,
+          title: 'Fixed Telemetry Tuning Bug',
+          date: '2026-09-26',
+          items: [
+            'Fixed a bug in the Telemetry tool where changes to tunings weren\'t being picked up.  <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases/tag/v1.1.1" target="_blank" rel="noopener" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Download the patched plugin here</a>.'
+          ]
+        },
+        {
           id: 4,
           title: 'Sortable Races and Track Detail tables',
           date: '2026-09-22',

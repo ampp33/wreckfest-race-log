@@ -101,6 +101,7 @@ is no way to submit a backdated race through this endpoint.
 ```bash
 curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
   -H "apikey: {SUPABASE_ANON_KEY}" \
+  -H "Content-Profile: wf1" \
   -H "Content-Type: application/json" \
   -d '{
     "api_key": "PASTE_YOUR_RAW_API_KEY_HERE",
