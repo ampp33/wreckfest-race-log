@@ -69,8 +69,8 @@ editor itself: a full UI for hand-drawing racing lines with prev/next, undo,
 reset-to-auto, multi-stroke lines, arrow/flip/open-loop toggles, copy-paste
 between tracks, "fill reverses" (mirror a track's `-reverse` twin), a name
 preview that renders the track name as text on your path, and
-confirm/download/backup. Keyboard: `←`/`→` change track, `z` undo, `Enter`
-confirm, `Ctrl/Cmd+C`/`V` copy and paste strokes.
+confirm/download/backup. Keyboard: `←`/`→` change track, `z` undo,
+`Delete`/`Backspace` delete the selected handle, `Esc` deselect, `Enter` confirm, `Ctrl/Cmd+C`/`V` copy and paste strokes.
 
 Each track is seeded from the automatic tracer so you start from a close shape
 rather than a blank canvas. `HANDLE_OVERRIDE` in the script bumps the handle

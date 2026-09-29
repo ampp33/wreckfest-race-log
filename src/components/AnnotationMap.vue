@@ -144,6 +144,10 @@ let uid = 0
 // The ring is set in an 18px face; tracking is quoted in the same user units.
 const BASE_FONT = 18
 const BASE_TRACKING = 0.18
+// Venue and layout nouns: meaningless as a label on their own. Mirrored in
+// tools/line-editor-shell.html so the editor's Name preview matches.
+const GENERIC_WORDS = new Set(['CIRCUIT', 'RACEWAY', 'SPEEDWAY', 'RING', 'STADIUM', 'MOTORPARK',
+  'MOTOCENTER', 'RACEPARK', 'ROUTE', 'TRACK', 'RACE', 'RACING', 'OVAL', 'STAGE'])
 // A stroke too short for even one pass of the name gets a smaller face rather
 // than crushed letter-spacing. Below this it would be unreadable anyway, so the
 // tail is allowed to run off the end instead.
@@ -209,6 +213,12 @@ export default {
         out.push(parts[parts.length - 1])
         out.push(parts[0])
       }
+      // Last resort for short spurs: single words, longest first so the most
+      // distinctive one that fits wins. Venue and layout nouns say nothing on
+      // their own, so they are skipped.
+      const words = full.split(/[\s—]+/).filter(w => w.length > 2 && !GENERIC_WORDS.has(w))
+      words.sort((a, b) => b.length - a.length)
+      out.push(...words)
       return out.filter((v, i, a) => v && a.indexOf(v) === i).map(v => `${v} · `)
     }
   },
