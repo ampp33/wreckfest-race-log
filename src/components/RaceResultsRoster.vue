@@ -7,6 +7,7 @@
           <th class="py-2 pr-3 text-left font-medium">Name</th>
           <th class="py-2 pr-3 text-left font-medium">Car</th>
           <th class="py-2 pr-3 text-left font-medium">Class</th>
+          <th v-if="hasTuning" class="py-2 pr-3 text-left font-medium">Tuning</th>
           <th class="py-2 pr-3 text-right font-medium">Best lap</th>
           <th class="py-2 pr-3 text-right font-medium">Total</th>
           <th class="py-2 pr-3 text-right font-medium">Laps</th>
@@ -28,6 +29,7 @@
             </template>
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </td>
+          <td v-if="hasTuning" class="py-1.5 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTuning(row.tuning) }}</td>
           <td
             class="py-1.5 pr-3 text-right tabular"
             :class="isFastestLap(row) ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
@@ -51,12 +53,15 @@ export default {
   props: {
     // JSON array stored on the race, see README / docs/external-api.md for
     // the entry shape (position, name, car, class, best_lap_ms,
-    // total_time_ms, dnf, laps_completed).
+    // total_time_ms, dnf, laps_completed, and optionally tuning).
     roster: { type: Array, default: () => [] }
   },
   computed: {
     rows() {
       return Array.isArray(this.roster) ? this.roster : []
+    },
+    hasTuning() {
+      return this.rows.some(r => r && 'tuning' in r)
     },
     fastestLapMs() {
       const times = this.rows
@@ -70,6 +75,13 @@ export default {
       return row.best_lap_ms != null
         && row.best_lap_ms > 0
         && row.best_lap_ms === this.fastestLapMs
+    },
+    // `tuning` is { suspension, gear_ratio, differential, brake_balance },
+    // shown concatenated in that order, e.g. "5342".
+    formatTuning(t) {
+      if (!t) return '—'
+      const parts = [t.suspension, t.gear_ratio, t.differential, t.brake_balance]
+      return parts.some(v => v == null) ? '—' : parts.join('')
     },
     formatTime(ms) {
       if (ms == null || ms === 0) return '—'
