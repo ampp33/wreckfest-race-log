@@ -31,6 +31,14 @@ export default {
     return {
       entries: [
         {
+          id: 6,
+          title: 'Fixed Telemetry Tuning Bug (Again) + Opponent Tunings',
+          date: '2026-09-26',
+          items: [
+            'Actually fixed tunings to be properly scraped, my bad.  The plugin now also pulls your opponent\'s tuning values too :)  <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases/tag/v1.2.0" target="_blank" rel="noopener" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Download it here</a>.'
+          ]
+        },
+        {
           id: 5,
           title: 'Fixed Telemetry Tuning Bug',
           date: '2026-09-26',
