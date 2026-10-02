@@ -153,6 +153,8 @@ Defined in [`../supabase/schema.sql`](../supabase/schema.sql), seeded by
   `tuning`, `assists` (jsonb — shifting/abs/traction_control/stability_control),
   `vehicle_weight_kg`, `place`, `lap_time_ms`, `total_time_ms`, `performance_index`,
   `lap_count`, `lap_times_ms` (jsonb), `results_roster` (jsonb),
+  `server_name` (raw, with color codes; null offline), `plugin_version` (companion plugin release that
+  submitted it; API only),
   `notes`, `source` (`'web'` or `'api'`), `api_key_id`
 - `goals` — target lap time + notes per variation
 - `variation_annotations` — numbered map pins (`x`, `y`, `number`, `note`)
@@ -190,7 +192,9 @@ Three mechanisms, in order of how much they matter:
 Supabase session**. The per-user API key in the request body *is* the
 credential; the anon `apikey` header only identifies the project. The function
 resolves track/variant/vehicle by name, packs the four tuning dials into a
-single integer, and inserts the race with `source = 'api'`.
+single integer, and inserts the race with `source = 'api'`. Callers also send
+their `plugin_version`, which is stored on the race so we can see which plugin
+releases users are running and trace bad data back to the version that sent it.
 
 The `_wf1` suffix is deliberate — a sibling project exposes a `_wf2` equivalent.
 Full request/response contract: [external-api.md](external-api.md).

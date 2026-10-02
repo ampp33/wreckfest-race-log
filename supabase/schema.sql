@@ -91,6 +91,18 @@ alter table wf1.races add column if not exists assists jsonb;
 -- companion tool couldn't resolve it.
 alter table wf1.races add column if not exists vehicle_weight_kg integer;
 
+-- Name of the online server the race was run on, raw as the game reports
+-- it -- including Wreckfest's ^N / ^: color codes, kept so the site can
+-- strip them or render the colors. null for offline races, races logged
+-- before this existed, or where the companion tool couldn't resolve it.
+alter table wf1.races add column if not exists server_name text;
+
+-- Version of the companion plugin that submitted the race via the API
+-- (e.g. '1.4.0'), so bad data can be traced back to a plugin release.
+-- null for web-logged races, races logged before this existed, or plugins
+-- too old to send it.
+alter table wf1.races add column if not exists plugin_version text;
+
 -- Where the race was logged from: the web UI, or the external API (see
 -- api_key_id below, added once the api_keys table exists further down).
 alter table wf1.races add column if not exists source text not null default 'web';
@@ -682,6 +694,16 @@ drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb, jsonb
 );
+-- Drop the pre-server_name version (18 params).
+drop function if exists wf1.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer
+);
+-- Drop the pre-plugin_version version (19 params).
+drop function if exists wf1.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer, text
+);
 
 create or replace function wf1.insert_race_with_api_key_wf1(
     api_key            text,
@@ -701,7 +723,9 @@ create or replace function wf1.insert_race_with_api_key_wf1(
     lap_times_ms       jsonb default null,
     results_roster     jsonb default null,
     assists            jsonb default null,
-    vehicle_weight_kg  integer default null
+    vehicle_weight_kg  integer default null,
+    server_name        text default null,
+    plugin_version     text default null
 )
 returns json
 language plpgsql
@@ -762,6 +786,14 @@ begin
         return json_build_object('success', false, 'error', 'vehicle_weight_kg must be >= 0');
     end if;
 
+    if server_name is not null and length(server_name) > 256 then
+        return json_build_object('success', false, 'error', 'server_name must be at most 256 characters');
+    end if;
+
+    if plugin_version is not null and length(plugin_version) > 64 then
+        return json_build_object('success', false, 'error', 'plugin_version must be at most 64 characters');
+    end if;
+
     -- Fall back to the length of the lap array when lap_count isn't sent.
     v_lap_count := coalesce(lap_count, jsonb_array_length(lap_times_ms));
 
@@ -807,12 +839,12 @@ begin
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
         performance_index, tuning, notes, lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, source, api_key_id
+        assists, vehicle_weight_kg, server_name, plugin_version, source, api_key_id
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
         performance_index, v_tuning, notes, v_lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, 'api', v_key_id
+        assists, vehicle_weight_kg, nullif(server_name, ''), nullif(plugin_version, ''), 'api', v_key_id
     )
     returning id into v_race_id;
 

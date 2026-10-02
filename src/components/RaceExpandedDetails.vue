@@ -4,7 +4,16 @@
     <div :class="['text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark', showNotesHeading ? 'mt-2' : '']">{{ notes || notesFallback }}</div>
   </template>
 
-  <div v-if="divider && (hasLapTimes || hasRoster)" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
+  <div v-if="divider && (serverName || hasLapTimes || hasRoster)" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
+
+  <template v-if="serverName">
+    <div :class="['mt-3', headingClass]">Server</div>
+    <!-- Dark chip so every in-game color (white and black included) stays
+         legible in both themes, like it is against Wreckfest's own UI. -->
+    <div class="mt-2 inline-block max-w-full rounded px-2 py-1 bg-neutral-900 text-white text-sm font-bold break-words" :title="plainServerName">
+      <span v-for="(seg, i) in serverNameSegments" :key="i" :style="seg.color ? { color: seg.color } : null">{{ seg.text }}</span>
+    </div>
+  </template>
 
   <template v-if="hasLapTimes">
     <div :class="['mt-3', headingClass]">Lap times</div>
@@ -20,8 +29,9 @@
 <script>
 import LapSplitsChart from './LapSplitsChart.vue'
 import RaceResultsRoster from './RaceResultsRoster.vue'
+import { parseWreckfestColors, stripWreckfestColors } from '../utils/wreckfestColors.js'
 
-// The "Notes / Lap times / Roster" block shown when a race row is expanded.
+// The "Notes / Server / Lap times / Roster" block shown when a race row is expanded.
 // Two cosmetic flavors exist in the app today: a plain muted-label one
 // (RacesPage.vue, where the notes block only appears when there are notes)
 // and a bigger accent-labeled one with a divider (RaceRow.vue's table
@@ -38,6 +48,8 @@ export default {
     notesFallback: { type: String, default: '' },
     lapTimes: { type: Array, default: () => [] },
     roster: { type: Array, default: () => [] },
+    // Raw server name, with Wreckfest ^N color codes still in it.
+    serverName: { type: String, default: '' },
     showNotesHeading: { type: Boolean, default: true },
     // Bigger, accent-colored section labels instead of the plain muted ones.
     accent: { type: Boolean, default: false },
@@ -47,6 +59,12 @@ export default {
   computed: {
     showNotesSection() {
       return Boolean(this.notes || this.notesFallback)
+    },
+    serverNameSegments() {
+      return parseWreckfestColors(this.serverName)
+    },
+    plainServerName() {
+      return stripWreckfestColors(this.serverName)
     },
     hasLapTimes() {
       return Array.isArray(this.lapTimes) && this.lapTimes.some(ms => ms != null)

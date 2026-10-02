@@ -13,6 +13,12 @@
               :title="apiSourceTitle"
               v-html="apiIcon"
             ></span>
+            <span
+              v-if="race.server_name"
+              class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+              :title="serverTitle"
+              v-html="globeIcon"
+            ></span>
           </div>
 
           <!-- Same fields, in the same order, as the desktop table columns —
@@ -84,6 +90,7 @@
           :show-notes-heading="false"
           :lap-times="race.lap_times_ms"
           :roster="race.results_roster"
+          :server-name="race.server_name || ''"
         />
       </div>
     </template>
@@ -113,6 +120,12 @@
             class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
             :title="apiSourceTitle"
             v-html="apiIcon"
+          ></span>
+          <span
+            v-if="race.server_name"
+            class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+            :title="serverTitle"
+            v-html="globeIcon"
           ></span>
         </span>
       </td>
@@ -167,6 +180,7 @@
         divider
         :lap-times="race.lap_times_ms"
         :roster="race.results_roster"
+        :server-name="race.server_name || ''"
       />
     </td>
   </tr>
@@ -189,7 +203,9 @@ import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
+import { stripWreckfestColors } from '../utils/wreckfestColors.js'
 import apiIcon from '../assets/icons/api.svg?raw'
+import globeIcon from '../assets/icons/globe.svg?raw'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -218,12 +234,16 @@ export default {
       saving: false,
       expanded: false,
       confirmingDelete: false,
-      apiIcon
+      apiIcon,
+      globeIcon
     }
   },
   computed: {
     rowColspan() {
       return this.visibleColumns.length + 1 // +1 for the always-shown Actions column
+    },
+    serverTitle() {
+      return `Online Race: ${stripWreckfestColors(this.race.server_name)}`
     },
     apiSourceTitle() {
       return this.race.api_key?.name

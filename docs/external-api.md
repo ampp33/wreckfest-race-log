@@ -59,6 +59,8 @@ convention — field names must exactly match the SQL parameter names):
 | `results_roster`     | array   | no       | JSON array of all racers in finishing order. Each entry is an object with the fields described below. Stored verbatim and intended for display as a structured results table in the app. |
 | `assists`            | object  | no       | Driving-assist difficulty settings in effect for the race, as a single JSON object — see shape below. Stored verbatim as `jsonb`. |
 | `vehicle_weight_kg`  | integer | no       | Vehicle weight in kg at race time. Must be `>= 0`. |
+| `server_name`        | string  | no       | Name of the online server the race was run on, exactly as the game reports it — **including** Wreckfest's color codes (`^` followed by one character, e.g. `^2`, `^:`), so the site can strip them or render the colors. Omit it for offline races. At most 256 characters; an empty string is stored as `null`. |
+| `plugin_version`     | string  | no       | Version of the companion plugin making the call (e.g. `"1.4.0"`). Stored on the race so we can track which plugin versions users are running, and trace bad or missing data back to the plugin release that sent it. Plugins should always send it. At most 64 characters; an empty string is stored as `null`. |
 
 #### `results_roster` entry shape
 
@@ -125,7 +127,9 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
       "traction_control": "off",
       "stability_control": "half"
     },
-    "vehicle_weight_kg": 1069
+    "vehicle_weight_kg": 1069,
+    "server_name": "^7WWF ^1| ^7Wednesday Wreck Fest ^1| ^7No Rules ^1| ^7Voting ^1",
+    "plugin_version": "1.4.0"
   }'
 ```
 
@@ -179,6 +183,16 @@ error).
 **Negative vehicle weight:**
 ```json
 { "success": false, "error": "vehicle_weight_kg must be >= 0" }
+```
+
+**Server name too long:**
+```json
+{ "success": false, "error": "server_name must be at most 256 characters" }
+```
+
+**Plugin version too long:**
+```json
+{ "success": false, "error": "plugin_version must be at most 64 characters" }
 ```
 
 **Unknown vehicle name:** not an error — the race is still inserted with

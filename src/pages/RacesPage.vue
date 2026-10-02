@@ -131,7 +131,13 @@
                       class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
                       :title="apiSourceTitle(race)"
                       v-html="apiIcon"
-                    ></span>
+                    />
+                    <span
+                      v-if="race.server_name"
+                      class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+                      :title="`Online Race: ${stripWreckfestColors(race.server_name)}`"
+                      v-html="globeIcon"
+                    />
                   </div>
 
                   <!-- Same fields, in the same order, as the desktop table columns —
@@ -196,6 +202,7 @@
                   divider
                   :lap-times="race.lap_times_ms"
                   :roster="race.results_roster"
+                  :server-name="race.server_name || ''"
                 />
               </div>
             </template>
@@ -312,6 +319,12 @@
                         :title="apiSourceTitle(race)"
                         v-html="apiIcon"
                       ></span>
+                      <span
+                        v-if="race.server_name"
+                        class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+                        :title="`Online Race: ${stripWreckfestColors(race.server_name)}`"
+                        v-html="globeIcon"
+                      ></span>
                     </span>
                   </td>
                   <td v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 py-2">
@@ -383,6 +396,7 @@
                       divider
                       :lap-times="race.lap_times_ms"
                       :roster="race.results_roster"
+                      :server-name="race.server_name || ''"
                     />
                   </td>
                 </tr>
@@ -439,6 +453,7 @@ import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDateTime } from '../utils/dateFormat.js'
+import { stripWreckfestColors } from '../utils/wreckfestColors.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
@@ -456,6 +471,7 @@ import { createSortState, sortRows } from '../utils/sortState.js'
 import SortCaret from '../components/SortCaret.vue'
 import SortMenu from '../components/SortMenu.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
+import globeIcon from '../assets/icons/globe.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 
@@ -548,6 +564,7 @@ export default {
       columnFilters: { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
       columnOptions: COLUMN_OPTIONS,
       apiIcon,
+      globeIcon,
       refreshIcon,
       columnsIcon
     }
@@ -726,6 +743,7 @@ export default {
       }
     },
     formatDateTime,
+    stripWreckfestColors,
     formatAssists,
     formatMs(ms) {
       return formatMsToTime(ms)
