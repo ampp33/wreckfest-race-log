@@ -132,12 +132,7 @@
                       :title="apiSourceTitle(race)"
                       v-html="apiIcon"
                     />
-                    <span
-                      v-if="race.server_name"
-                      class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-                      :title="`Online Race: ${stripWreckfestColors(race.server_name)}`"
-                      v-html="globeIcon"
-                    />
+                    <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
                   </div>
 
                   <!-- Same fields, in the same order, as the desktop table columns —
@@ -186,7 +181,7 @@
 
                 <RaceRowActions
                   vertical
-                  :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
+                  :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                   :expanded="!!expanded[race.id]"
                   @toggle-expand="toggleExpanded(race.id)"
                   @edit="editing[race.id] = true"
@@ -198,7 +193,7 @@
                 <RaceExpandedDetails
                   :notes="race.notes || ''"
                   notes-fallback="No notes"
-                  accent
+                  card-labels
                   divider
                   :lap-times="race.lap_times_ms"
                   :roster="race.results_roster"
@@ -319,12 +314,7 @@
                         :title="apiSourceTitle(race)"
                         v-html="apiIcon"
                       ></span>
-                      <span
-                        v-if="race.server_name"
-                        class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-                        :title="`Online Race: ${stripWreckfestColors(race.server_name)}`"
-                        v-html="globeIcon"
-                      ></span>
+                      <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
                     </span>
                   </td>
                   <td v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 py-2">
@@ -367,7 +357,7 @@
                   </td>
                   <td class="px-3.5 py-2 text-right whitespace-nowrap">
                     <RaceRowActions
-                      :show-expand="!!(race.notes || hasLapTimes(race) || hasRoster(race))"
+                      :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                       :expanded="!!expanded[race.id]"
                       @toggle-expand="toggleExpanded(race.id)"
                       @edit="editing[race.id] = true"
@@ -453,7 +443,6 @@ import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDateTime } from '../utils/dateFormat.js'
-import { stripWreckfestColors } from '../utils/wreckfestColors.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import LapSplitsChart from '../components/LapSplitsChart.vue'
@@ -463,6 +452,7 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
+import OnlineRaceIcon from '../components/OnlineRaceIcon.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
@@ -471,7 +461,6 @@ import { createSortState, sortRows } from '../utils/sortState.js'
 import SortCaret from '../components/SortCaret.vue'
 import SortMenu from '../components/SortMenu.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
-import globeIcon from '../assets/icons/globe.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 
@@ -538,7 +527,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
+  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
   // A small Composition API bridge — `createColumnVisibility`/`createSortState`
   // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
   // lifecycle hooks, so they don't need this whole file converted to
@@ -564,7 +553,6 @@ export default {
       columnFilters: { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
       columnOptions: COLUMN_OPTIONS,
       apiIcon,
-      globeIcon,
       refreshIcon,
       columnsIcon
     }
@@ -743,7 +731,6 @@ export default {
       }
     },
     formatDateTime,
-    stripWreckfestColors,
     formatAssists,
     formatMs(ms) {
       return formatMsToTime(ms)

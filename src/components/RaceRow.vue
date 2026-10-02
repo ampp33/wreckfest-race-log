@@ -13,12 +13,7 @@
               :title="apiSourceTitle"
               v-html="apiIcon"
             ></span>
-            <span
-              v-if="race.server_name"
-              class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-              :title="serverTitle"
-              v-html="globeIcon"
-            ></span>
+            <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
           </div>
 
           <!-- Same fields, in the same order, as the desktop table columns —
@@ -75,7 +70,7 @@
 
         <RaceRowActions
           vertical
-          :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
+          :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
           :expanded="expanded"
           @toggle-expand="toggleExpanded"
           @edit="editing = true"
@@ -87,7 +82,8 @@
         <RaceExpandedDetails
           :notes="race.notes || ''"
           notes-fallback="No notes"
-          :show-notes-heading="false"
+          card-labels
+          divider
           :lap-times="race.lap_times_ms"
           :roster="race.results_roster"
           :server-name="race.server_name || ''"
@@ -121,12 +117,7 @@
             :title="apiSourceTitle"
             v-html="apiIcon"
           ></span>
-          <span
-            v-if="race.server_name"
-            class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-            :title="serverTitle"
-            v-html="globeIcon"
-          ></span>
+          <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
         </span>
       </td>
       <td v-if="isColVisible('vehicle')" class="py-2 pr-3 text-brand-secondary dark:text-brand-secondary-dark">{{ vehicleName }}</td>
@@ -150,7 +141,7 @@
       </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <RaceRowActions
-          :show-expand="!!(race.notes || hasLapTimes || hasRoster)"
+          :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
           :expanded="expanded"
           @toggle-expand="toggleExpanded"
           @edit="editing = true"
@@ -201,11 +192,10 @@ import ConfirmDialog from './ConfirmDialog.vue'
 import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
+import OnlineRaceIcon from './OnlineRaceIcon.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
-import { stripWreckfestColors } from '../utils/wreckfestColors.js'
 import apiIcon from '../assets/icons/api.svg?raw'
-import globeIcon from '../assets/icons/globe.svg?raw'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -215,7 +205,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails },
+  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -234,16 +224,12 @@ export default {
       saving: false,
       expanded: false,
       confirmingDelete: false,
-      apiIcon,
-      globeIcon
+      apiIcon
     }
   },
   computed: {
     rowColspan() {
       return this.visibleColumns.length + 1 // +1 for the always-shown Actions column
-    },
-    serverTitle() {
-      return `Online Race: ${stripWreckfestColors(this.race.server_name)}`
     },
     apiSourceTitle() {
       return this.race.api_key?.name

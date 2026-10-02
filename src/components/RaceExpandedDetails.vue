@@ -1,17 +1,16 @@
 <template>
   <template v-if="showNotesSection">
-    <div v-if="showNotesHeading" :class="headingClass">Notes</div>
-    <div :class="['text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark', showNotesHeading ? 'mt-2' : '']">{{ notes || notesFallback }}</div>
+    <div :class="headingClass">Notes</div>
+    <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ notes || notesFallback }}</div>
   </template>
 
   <div v-if="divider && (serverName || hasLapTimes || hasRoster)" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
 
   <template v-if="serverName">
     <div :class="['mt-3', headingClass]">Server</div>
-    <!-- Dark chip so every in-game color (white and black included) stays
-         legible in both themes, like it is against Wreckfest's own UI. -->
-    <div class="mt-2 inline-block max-w-full rounded px-2 py-1 bg-neutral-900 text-white text-sm font-bold break-words" :title="plainServerName">
-      <span v-for="(seg, i) in serverNameSegments" :key="i" :style="seg.color ? { color: seg.color } : null">{{ seg.text }}</span>
+    <!-- Long names scroll sideways rather than wrapping. -->
+    <div class="mt-2 overflow-x-auto">
+      <ServerName :name="serverName" class="!max-w-none whitespace-nowrap" />
     </div>
   </template>
 
@@ -29,18 +28,16 @@
 <script>
 import LapSplitsChart from './LapSplitsChart.vue'
 import RaceResultsRoster from './RaceResultsRoster.vue'
-import { parseWreckfestColors, stripWreckfestColors } from '../utils/wreckfestColors.js'
+import ServerName from './ServerName.vue'
 
 // The "Notes / Server / Lap times / Roster" block shown when a race row is expanded.
-// Two cosmetic flavors exist in the app today: a plain muted-label one
-// (RacesPage.vue, where the notes block only appears when there are notes)
-// and a bigger accent-labeled one with a divider (RaceRow.vue's table
-// layout, which always shows a "No notes" fallback); RaceRow.vue's card
-// layout shows the fallback text with no heading at all, since its own
-// always-visible notes preview above already carries the "Notes" label.
+// Desktop tables use bigger accent-colored labels (`accent`); the mobile
+// card layouts (RacesPage.vue and RaceRow.vue) pass `cardLabels` so the
+// section labels match the card's own field labels. Both show a divider
+// under the notes and a "No notes" fallback.
 export default {
   name: 'RaceExpandedDetails',
-  components: { LapSplitsChart, RaceResultsRoster },
+  components: { LapSplitsChart, RaceResultsRoster, ServerName },
   props: {
     notes: { type: String, default: '' },
     // Shown instead of `notes` when empty. Leave '' (the default) to hide
@@ -50,21 +47,17 @@ export default {
     roster: { type: Array, default: () => [] },
     // Raw server name, with Wreckfest ^N color codes still in it.
     serverName: { type: String, default: '' },
-    showNotesHeading: { type: Boolean, default: true },
     // Bigger, accent-colored section labels instead of the plain muted ones.
     accent: { type: Boolean, default: false },
+    // Small accent-colored labels matching a mobile card's field labels
+    // ("Vehicle", "Place", ...). Takes precedence over `accent`.
+    cardLabels: { type: Boolean, default: false },
     // Divider between the notes section and lap times/roster.
     divider: { type: Boolean, default: false }
   },
   computed: {
     showNotesSection() {
       return Boolean(this.notes || this.notesFallback)
-    },
-    serverNameSegments() {
-      return parseWreckfestColors(this.serverName)
-    },
-    plainServerName() {
-      return stripWreckfestColors(this.serverName)
     },
     hasLapTimes() {
       return Array.isArray(this.lapTimes) && this.lapTimes.some(ms => ms != null)
@@ -73,6 +66,7 @@ export default {
       return Array.isArray(this.roster) && this.roster.length > 0
     },
     headingClass() {
+      if (this.cardLabels) return 'ov text-brand-accent dark:text-brand-accent-dark'
       return this.accent
         ? 'ov ov-lg text-brand-accent dark:text-brand-accent-dark'
         : 'ov text-brand-muted dark:text-brand-muted-dark'
