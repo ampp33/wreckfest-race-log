@@ -10,6 +10,7 @@
       <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
     </button>
     <button
+      v-if="editable"
       type="button"
       class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Edit"
@@ -18,6 +19,7 @@
       <span class="w-4 h-4 inline-block" v-html="editIcon"></span>
     </button>
     <button
+      v-if="editable"
       type="button"
       class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Delete"
@@ -42,7 +44,9 @@ export default {
     // Stacks the buttons in a column instead of a row — used on mobile
     // cards, where the actions sit beside the card's content rather than
     // in its header row.
-    vertical: { type: Boolean, default: false }
+    vertical: { type: Boolean, default: false },
+    // false on someone else's race: only the expand toggle is shown.
+    editable: { type: Boolean, default: true }
   },
   emits: ['toggle-expand', 'edit', 'delete'],
   data() {

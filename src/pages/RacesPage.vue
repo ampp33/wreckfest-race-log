@@ -1,13 +1,17 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       Races
     </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
+    <p v-if="isCommunity" class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
+      The newest races from every driver — <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ totalUnfiltered }}</span> loaded.
+      <template v-if="hasMore">Sorting and filters apply to the races loaded so far; load older ones at the end of the list.</template>
+    </p>
+    <p v-else class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
       <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
       <template v-if="isFiltered">
         — filtered to races logged {{ apiKeyIdFilter ? 'with this API key' : `via the ${sourceFilter === 'api' ? 'Telemetry API' : 'web app'}` }}.
-        <router-link to="/races" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Clear filter</router-link>
+        <router-link :to="$route.path" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Clear filter</router-link>
       </template>
     </p>
 
@@ -35,6 +39,7 @@
            reproduced here (inline, not popup) behind a side tab. -->
       <FilterDrawer>
         <SortMenu :columns="sortableColumns" :sort="sort" />
+        <ColumnFilterMenu v-if="isCommunity" inline label="Driver" v-model="columnFilters.driver" :options="driverOptions" />
         <ColumnFilterMenu inline label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
         <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
         <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
@@ -113,10 +118,15 @@
             <template v-if="!editing[race.id]">
               <div class="flex items-start gap-2">
                 <div class="min-w-0 flex-1">
+                  <router-link
+                    v-if="isCommunity && columnVisibility.isVisible('driver')"
+                    :to="`/${race.user_id}/races`"
+                    class="ov text-brand-accent dark:text-brand-accent-dark hover:underline"
+                  >{{ race.driverName }}</router-link>
                   <template v-if="columnVisibility.isVisible('trackVariation')">
                     <router-link
                       v-if="race.trackSlug && race.variationSlug"
-                      :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                      :to="`${basePath}/track/${race.trackSlug}/${race.variationSlug}`"
                       class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
                     >
                       {{ race.trackName }}
@@ -184,6 +194,7 @@
                   :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                   :expanded="!!expanded[race.id]"
                   @toggle-expand="toggleExpanded(race.id)"
+                  :editable="isOwnView"
                   @edit="editing[race.id] = true"
                   @delete="onDelete(race)"
                 />
@@ -192,7 +203,7 @@
               <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                 <RaceExpandedDetails
                   :notes="race.notes || ''"
-                  notes-fallback="No notes"
+                  :notes-fallback="isOwnView ? 'No notes' : ''"
                   card-labels
                   divider
                   :lap-times="race.lap_times_ms"
@@ -224,6 +235,15 @@
                     Date
                     <SortCaret :direction="sort.directionFor('date')" />
                   </button>
+                </th>
+                <th v-if="isCommunity && columnVisibility.isVisible('driver')" class="px-3.5 pb-2.5 font-medium">
+                  <span class="inline-flex items-center gap-1">
+                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('driver', 'Driver')" :aria-label="sort.titleFor('driver', 'Driver')" @click="sort.toggle('driver')">
+                      Driver
+                      <SortCaret :direction="sort.directionFor('driver')" />
+                    </button>
+                    <ColumnFilterMenu label="Driver" icon-size="w-4 h-4" v-model="columnFilters.driver" :options="driverOptions" />
+                  </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 pb-2.5 font-medium">
                   <span class="inline-flex items-center gap-1">
@@ -317,10 +337,16 @@
                       <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
                     </span>
                   </td>
+                  <td v-if="isCommunity && columnVisibility.isVisible('driver')" class="px-3.5 py-2 whitespace-nowrap">
+                    <router-link
+                      :to="`/${race.user_id}/races`"
+                      class="text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+                    >{{ race.driverName }}</router-link>
+                  </td>
                   <td v-if="columnVisibility.isVisible('trackVariation')" class="px-3.5 py-2">
                     <router-link
                       v-if="race.trackSlug && race.variationSlug"
-                      :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                      :to="`${basePath}/track/${race.trackSlug}/${race.variationSlug}`"
                       class="font-semibold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
                     >
                       {{ race.trackName }}
@@ -360,6 +386,7 @@
                       :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                       :expanded="!!expanded[race.id]"
                       @toggle-expand="toggleExpanded(race.id)"
+                      :editable="isOwnView"
                       @edit="editing[race.id] = true"
                       @delete="onDelete(race)"
                     />
@@ -381,7 +408,7 @@
                   <td :colspan="visibleColumnKeys.length + 1" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceExpandedDetails
                       :notes="race.notes || ''"
-                      notes-fallback="No notes"
+                      :notes-fallback="isOwnView ? 'No notes' : ''"
                       accent
                       divider
                       :lap-times="race.lap_times_ms"
@@ -424,6 +451,15 @@
           >Next</button>
         </div>
       </div>
+
+      <div v-if="isCommunity && hasMore && currentPage === totalPages" class="mt-6 flex justify-center">
+        <button
+          type="button"
+          class="ov min-h-[44px] px-6 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark disabled:opacity-50"
+          :disabled="loadingMore"
+          @click="loadMore"
+        >{{ loadingMore ? 'Loading…' : `Load ${COMMUNITY_PAGE_SIZE} older races` }}</button>
+      </div>
     </div>
 
     <ConfirmDialog
@@ -434,11 +470,13 @@
       @confirm="onConfirmDelete"
       @cancel="confirmDeleteRace = null"
     />
-  </div>
+  </DriverScope>
 </template>
 
 <script>
-import { getAllRaces, updateRace, deleteRace } from '../services/raceService.js'
+import { getAllRaces, getCommunityRaces, COMMUNITY_PAGE_SIZE, updateRace, deleteRace } from '../services/raceService.js'
+import { authStore } from '../stores/authStore.js'
+import DriverScope from '../components/DriverScope.vue'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
@@ -482,7 +520,8 @@ const TABLE_COLUMNS = [
   // 'Actions' is intentionally left out — it's always shown, since hiding it
   // would remove the row's only in-table way to edit/delete a race.
 ]
-const COLUMN_OPTIONS = TABLE_COLUMNS.map(c => ({ value: c.key, label: c.label }))
+// Community races add who raced, right after the date.
+const COMMUNITY_TABLE_COLUMNS = [TABLE_COLUMNS[0], { key: 'driver', label: 'Driver' }, ...TABLE_COLUMNS.slice(1)]
 // Shown only on a first-ever visit, before the column picker has written
 // anything to localStorage — after that, whatever the user has chosen wins.
 const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'assists']
@@ -495,6 +534,7 @@ function trackVariationLabel(race) { return race.trackSlug && race.variationSlug
 function vehicleKey(race) { return race.vehicleName === '—' ? UNRESOLVED_VEHICLE : race.vehicle_id }
 function piKey(race) { return race.performance_index != null ? race.performance_index : null }
 function placeKey(race) { return race.place != null ? race.place : '—' }
+function driverKey(race) { return race.user_id }
 
 // One value-getter per sortable column (everything but Actions), fed to
 // sortRows() — each returns either a number (or a date's timestamp) or a
@@ -507,6 +547,7 @@ function lapCountValue(race) {
 }
 const SORT_VALUE_GETTERS = {
   date: race => new Date(race.datetime).getTime(),
+  driver: race => race.driverName,
   trackVariation: trackVariationLabel,
   vehicle: race => race.vehicleName,
   pi: race => race.performance_index,
@@ -527,13 +568,16 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
+  components: { DriverScope, LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
   // A small Composition API bridge — `createColumnVisibility`/`createSortState`
   // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
   // lifecycle hooks, so they don't need this whole file converted to
   // `<script setup>`.
   setup() {
-    const columnVisibility = createColumnVisibility('wreckfest:columns:races', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
+    // One instance serves both modes (the router reuses this component
+    // between /<userId>/races and /community/races), so it knows every column;
+    // 'driver' simply never renders outside community mode.
+    const columnVisibility = createColumnVisibility('wreckfest:columns:races', COMMUNITY_TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
     const sort = createSortState()
     return { columnVisibility, sort }
   },
@@ -550,19 +594,51 @@ export default {
       editing: {},
       saving: {},
       confirmDeleteRace: null,
-      columnFilters: { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
-      columnOptions: COLUMN_OPTIONS,
+      columnFilters: { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
+      // Community mode only: whether the server has older races than the ones
+      // loaded so far, and how many rows have been fetched (the next page's
+      // offset — not rows.length, which drops duplicates).
+      hasMore: false,
+      loadingMore: false,
+      fetchedCount: 0,
+      COMMUNITY_PAGE_SIZE,
       apiIcon,
       refreshIcon,
       columnsIcon
     }
   },
   computed: {
+    // Every public driver's races (/community/races) rather than one driver's.
+    isCommunity() {
+      return this.$route.meta.scope === 'community'
+    },
+    // Whose races these are — from the /<userId>/races URL; undefined on
+    // the community page.
+    userId() {
+      return this.$route.params.userId
+    },
+    // Where track links point: the same driver's track page, or the community one.
+    basePath() {
+      return this.isCommunity ? '/community' : `/${this.userId}`
+    },
+    tableColumns() {
+      return this.isCommunity ? COMMUNITY_TABLE_COLUMNS : TABLE_COLUMNS
+    },
+    columnOptions() {
+      return this.tableColumns.map(c => ({ value: c.key, label: c.label }))
+    },
+    isOwnView() {
+      return !!this.userId && authStore.user?.id === this.userId
+    },
     sourceFilter() {
+      if (this.isCommunity) return null
       const source = this.$route.query.source
       return source === 'web' || source === 'api' ? source : null
     },
+    // Which API key logged a race is private (races_private), so this
+    // filter only means anything on your own races.
     apiKeyIdFilter() {
+      if (!this.isOwnView) return null
       const apiKeyId = this.$route.query.api_key_id
       return typeof apiKeyId === 'string' && apiKeyId ? apiKeyId : null
     },
@@ -570,12 +646,15 @@ export default {
       return !!(this.sourceFilter || this.apiKeyIdFilter)
     },
     visibleColumnKeys() {
-      return TABLE_COLUMNS.map(c => c.key).filter(this.columnVisibility.isVisible)
+      return this.tableColumns.map(c => c.key).filter(this.columnVisibility.isVisible)
     },
     // Feeds the mobile filter drawer's SortMenu — only currently-visible
     // columns, so it can't be pointed at a field the column picker has hidden.
     sortableColumns() {
-      return TABLE_COLUMNS.filter(c => this.columnVisibility.isVisible(c.key))
+      return this.tableColumns.filter(c => this.columnVisibility.isVisible(c.key))
+    },
+    driverOptions() {
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'driver')), driverKey, r => r.driverName))
     },
     trackVariationOptions() {
       return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'trackVariationId')), trackVariationKey, trackVariationLabel))
@@ -637,9 +716,22 @@ export default {
     await this.load()
   },
   watch: {
+    // $route watchers also fire on the way out to another page, hence the
+    // name check — otherwise leaving would kick off a pointless reload.
     '$route.query'() {
+      if (!this.isRacesRoute()) return
       this.resetColumnFilters()
       this.currentPage = 1
+      this.load()
+    },
+    // Also covers switching between a driver's races and the community ones,
+    // which reuses this same component instance.
+    userId() {
+      if (!this.isRacesRoute()) return
+      this.resetColumnFilters()
+      this.currentPage = 1
+      this.expanded = {}
+      this.editing = {}
       this.load()
     },
     columnFilters: {
@@ -656,8 +748,11 @@ export default {
     }
   },
   methods: {
+    isRacesRoute() {
+      return this.$route.name === 'driver-races' || this.$route.name === 'community-races'
+    },
     resetColumnFilters() {
-      this.columnFilters = { trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] }
+      this.columnFilters = { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] }
     },
     // Matches a race against every column filter except `exceptKey` — used
     // to build each column's own option list off what's visible once every
@@ -666,6 +761,7 @@ export default {
     // its own checked/unchecked values don't vanish from its own list.
     matchesFilters(race, exceptKey) {
       const f = this.columnFilters
+      if (exceptKey !== 'driver' && f.driver.includes(driverKey(race))) return false
       if (exceptKey !== 'trackVariationId' && f.trackVariationId.includes(trackVariationKey(race))) return false
       if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
       if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
@@ -680,38 +776,20 @@ export default {
     async load({ refresh = false } = {}) {
       if (refresh) this.refreshing = true
       try {
+        // Community mode loads the newest page only; loadMore() fetches older.
         const [races, tracks, vehicles] = await Promise.all([
-          getAllRaces({ source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter }),
+          this.isCommunity
+            ? getCommunityRaces()
+            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter }),
           getTracks(),
           getVehicles()
         ])
 
-        const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-
-        const variationMap = {}
-        for (const track of tracks) {
-          for (const v of track.track_variations || []) {
-            variationMap[v.id] = {
-              trackName: track.name,
-              trackSlug: track.slug,
-              variationName: v.name,
-              variationSlug: v.slug
-            }
-          }
-        }
-
         this.vehicles = vehicles
-
-        this.rows = races.map(r => ({
-          ...r,
-          vehicleName: vehicleMap[r.vehicle_id] ?? '—',
-          ...(variationMap[r.track_variation_id] ?? {
-            trackName: '—',
-            trackSlug: null,
-            variationName: '—',
-            variationSlug: null
-          })
-        }))
+        this.buildLookups(tracks, vehicles)
+        this.rows = races.map(this.decorateRace)
+        this.fetchedCount = races.length
+        this.hasMore = this.isCommunity && races.length === COMMUNITY_PAGE_SIZE
 
         // Races deleted elsewhere can shrink the list past the page being
         // viewed, which would otherwise leave an empty table.
@@ -728,6 +806,51 @@ export default {
       } finally {
         this.loading = false
         this.refreshing = false
+      }
+    },
+    // Name lookups for the track/vehicle columns, kept (non-reactively) so
+    // loadMore() can decorate later pages without refetching the catalogue.
+    buildLookups(tracks, vehicles) {
+      this.vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+      this.variationMap = {}
+      for (const track of tracks) {
+        for (const v of track.track_variations || []) {
+          this.variationMap[v.id] = {
+            trackName: track.name,
+            trackSlug: track.slug,
+            variationName: v.name,
+            variationSlug: v.slug
+          }
+        }
+      }
+    },
+    decorateRace(r) {
+      return {
+        ...r,
+        vehicleName: this.vehicleMap[r.vehicle_id] ?? '—',
+        ...(this.variationMap[r.track_variation_id] ?? {
+          trackName: '—',
+          trackSlug: null,
+          variationName: '—',
+          variationSlug: null
+        })
+      }
+    },
+    // Community mode: append the next-older page. Offset paging, so a race
+    // logged since the last fetch shifts everything down one — the overlap
+    // is dropped by id rather than shown twice.
+    async loadMore() {
+      this.loadingMore = true
+      try {
+        const races = await getCommunityRaces({ offset: this.fetchedCount })
+        const seen = new Set(this.rows.map(r => r.id))
+        this.rows = this.rows.concat(races.filter(r => !seen.has(r.id)).map(this.decorateRace))
+        this.fetchedCount += races.length
+        this.hasMore = races.length === COMMUNITY_PAGE_SIZE
+      } catch (err) {
+        pushToast(err.message || 'Failed to load older races', 'error')
+      } finally {
+        this.loadingMore = false
       }
     },
     formatDateTime,

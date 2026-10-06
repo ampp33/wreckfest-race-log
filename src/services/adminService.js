@@ -6,16 +6,12 @@ export async function getAllUsers() {
   return data ?? []
 }
 
-export async function getUserGrowth(range = '30d') {
-  const { data, error } = await supabase.rpc('get_user_growth', { p_range: range })
+// When each race in the range was logged, unaggregated — the caller buckets
+// them by the viewer's local day (see src/utils/dailyBuckets.js).
+export async function getRaceLogTimes(range = '30d') {
+  const { data, error } = await supabase.rpc('get_race_log_times', { p_range: range })
   if (error) throw error
-  return data ?? []
-}
-
-export async function getRaceLogGrowth(range = '30d') {
-  const { data, error } = await supabase.rpc('get_race_log_growth', { p_range: range })
-  if (error) throw error
-  return data ?? []
+  return (data ?? []).map(row => row.logged_at)
 }
 
 export async function setUserRole(userId, role) {

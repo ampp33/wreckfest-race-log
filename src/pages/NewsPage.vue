@@ -31,6 +31,20 @@ export default {
     return {
       entries: [
         {
+          id: 7,
+          title: 'Going Public: Leaderboards, Everyone\'s Races, and a New Nav',
+          date: '2026-10-06',
+          items: [
+            'Logging races on your own gets lonely, so the site has opened up: you can now see everyone\'s races, not just your own — and so can visitors who aren\'t signed in.',
+            'Races are <b>public by default</b> — <b>Notes stay private, always</b>, as do your track notes, goal times and map annotations.',
+            'Don\'t want your races shown? Head to <a href="#/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">your profile</a> and set them to private — you can change it any time. While you\'re there, pick a display name; everyone starts out as "Driver-something".',
+            '<b class="text-brand-text dark:text-brand-text-dark">Leaderboards:</b> <a href="#/community/leaderboard" class="text-brand-accent dark:text-brand-accent-dark hover:underline">see who\'s logged the most races</a>, and the fastest lap on every track and variation — filter by car class or by vehicle to see who\'s quickest in what. Signing in now lands you here.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Everyone\'s races and tracks:</b> browse <a href="#/community/races" class="text-brand-accent dark:text-brand-accent-dark hover:underline">everyone\'s latest races</a>, or open a track to see every driver\'s laps there, plus the best lap and who set it. Community-wide stats are coming soon.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Driver pages:</b> click any driver\'s name to see their tracks, races and stats.',
+            '<b class="text-brand-text dark:text-brand-text-dark">New navigation:</b> the icon next to the logo can be used to set the scope: <i>whose</i> races you\'re looking at — the globe for everyone, the person for you, or another driver\'s initial — and the links beside it (Leaderboard, Tracks, Races, Stats) are the views for the selected scope. Its menu also lists drivers you\'ve viewed recently and has a "Find a driver" search. On phones, the icon sits next to the menu button.',
+          ]
+        },
+        {
           id: 6,
           title: 'Fixed Telemetry Tuning Bug (Again) + Opponent Tunings',
           date: '2026-09-30',

@@ -1,7 +1,5 @@
 <template>
   <div>
-    <PublicHeader />
-
     <!-- HERO — inlined here rather than its own component now that the
          design (car watermark + gutter) is settled; it used to be a
          separate HeroIntro.vue while that was still being worked out. Its
@@ -35,7 +33,7 @@
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
           <b>Wreckfest Race Log</b> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <router-link to="/plugin" class="font-bold hover:underline">Telemetry plugin</router-link>,
           or manually log them yourself here — then use the site to watch your stats improve, take notes
-          track by track, and work toward mastering the game.
+          track by track, see how you stack up against everyone else, and work toward mastering the game.
         </p>
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-4">
           <i>I built this site because I wanted a pretty and simple way to log my races and take notes, and I hope it helps you as much as it's helped me.</i> — Ampp33
@@ -72,6 +70,13 @@
             <h2 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Stats, Stats, Stats</h2>
             <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">With all your data in one place, you can run the numbers to see the metrics that matter.</p>
             <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Total number of races, most used vehicle, favorite track, races per week/month/year, goal lap time deltas, biggest improvements, and more.</p>
+          </div>
+
+          <div>
+            <h2 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Public by Default</h2>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Everyone's races are public, so you can see how you stack up on the leaderboards, see who set the fastest lap on a track, and see what cars and tunings the fast drivers are running.</p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Rather keep your log to yourself? One switch in your profile settings hides all your races from everyone but you.</p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Your notes, goals and track annotations are always private.</p>
           </div>
 
           <div>
@@ -117,6 +122,16 @@
           <div class="absolute left-5 top-2 bottom-2 w-0.5 bg-brand-border dark:bg-brand-border-dark"></div>
 
           <div class="relative mb-12">
+            <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-accent dark:bg-brand-accent-dark text-white font-display font-black text-[13px] flex items-center justify-center">0</div>
+            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">See what everyone's logging.</h2>
+            <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">No account needed. Check out the leaderboards for who's raced the most and the fastest lap on every track, or browse everyone's races to see what people have been logging.</p>
+            <div class="flex flex-wrap gap-x-6 gap-y-2">
+              <router-link to="/community/leaderboard" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">See the leaderboards →</router-link>
+              <router-link to="/community/races" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Browse races →</router-link>
+            </div>
+          </div>
+
+          <div class="relative mb-12">
             <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-accent dark:bg-brand-accent-dark text-white font-display font-black text-[13px] flex items-center justify-center">1</div>
             <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Create an account.</h2>
             <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark mb-3">Email or Google — either works, takes about ten seconds, no credit card, no personal info (we don't need it anyway).</p>
@@ -146,7 +161,7 @@
 
           <div class="relative mb-12">
             <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark font-display font-black text-[13px] flex items-center justify-center">5</div>
-            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Set your goals and chase them.</h2>
+            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Set your goals and chase them, and see how often you finish on top.</h2>
             <HomeGapTiles :goal="flagshipGoal" />
           </div>
 
@@ -185,7 +200,6 @@
 </template>
 
 <script>
-import PublicHeader from '../components/PublicHeader.vue'
 import HomeGapTiles from '../components/HomeGapTiles.vue'
 import HomeRacesTable from '../components/HomeRacesTable.vue'
 import HomeStatsPreview from '../components/HomeStatsPreview.vue'
@@ -193,7 +207,7 @@ import { races, flagshipRaceIndex, flagshipGoal, statsPreview } from '../data/ho
 
 export default {
   name: 'HomePage',
-  components: { PublicHeader, HomeGapTiles, HomeRacesTable, HomeStatsPreview },
+  components: { HomeGapTiles, HomeRacesTable, HomeStatsPreview },
   // The car watermark itself is a background-image on #app, the Vue mount
   // div (see style.css for why #app rather than <body>) — toggled here via
   // mounted/beforeUnmount rather than living in the hero section's own

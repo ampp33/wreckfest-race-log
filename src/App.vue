@@ -1,6 +1,6 @@
 <template>
   <div class="app-shell min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
-    <NavBar v-if="auth.isAuthenticated && !isLoginRoute" />
+    <NavBar v-if="showNavBar" />
     <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
 
     <main class="flex-1">
@@ -16,10 +16,11 @@
     <AppFooter v-if="!isLoginRoute && !isHomeRoute" />
 
     <QuickAddModal v-if="auth.isAuthenticated" />
-    <TrackSearchModal v-if="auth.isAuthenticated" />
+    <TrackSearchModal />
     <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
+    <NavIntroOverlay v-if="auth.ready && auth.isAuthenticated && showNavBar" />
   </div>
 </template>
 
@@ -32,6 +33,7 @@ import TrackSearchModal from './components/TrackSearchModal.vue'
 import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import NavIntroOverlay from './components/NavIntroOverlay.vue'
 import { authStore } from './stores/authStore.js'
 import { prefsStore, applyDarkModeClass } from './stores/prefsStore.js'
 import { openQuickAdd, quickAddStore } from './stores/quickAddStore.js'
@@ -39,7 +41,7 @@ import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
     return {
       auth: authStore,
@@ -52,6 +54,13 @@ export default {
     },
     isHomeRoute() {
       return this.$route && this.$route.name === 'home'
+    },
+    // Signed out, the plugin page brings its own PublicHeader; every other
+    // public page (the landing page, community, driver pages) gets the real nav.
+    showNavBar() {
+      if (this.isLoginRoute) return false
+      if (authStore.isAuthenticated) return true
+      return this.$route?.name !== 'telemetry'
     }
   },
   mounted() {
@@ -64,10 +73,11 @@ export default {
   methods: {
     onGlobalKeydown(event) {
       if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (!authStore.isAuthenticated) return
       if (this.isTypingTarget(event.target)) return
 
       if (event.key === 'q' || event.key === 'Q') {
+        // Quick add writes to your own log, so it stays signed-in only.
+        if (!authStore.isAuthenticated) return
         if (quickAddStore.open || trackSearchStore.open) return
         event.preventDefault()
         openQuickAdd()

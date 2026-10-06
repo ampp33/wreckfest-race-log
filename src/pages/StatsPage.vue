@@ -1,16 +1,16 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       Stats
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
-      Aggregated from all of your saved races.
+      Aggregated from all of {{ isOwnView ? 'your' : 'their' }} saved races.
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <div v-else class="space-y-6">
-      <StatsSummaryTiles :stats="stats" />
+      <StatsSummaryTiles :stats="stats" :base-path="`/${userId}`" />
 
       <div class="grid grid-cols-3 gap-6">
         <div class="rule-top pt-3">
@@ -38,7 +38,7 @@
         :daily-counts="stats.raceCounts.dailyCounts"
       />
 
-      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+      <div v-if="isOwnView" class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
         <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
           Goal <em class="signal">progress</em>
         </h2>
@@ -52,7 +52,7 @@
             class="flex items-center justify-between py-2.5 text-sm"
           >
             <router-link
-              :to="`/track/${row.trackSlug}/${row.variationSlug}`"
+              :to="`/${userId}/track/${row.trackSlug}/${row.variationSlug}`"
               class="text-brand-accent hover:underline font-body"
             >
               {{ row.trackName }}
@@ -85,23 +85,26 @@
 
       <BiggestImprovementsList
         :items="stats.biggestImprovements"
+        :base-path="`/${userId}`"
         empty-message="No improvement data yet — log more laps on the same variation."
       />
     </div>
-  </div>
+  </DriverScope>
 </template>
 
 <script>
 import { getStats } from '../services/statsService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { pushToast } from '../stores/toastStore.js'
+import { authStore } from '../stores/authStore.js'
 import RaceActivityChart from '../components/RaceActivityChart.vue'
 import StatsSummaryTiles from '../components/StatsSummaryTiles.vue'
 import BiggestImprovementsList from '../components/BiggestImprovementsList.vue'
+import DriverScope from '../components/DriverScope.vue'
 
 export default {
   name: 'StatsPage',
-  components: { RaceActivityChart, StatsSummaryTiles, BiggestImprovementsList },
+  components: { DriverScope, RaceActivityChart, StatsSummaryTiles, BiggestImprovementsList },
   data() {
     return {
       loading: true,
@@ -119,16 +122,34 @@ export default {
       }
     }
   },
-  async mounted() {
-    try {
-      this.stats = await getStats()
-    } catch (err) {
-      pushToast(err.message || 'Failed to load stats', 'error')
-    } finally {
-      this.loading = false
+  computed: {
+    // Whose stats these are — from the /<userId>/stats URL.
+    userId() {
+      return this.$route.params.userId
+    },
+    isOwnView() {
+      return !!this.userId && authStore.user?.id === this.userId
     }
   },
+  watch: {
+    userId() {
+      if (this.$route.name === 'driver-stats') this.load()
+    }
+  },
+  mounted() {
+    this.load()
+  },
   methods: {
+    async load() {
+      this.loading = true
+      try {
+        this.stats = await getStats(this.userId, { includeGoals: this.isOwnView })
+      } catch (err) {
+        pushToast(err.message || 'Failed to load stats', 'error')
+      } finally {
+        this.loading = false
+      }
+    },
     format(ms) {
       return formatMsToTime(ms)
     }

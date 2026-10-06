@@ -40,8 +40,14 @@ progression charts, and your biggest improvements.
 
 The site allows you to use hotkeys to quickly jump to the pages that matter most: `T` to jump to a track page, `Q` to quick-add a
 race from anywhere, `A` to add a race to the track you're looking at, `Esc` to
-close. Your log is private to your account, and you can export the whole thing
-to JSON at any time.
+close. You can export your whole log to JSON at any time.
+
+### See how everyone else is doing
+
+Races are public by default: the Community pages show everyone's latest races and
+every driver's laps on each track, and anyone can open a driver's log. Notes,
+goal times and map annotations always stay private, and you can make your races
+private from your profile settings whenever you like.
 
 ### The Telemetry plugin
 

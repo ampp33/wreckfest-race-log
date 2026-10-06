@@ -4,6 +4,11 @@
     <template v-if="!editing">
       <div class="flex items-start gap-2">
         <div class="min-w-0 flex-1">
+          <router-link
+            v-if="isColVisible('driver')"
+            :to="driverPath"
+            class="ov text-brand-accent dark:text-brand-accent-dark hover:underline"
+          >{{ race.driverName }}</router-link>
           <div v-if="isColVisible('vehicle')" class="font-bold text-brand-text dark:text-brand-text-dark truncate">{{ vehicleName }}</div>
           <div v-if="isColVisible('when')" class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
             {{ formattedDate }}
@@ -62,7 +67,7 @@
           </div>
 
           <!-- Notes preview, expanded/collapsed via the icon in the button cluster to the right. -->
-          <div v-if="isColVisible('notes') && (race.notes || hasLapTimes || hasRoster)" class="mt-3">
+          <div v-if="!readOnly && isColVisible('notes') && (race.notes || hasLapTimes || hasRoster)" class="mt-3">
             <div class="ov text-brand-accent dark:text-brand-accent-dark">Notes</div>
             <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
           </div>
@@ -73,6 +78,7 @@
           :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
           :expanded="expanded"
           @toggle-expand="toggleExpanded"
+          :editable="!readOnly"
           @edit="editing = true"
           @delete="onDelete"
         />
@@ -81,7 +87,7 @@
       <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
         <RaceExpandedDetails
           :notes="race.notes || ''"
-          notes-fallback="No notes"
+          :notes-fallback="readOnly ? '' : 'No notes'"
           card-labels
           divider
           :lap-times="race.lap_times_ms"
@@ -120,6 +126,12 @@
           <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
         </span>
       </td>
+      <td v-if="isColVisible('driver')" class="py-2 pr-3 whitespace-nowrap">
+        <router-link
+          :to="driverPath"
+          class="text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+        >{{ race.driverName }}</router-link>
+      </td>
       <td v-if="isColVisible('vehicle')" class="py-2 pr-3 text-brand-secondary dark:text-brand-secondary-dark">{{ vehicleName }}</td>
       <td v-if="isColVisible('pi')" class="py-2 pr-3 whitespace-nowrap">
         <PerformanceIndexBadge :value="race.performance_index" />
@@ -144,6 +156,7 @@
           :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
           :expanded="expanded"
           @toggle-expand="toggleExpanded"
+          :editable="!readOnly"
           @edit="editing = true"
           @delete="onDelete"
         />
@@ -166,7 +179,7 @@
     <td :colspan="rowColspan" class="p-3 bg-brand-surface dark:bg-brand-surface-dark">
       <RaceExpandedDetails
         :notes="race.notes || ''"
-        notes-fallback="No notes"
+        :notes-fallback="readOnly ? '' : 'No notes'"
         accent
         divider
         :lap-times="race.lap_times_ms"
@@ -215,7 +228,14 @@ export default {
     // The set of toggleable column keys currently visible, per
     // TrackDetailPage's column-visibility picker — used by both the table
     // and card layouts. 'actions' isn't included since it's always shown.
-    visibleColumns: { type: Array, required: true }
+    visibleColumns: { type: Array, required: true },
+    // Someone else's race: no edit/delete, and no notes (they're private
+    // and never loaded for other drivers anyway).
+    readOnly: { type: Boolean, default: false },
+    // Community track page: where a driver's name links, under their prefix —
+    // e.g. '/track/<t>/<v>' to open that driver's page for this variation.
+    // Only used when the 'driver' column is visible.
+    driverPathSuffix: { type: String, default: '/races' }
   },
   emits: ['update', 'delete'],
   data() {
@@ -228,6 +248,9 @@ export default {
     }
   },
   computed: {
+    driverPath() {
+      return `/${this.race.user_id}${this.driverPathSuffix}`
+    },
     rowColspan() {
       return this.visibleColumns.length + 1 // +1 for the always-shown Actions column
     },

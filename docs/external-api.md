@@ -53,14 +53,14 @@ convention — field names must exactly match the SQL parameter names):
 | `gear_ratio`         | integer | no       | Tuning dial position. |
 | `differential`       | integer | no       | Tuning dial position. |
 | `brake_balance`      | integer | no       | Tuning dial position. |
-| `notes`              | string  | no       | Free-form notes stored on the race. |
+| `notes`              | string  | no       | Free-form notes stored with the race. Private: only the key's owner can see them, even though the race itself is public. |
 | `lap_count`          | integer | no       | Number of laps in the race. Defaults to the length of `lap_times_ms` when omitted. |
 | `lap_times_ms`       | array   | no       | JSON array of per-lap times in milliseconds, in lap order — first entry is lap 1, second is lap 2, and so on (e.g. `[19160, 18994, 19340]`). Stored as a JSON object on the race and charted in the race's expand drawer on the track page. |
 | `results_roster`     | array   | no       | JSON array of all racers in finishing order. Each entry is an object with the fields described below. Stored verbatim and intended for display as a structured results table in the app. |
 | `assists`            | object  | no       | Driving-assist difficulty settings in effect for the race, as a single JSON object — see shape below. Stored verbatim as `jsonb`. |
 | `vehicle_weight_kg`  | integer | no       | Vehicle weight in kg at race time. Must be `>= 0`. |
 | `server_name`        | string  | no       | Name of the online server the race was run on, exactly as the game reports it — **including** Wreckfest's color codes (`^` followed by one character, e.g. `^2`, `^:`), so the site can strip them or render the colors. Omit it for offline races. At most 256 characters; an empty string is stored as `null`. |
-| `plugin_version`     | string  | no       | Version of the companion plugin making the call (e.g. `"1.4.0"`). Stored on the race so we can track which plugin versions users are running, and trace bad or missing data back to the plugin release that sent it. Plugins should always send it. At most 64 characters; an empty string is stored as `null`. |
+| `plugin_version`     | string  | no       | Version of the companion plugin making the call (e.g. `"1.4.0"`). Stored privately with the race so we can track which plugin versions users are running, and trace bad or missing data back to the plugin release that sent it. Plugins should always send it. At most 64 characters; an empty string is stored as `null`. |
 
 #### `results_roster` entry shape
 

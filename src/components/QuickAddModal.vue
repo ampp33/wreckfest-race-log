@@ -92,7 +92,7 @@ export default {
     async onOpened() {
       this.loadingTracks = true
       try {
-        const [tracks, vehicles, piMap] = await Promise.all([getTracks(), getVehicles(), getVehiclePiMap()])
+        const [tracks, vehicles, piMap] = await Promise.all([getTracks(), getVehicles(), getVehiclePiMap(authStore.user.id)])
         this.tracks = tracks
         this.vehicles = vehicles
         this.vehiclePiMap = piMap
