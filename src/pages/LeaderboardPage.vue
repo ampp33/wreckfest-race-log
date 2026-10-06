@@ -52,14 +52,34 @@
           Fastest <em class="signal">laps</em>
         </h2>
         <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4">
-          The quickest lap logged on every track and variation{{ piClass ? ` in class ${piClass}` : '' }}.
+          The quickest lap logged on every track and variation{{ filterSuffix }}.
         </p>
-        <PiClassSlider v-model="piClass" label="Car class" class="mb-5" />
+        <div class="flex flex-wrap items-center gap-4 mb-5">
+          <PiClassSlider v-model="piClass" label="Car class" />
+          <!-- The native arrow hugs the right border, so it's swapped for the
+               nav's chevron with room around it. -->
+          <div class="relative">
+            <select
+              v-model="vehicleId"
+              aria-label="Vehicle"
+              class="appearance-none min-h-[54px] min-w-[14rem] border border-brand-border dark:border-brand-border-dark bg-brand-bg dark:bg-brand-surface-dark pl-4 pr-11 py-2 text-sm focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent-dark"
+              :class="vehicleId ? 'text-brand-text dark:text-brand-text-dark font-semibold' : 'text-brand-muted dark:text-brand-muted-dark'"
+            >
+              <option :value="null">All vehicles</option>
+              <option v-for="v in vehicles" :key="v.id" :value="v.id">{{ v.name }}</option>
+            </select>
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-brand-muted dark:text-brand-muted-dark"
+              v-html="chevronDownIcon"
+            ></span>
+          </div>
+        </div>
 
         <p v-if="lapsLoading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
-        <p v-else-if="lapsFailed[lapsKey]" class="text-sm text-brand-accent dark:text-brand-accent-dark">Couldn't load these laps — pick the class again to retry.</p>
+        <p v-else-if="lapsFailed[lapsKey]" class="text-sm text-brand-accent dark:text-brand-accent-dark">Couldn't load these laps — change a filter and back to retry.</p>
         <p v-else-if="!fastestLaps.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-          {{ piClass ? `No class ${piClass} laps logged yet.` : 'No laps logged yet.' }}
+          No laps logged{{ filterSuffix }} yet.
         </p>
 
         <template v-else>
@@ -155,10 +175,12 @@ import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import PiClassSlider from '../components/PiClassSlider.vue'
 import ScopeKicker from '../components/ScopeKicker.vue'
 import { getMostRacesLeaderboard, getFastestLaps } from '../services/leaderboardService.js'
+import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDate } from '../utils/dateFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
+import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
@@ -168,24 +190,32 @@ export default {
       loading: true,
       error: null,
       mostRaces: [],
-      // Fastest laps per class slider stop ('all', 'D'..'A'), fetched the
-      // first time each is picked and kept, so sliding back is instant.
+      // Fastest laps per filter combination (class slider stop × vehicle),
+      // fetched the first time each is picked and kept, so going back is instant.
       piClass: null,
-      lapsByClass: {},
-      lapsFailed: {}
+      vehicleId: null,
+      vehicles: [],
+      lapsByFilter: {},
+      lapsFailed: {},
+      chevronDownIcon
     }
   },
   computed: {
     lapsKey() {
-      return this.piClass || 'all'
+      return `${this.piClass || 'all'}|${this.vehicleId || 'all'}`
     },
     fastestLaps() {
-      return this.lapsByClass[this.lapsKey] || []
+      return this.lapsByFilter[this.lapsKey] || []
     },
     // Derived rather than toggled, so a quick second pick can't strand the
-    // spinner: it's loading exactly while the selected class has no result.
+    // spinner: it's loading exactly while the selected filters have no result.
     lapsLoading() {
-      return !(this.lapsKey in this.lapsByClass) && !this.lapsFailed[this.lapsKey]
+      return !(this.lapsKey in this.lapsByFilter) && !this.lapsFailed[this.lapsKey]
+    },
+    // " in class C in the Nexus RX", or whichever part applies.
+    filterSuffix() {
+      const vehicle = this.vehicles.find(v => v.id === this.vehicleId)
+      return (this.piClass ? ` in class ${this.piClass}` : '') + (vehicle ? ` in the ${vehicle.name}` : '')
     },
     topRaceCount() {
       return this.mostRaces[0]?.race_count || 1
@@ -195,10 +225,12 @@ export default {
     try {
       const [mostRaces, fastestLaps] = await Promise.all([
         getMostRacesLeaderboard(25),
-        getFastestLaps()
+        getFastestLaps(),
+        // The dropdown is a nice-to-have; without it the boards still work.
+        getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {})
       ])
       this.mostRaces = mostRaces
-      this.lapsByClass = { all: fastestLaps }
+      this.lapsByFilter = { ...this.lapsByFilter, 'all|all': fastestLaps }
     } catch (err) {
       this.error = err.message || 'Failed to load leaderboards'
     } finally {
@@ -206,13 +238,12 @@ export default {
     }
   },
   watch: {
-    async piClass(piClass) {
-      const key = this.lapsKey
-      if (key in this.lapsByClass) return
+    async lapsKey(key) {
+      if (key in this.lapsByFilter) return
       this.lapsFailed = { ...this.lapsFailed, [key]: false }
       try {
-        const laps = await getFastestLaps(piClass)
-        this.lapsByClass = { ...this.lapsByClass, [key]: laps }
+        const laps = await getFastestLaps(this.piClass, this.vehicleId)
+        this.lapsByFilter = { ...this.lapsByFilter, [key]: laps }
       } catch (err) {
         this.lapsFailed = { ...this.lapsFailed, [key]: true }
         pushToast(err.message || 'Failed to load fastest laps', 'error')

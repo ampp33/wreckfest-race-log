@@ -121,7 +121,7 @@ that without a 404-page hack.
 | `/plugin` | public | Telemetry plugin install instructions |
 | `/getting-started` | auth | In-app guide: shortcuts, plugin, annotations, charts |
 | `/news` | auth | Changelog / release notes |
-| `/community/leaderboard` | public | Most races (top 25 drivers) and the fastest lap on every variation, filterable by PI class; where signed-in users land |
+| `/community/leaderboard` | public | Most races (top 25 drivers) and the fastest lap on every variation, filterable by PI class and vehicle; where signed-in users land |
 | `/community/stats` | public | Placeholder for site-wide stats |
 | `/community/tracks` | public | Track grid; cards open each track's all-drivers page |
 | `/community/track/:trackSlug/:variationSlug` | public | Every public driver's races at a variation, best lap and who set it |
