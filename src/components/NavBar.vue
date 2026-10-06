@@ -13,8 +13,9 @@
 
       <!-- Desktop: whose races (the scope icon) and which view of them. On
            pages outside any scope — News, admin — it keeps the last scope
-           you were in, with no view lit. -->
-      <div class="hidden min-[1200px]:flex items-center gap-6 shrink-0">
+           you were in, with no view lit. `data-nav-intro` (here and on the
+           mobile pair below) is what NavIntroOverlay spotlights. -->
+      <div data-nav-intro class="hidden min-[1200px]:flex items-center gap-6 shrink-0">
         <div ref="scopePicker" class="relative">
           <button
             type="button"
@@ -162,7 +163,7 @@
 
       <!-- Mobile: whose races (scope) and the menu, each opening its own red
            drop-down. Only one is open at a time; the open one turns red. -->
-      <div class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
+      <div data-nav-intro class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
         <button
           type="button"
           class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"

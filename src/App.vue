@@ -20,6 +20,7 @@
     <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
+    <NavIntroOverlay v-if="auth.ready && auth.isAuthenticated && showNavBar" />
   </div>
 </template>
 
@@ -32,6 +33,7 @@ import TrackSearchModal from './components/TrackSearchModal.vue'
 import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import NavIntroOverlay from './components/NavIntroOverlay.vue'
 import { authStore } from './stores/authStore.js'
 import { prefsStore, applyDarkModeClass } from './stores/prefsStore.js'
 import { openQuickAdd, quickAddStore } from './stores/quickAddStore.js'
@@ -39,7 +41,7 @@ import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
     return {
       auth: authStore,

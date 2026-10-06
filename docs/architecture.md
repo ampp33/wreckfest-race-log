@@ -276,8 +276,12 @@ Full request/response contract: [external-api.md](external-api.md).
 
 The shell mounts the NavBar (for signed-out visitors too, except on `/plugin`,
 which carries its own `PublicHeader`, and `/login`, which has none), the modals any screen can
-open (Quick Add, track search, feedback, toasts), and the document-level
-keyboard shortcuts, which are suppressed whenever focus is in an input:
+open (Quick Add, track search, feedback, toasts), `NavIntroOverlay` (a
+one-time walkthrough of the scope nav, shown to each signed-in user once per
+browser: everything but the nav's `data-nav-intro` controls is washed in the
+accent colour, with screenshots from `public/images/getting-started/nav-*`),
+and the document-level keyboard shortcuts, which are suppressed whenever focus
+is in an input:
 
 | Key | Action |
 | --- | --- |
