@@ -46,7 +46,10 @@ import { formatMsToTime } from '../utils/timeFormat.js'
 export default {
   name: 'TrackCard',
   props: {
-    track: { type: Object, required: true }
+    track: { type: Object, required: true },
+    // Prefix for the card's link: '/<userId>' on a driver's track list,
+    // '/community' on the site-wide one.
+    basePath: { type: String, required: true }
   },
   computed: {
     variationCount() {
@@ -58,8 +61,8 @@ export default {
     },
     firstVariationLink() {
       const first = (this.track.track_variations || [])[0]
-      if (!first) return '/tracks'
-      return `/track/${this.track.slug}/${first.slug}`
+      if (!first) return `${this.basePath}/tracks`
+      return `${this.basePath}/track/${this.track.slug}/${first.slug}`
     },
     resolvedImage() {
       return trackImageUrl(this.track.slug)

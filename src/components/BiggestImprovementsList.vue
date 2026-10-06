@@ -14,7 +14,7 @@
           :data-fade-item="i"
           class="flex items-center justify-between"
         >
-          <router-link :to="`/track/${row.trackSlug}/${row.variationSlug}`" class="text-brand-accent hover:underline font-body">
+          <router-link :to="`${basePath}/track/${row.trackSlug}/${row.variationSlug}`" class="text-brand-accent hover:underline font-body">
             {{ row.trackName }} — {{ row.variationName }}
           </router-link>
           <span class="font-mono text-green-600">-{{ formatMsToTime(row.deltaMs) }}</span>
@@ -37,6 +37,10 @@ export default {
   name: 'BiggestImprovementsList',
   props: {
     items: { type: Array, default: () => [] },
+    // Prefix for the track links: '/<userId>' for a driver's stats, '/community'
+    // for site-wide ones. The homepage demo leaves it '', which resolves via
+    // the legacy /track/... redirect.
+    basePath: { type: String, default: '' },
     // Shown instead of the list when items is empty; leave '' to render an
     // empty list with no message (not currently used by any caller).
     emptyMessage: { type: String, default: '' },

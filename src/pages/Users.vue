@@ -326,7 +326,8 @@ import {
 } from 'chart.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getUserGrowth, getRaceLogGrowth, setUserRole, setUserBanned } from '../services/adminService.js'
+import { getAllUsers, getRaceLogTimes, setUserRole, setUserBanned } from '../services/adminService.js'
+import { growthDays, countPerDay, runningTotalPerDay } from '../utils/dailyBuckets.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate, formatDateTime } from '../utils/dateFormat.js'
@@ -515,23 +516,32 @@ watch(loading, (isLoading) => {
   if (!isLoading) nextTick(renderCharts)
 })
 
-async function loadGrowth() {
-  try {
-    growthData.value = await getUserGrowth(usersRange.value)
-    nextTick(renderGrowthChart)
-  } catch (err) {
-    pushToast(err.message || 'Failed to load user growth', 'error')
-  }
+// Both charts are bucketed here, by the viewer's local day (see
+// src/utils/dailyBuckets.js). User growth is a running total built from the
+// signup dates the users list already carries — no extra query.
+function buildUserGrowth() {
+  const signups = users.value.map(u => u.created_at)
+  const days = growthDays(usersRange.value, signups)
+  growthData.value = runningTotalPerDay(signups, days).map(({ day, count }) => ({ day, user_count: count }))
+}
+// Races logged is a per-day count, not a running total.
+function buildRaceGrowth(loggedAt) {
+  const days = growthDays(racesRange.value, loggedAt)
+  racesData.value = countPerDay(loggedAt, days).map(({ day, count }) => ({ day, race_count: count }))
+}
+function onUsersRangeChange() {
+  buildUserGrowth()
+  nextTick(renderGrowthChart)
 }
 async function loadRaceGrowth() {
   try {
-    racesData.value = await getRaceLogGrowth(racesRange.value)
+    buildRaceGrowth(await getRaceLogTimes(racesRange.value))
     nextTick(renderRacesChart)
   } catch (err) {
     pushToast(err.message || 'Failed to load race growth', 'error')
   }
 }
-watch(usersRange, loadGrowth)
+watch(usersRange, onUsersRangeChange)
 watch(racesRange, loadRaceGrowth)
 
 function openDialog(user) {
@@ -585,15 +595,14 @@ useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog()
 
 onMounted(async () => {
   try {
-    const [allUsers, growth, racesGrowth, raceCount] = await Promise.all([
+    const [allUsers, raceLogTimes, raceCount] = await Promise.all([
       getAllUsers(),
-      getUserGrowth(usersRange.value),
-      getRaceLogGrowth(racesRange.value),
+      getRaceLogTimes(racesRange.value),
       getTotalRaceCount()
     ])
     users.value = allUsers
-    growthData.value = growth
-    racesData.value = racesGrowth
+    buildUserGrowth()
+    buildRaceGrowth(raceLogTimes)
     totalRaces.value = raceCount
   } catch (err) {
     error.value = err.message || 'Failed to load users'

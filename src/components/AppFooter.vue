@@ -129,6 +129,7 @@ export default {
           { label: 'T — search tracks' }
         ] },
         { title: 'Your data', links: [
+          { label: 'Profile', to: '/settings/profile' },
           { label: 'API keys', to: '/settings/api-keys' },
           { label: 'Export JSON', action: 'export' },
           { label: 'Import JSON', action: 'import' }
@@ -145,8 +146,12 @@ export default {
   },
   methods: {
     async exportJson() {
+      if (!authStore.user) {
+        pushToast('Sign in to export your races', 'error')
+        return
+      }
       try {
-        const races = await getAllRaces()
+        const races = await getAllRaces({ userId: authStore.user.id })
         downloadJson(`wreckfest-races-${Date.now()}.json`, { races })
         pushToast('Exported races', 'success')
       } catch (err) {

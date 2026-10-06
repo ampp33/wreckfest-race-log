@@ -1,6 +1,7 @@
 <!-- The homepage's races preview table. Matches the real expanded-row
-     behavior on RacesPage.vue / RaceRow.vue exactly (Notes, then Lap times,
-     then Roster, stacked full width — not a side-by-side split). Fed a
+     behavior on RacesPage.vue / RaceRow.vue exactly (Notes, then Server, Lap
+     times and Roster from the same RaceExpandedDetails, stacked full width —
+     not a side-by-side split). Fed a
      small set of real races (see HomePage.vue) rather than the live
      per-user API, since this renders for signed-out visitors.
 
@@ -59,14 +60,12 @@
             <td colspan="9" class="p-4 sm:p-5 bg-brand-surface dark:bg-brand-surface-dark">
               <div class="ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Notes</div>
               <p class="font-body text-[13px] italic text-brand-muted dark:text-brand-muted-dark">Private — visible only to you, never shown here.</p>
-              <template v-if="row.lap_times_ms">
-                <div class="mt-3 ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Lap times</div>
-                <LapSplitsChart :lap-times="row.lap_times_ms" class="mt-1" />
-              </template>
-              <template v-if="row.results_roster">
-                <div class="mt-3 ov text-brand-accent dark:text-brand-accent-dark mb-1.5">Roster</div>
-                <RaceResultsRoster :roster="row.results_roster" class="mt-1" />
-              </template>
+              <RaceExpandedDetails
+                card-labels
+                :server-name="row.server_name || ''"
+                :lap-times="row.lap_times_ms || []"
+                :roster="row.results_roster || []"
+              />
             </td>
           </tr>
         </template>
@@ -87,8 +86,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import LapSplitsChart from './LapSplitsChart.vue'
-import RaceResultsRoster from './RaceResultsRoster.vue'
+import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatCompactDate } from '../utils/dateFormat.js'

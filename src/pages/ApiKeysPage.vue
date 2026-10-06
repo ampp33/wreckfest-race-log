@@ -102,7 +102,7 @@
               </td>
               <td class="px-4 py-2 text-right whitespace-nowrap">
                 <router-link
-                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  :to="{ path: `/${auth.user.id}/races`, query: { source: 'api', api_key_id: key.id } }"
                   class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
                 >{{ key.race_count.toLocaleString() }}</router-link>
               </td>
@@ -145,11 +145,13 @@
 import { getApiKeys, createApiKey, deleteApiKey } from '../services/apiKeyService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate } from '../utils/dateFormat.js'
+import { authStore } from '../stores/authStore.js'
 
 export default {
   name: 'ApiKeysPage',
   data() {
     return {
+      auth: authStore,
       keys: [],
       loading: true,
       loadError: null,

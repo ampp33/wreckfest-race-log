@@ -13,6 +13,7 @@ import TrackVariationPicker from './TrackVariationPicker.vue'
 import { trackSearchStore, closeTrackSearch } from '../stores/trackSearchStore.js'
 import { getTracks } from '../services/trackService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { authStore } from '../stores/authStore.js'
 
 export default {
   name: 'TrackSearchModal',
@@ -43,7 +44,15 @@ export default {
     },
     onTrackSelected({ track, variation }) {
       closeTrackSearch()
-      this.$router.push(`/track/${track.slug}/${variation.slug}`)
+      this.$router.push(`${this.basePath()}/track/${track.slug}/${variation.slug}`)
+    },
+    // Stay in context: community pages search community tracks, a driver's pages
+    // search that driver's. Anywhere else it's your own log — or, signed
+    // out, the community one.
+    basePath() {
+      if (this.$route.meta.scope === 'community') return '/community'
+      if (this.$route.params.userId) return `/${this.$route.params.userId}`
+      return authStore.user ? `/${authStore.user.id}` : '/community'
     },
     onClose() {
       closeTrackSearch()

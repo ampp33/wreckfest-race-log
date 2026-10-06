@@ -31,6 +31,16 @@ export default {
     return {
       entries: [
         {
+          id: 7,
+          title: 'Coming Soon: See Everyone\'s Races',
+          date: '2026-10-02',
+          items: [
+            'Logging races on your own gets lonely, so the site is opening up. A new Community section is on the way: leaderboards, a feed of everyone\'s latest races, and per-track pages showing how everyone else is doing.',
+            'Races will be <b>public by default</b> — date, track, vehicle, tuning, assists, PI, place, lap times and roster. <b>Notes stay private, always</b>, as do your track notes, goal times and map annotations.',
+            'Don\'t want your races shown? Head to <a href="#/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">your profile</a> and set them to private — you can change it any time. While you\'re there, pick a display name; everyone starts out as "Driver-something".'
+          ]
+        },
+        {
           id: 6,
           title: 'Fixed Telemetry Tuning Bug (Again) + Opponent Tunings',
           date: '2026-09-30',

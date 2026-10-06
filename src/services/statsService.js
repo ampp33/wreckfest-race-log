@@ -7,12 +7,16 @@ import { placementRate } from '../utils/raceStats.js'
 // Aggregate stats for the Stats page. We pull everything client-side because
 // the dataset per user is small (hundreds of races at most) and avoids round
 // trips for each metric.
-export async function getStats() {
+//
+// Goals are private and RLS-scoped to the signed-in user, so they're only
+// loaded for your own stats — on another driver's page they'd be *your*
+// goals measured against *their* laps.
+export async function getStats(userId, { includeGoals = false } = {}) {
   const [races, vehicles, tracks, goals] = await Promise.all([
-    getAllRaces(),
+    getAllRaces({ userId }),
     getVehicles(),
     getTracks(),
-    getAllGoals()
+    includeGoals ? getAllGoals() : []
   ])
 
   return {

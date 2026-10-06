@@ -7,7 +7,9 @@
 // other players); the roster's other names are real public multiplayer
 // handles, same as a Wreckfest results screen would show.
 
-// Savolax Sandpit — Fire Rock Raceway is the one with real laps + roster.
+// Fire Rock Raceway is the one shown expanded. This race predates the plugin
+// sending a server name and other racers' tunings, so it borrows real ones
+// from a later LaBandaDelWreckfest race (2026-10-06) to show both off.
 export const flagshipRaceIndex = 1
 
 export const races = [
@@ -23,15 +25,16 @@ export const races = [
     ]
   },
   { id: '8ae9ca4d', datetime: '2026-09-12T03:39:21.026537+00:00', track: 'Fire Rock Raceway', variation: 'Main Circuit Reverse', vehicle: 'Boomer RS', performance_index: 164, place: '1', lap_count: 5, lap_time_ms: 58090, total_time_ms: 301180,
+    server_name: '000^2C ^5AR^7GE^3N^7TI^5NA^7//LaBandaDelWreckfest//^2SEMICLEAN',
     lap_times_ms: [65902, 58090, 59454, 58936, 58798],
     results_roster: [
-      { position: 1, name: 'Ampp33', car: 'Boomer RS', class: 'C 164', best_lap_ms: 58090, total_time_ms: 301180, laps_completed: 5 },
-      { position: 2, name: 'speedgamer5', car: 'Venom', class: 'C 164', best_lap_ms: 59873, total_time_ms: 303628, laps_completed: 5 },
-      { position: 3, name: 'DonCobra', car: 'Rebelrat', class: 'C 163', best_lap_ms: 59978, total_time_ms: 309457, laps_completed: 5 },
-      { position: 4, name: 'CeoKeanan', car: 'Super Venom', class: 'C 164', best_lap_ms: 59376, total_time_ms: 315032, laps_completed: 5 },
-      { position: 5, name: 'Throat Clogger', car: 'Rocket', class: 'C 163', best_lap_ms: 60559, total_time_ms: 316571, laps_completed: 5 },
-      { position: 6, name: 'TRACANGUS', car: 'Rocket', class: 'C 164', best_lap_ms: 60792, total_time_ms: 318205, laps_completed: 5 },
-      { position: 7, name: 'ColeTrickle2709', car: 'Rocket Rx', class: 'C 164', best_lap_ms: 59516, total_time_ms: 320610, laps_completed: 5 }
+      { position: 1, name: 'Ampp33', car: 'Boomer RS', class: 'C 164', best_lap_ms: 58090, total_time_ms: 301180, laps_completed: 5, tuning: { suspension: 5, gear_ratio: 2, differential: 4, brake_balance: 2 } },
+      { position: 2, name: 'speedgamer5', car: 'Venom', class: 'C 164', best_lap_ms: 59873, total_time_ms: 303628, laps_completed: 5, tuning: { suspension: 3, gear_ratio: 3, differential: 5, brake_balance: 1 } },
+      { position: 3, name: 'DonCobra', car: 'Rebelrat', class: 'C 163', best_lap_ms: 59978, total_time_ms: 309457, laps_completed: 5, tuning: { suspension: 5, gear_ratio: 2, differential: 5, brake_balance: 3 } },
+      { position: 4, name: 'CeoKeanan', car: 'Super Venom', class: 'C 164', best_lap_ms: 59376, total_time_ms: 315032, laps_completed: 5, tuning: { suspension: 2, gear_ratio: 3, differential: 5, brake_balance: 1 } },
+      { position: 5, name: 'Throat Clogger', car: 'Rocket', class: 'C 163', best_lap_ms: 60559, total_time_ms: 316571, laps_completed: 5, tuning: { suspension: 4, gear_ratio: 3, differential: 3, brake_balance: 2 } },
+      { position: 6, name: 'TRACANGUS', car: 'Rocket', class: 'C 164', best_lap_ms: 60792, total_time_ms: 318205, laps_completed: 5, tuning: { suspension: 3, gear_ratio: 3, differential: 1, brake_balance: 2 } },
+      { position: 7, name: 'ColeTrickle2709', car: 'Rocket Rx', class: 'C 164', best_lap_ms: 59516, total_time_ms: 320610, laps_completed: 5, tuning: { suspension: 1, gear_ratio: 3, differential: 5, brake_balance: 1 } }
     ]
   },
   { id: 'dbff4924', datetime: '2026-09-12T03:31:28.761778+00:00', track: 'Northland Raceway', variation: 'Outer Route Reverse', vehicle: 'Boomer RS', performance_index: 164, place: '1', lap_count: 5, lap_time_ms: 65045, total_time_ms: 337214,
@@ -189,8 +192,16 @@ export const races = [
 ]
 
 // Savolax Sandpit — Main Route: this account's closest open goal
-// (+0:00.055). racesHere is a real count, queried directly.
-export const flagshipGoal = { track: 'Savolax Sandpit', variation: 'Main Route', goalMs: 68000, bestMs: 68055, deltaMs: 55, beat: false, racesHere: 10 }
+// (+0:00.055). racesHere and the placement counts are real, queried
+// directly: 4 of those 10 races logged a place (4, 1, 2, 10).
+export const flagshipGoal = {
+  track: 'Savolax Sandpit', variation: 'Main Route', goalMs: 68000, bestMs: 68055, deltaMs: 55, beat: false, racesHere: 10,
+  placements: [
+    { label: 'Top 3 finishes', count: 2, total: 4 },
+    { label: 'Top 5 finishes', count: 3, total: 4 },
+    { label: 'Top 10 finishes', count: 4, total: 4 }
+  ]
+}
 
 // Real account-wide stats, queried directly — same relationship as the real
 // Races table vs. the real Stats page: bigger numbers than the 12 itemized

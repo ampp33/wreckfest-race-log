@@ -120,7 +120,7 @@ export default {
       if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
         return target
       }
-      return '/tracks'
+      return '/community/leaderboard'
     }
   },
   methods: {
