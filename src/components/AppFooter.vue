@@ -139,7 +139,7 @@ export default {
         ] },
         { title: 'Contact Us', links: [
           { label: 'Email', href: 'mailto:ampp33@gmail.com', icon: emailIcon },
-          { label: 'Discord', href: 'https://discordapp.com/channels/@me/431110818302656530/', icon: discordIcon }
+          { label: 'Discord', href: 'https://discord.gg/j7c4JCtxVs', icon: discordIcon }
         ] }
       ]
     }

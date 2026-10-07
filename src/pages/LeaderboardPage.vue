@@ -6,6 +6,7 @@
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-10 max-w-2xl">
       Who's logged the most racing, and the fastest lap anyone has set on every track.
+      Only races logged by the <router-link to="/plugin" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Telemetry plugin</router-link> count.
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
@@ -192,7 +193,8 @@ export default {
       mostRaces: [],
       // Fastest laps per filter combination (class slider stop × vehicle),
       // fetched the first time each is picked and kept, so going back is instant.
-      piClass: null,
+      // C is where most racing happens, so it's the starting class.
+      piClass: 'C',
       vehicleId: null,
       vehicles: [],
       lapsByFilter: {},
@@ -202,7 +204,7 @@ export default {
   },
   computed: {
     lapsKey() {
-      return `${this.piClass || 'all'}|${this.vehicleId || 'all'}`
+      return `${this.piClass}|${this.vehicleId || 'all'}`
     },
     fastestLaps() {
       return this.lapsByFilter[this.lapsKey] || []
@@ -212,25 +214,27 @@ export default {
     lapsLoading() {
       return !(this.lapsKey in this.lapsByFilter) && !this.lapsFailed[this.lapsKey]
     },
-    // " in class C in the Nexus RX", or whichever part applies.
+    // " in class C", plus " in the Nexus RX" when a vehicle is picked.
     filterSuffix() {
       const vehicle = this.vehicles.find(v => v.id === this.vehicleId)
-      return (this.piClass ? ` in class ${this.piClass}` : '') + (vehicle ? ` in the ${vehicle.name}` : '')
+      return ` in class ${this.piClass}` + (vehicle ? ` in the ${vehicle.name}` : '')
     },
     topRaceCount() {
       return this.mostRaces[0]?.race_count || 1
     }
   },
   async mounted() {
+    // Captured up front: the filters may change while this loads.
+    const { lapsKey, piClass, vehicleId } = this
     try {
       const [mostRaces, fastestLaps] = await Promise.all([
         getMostRacesLeaderboard(25),
-        getFastestLaps(),
+        getFastestLaps(piClass, vehicleId),
         // The dropdown is a nice-to-have; without it the boards still work.
         getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {})
       ])
       this.mostRaces = mostRaces
-      this.lapsByFilter = { ...this.lapsByFilter, 'all|all': fastestLaps }
+      this.lapsByFilter = { ...this.lapsByFilter, [lapsKey]: fastestLaps }
     } catch (err) {
       this.error = err.message || 'Failed to load leaderboards'
     } finally {

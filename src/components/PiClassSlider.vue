@@ -12,8 +12,7 @@
     <span
       aria-hidden="true"
       class="absolute top-1 bottom-1 left-1 w-16 transition-[transform,background-color] duration-300 ease-out"
-      :class="{ 'bg-brand-strong dark:bg-brand-strong-dark': !selectedColor }"
-      :style="{ transform: `translateX(${selectedIndex * 100}%)`, backgroundColor: selectedColor || undefined }"
+      :style="{ transform: `translateX(${selectedIndex * 100}%)`, backgroundColor: selectedColor }"
     ></span>
     <button
       v-for="option in options"
@@ -25,10 +24,8 @@
       class="relative z-10 w-16 min-h-[44px] font-display font-black text-[15px] tracking-tight transition-colors duration-300"
       :class="option.value !== modelValue
         ? 'text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark'
-        : option.value
-          ? 'text-white'
-          : 'text-brand-bg dark:text-brand-bg-dark'"
-      :style="option.value !== modelValue && option.value ? { color: classLetterColor(option.value) } : undefined"
+        : 'text-white'"
+      :style="option.value !== modelValue ? { color: classLetterColor(option.value) } : undefined"
       @click="select(option.value)"
     >{{ option.label }}</button>
   </div>
@@ -40,8 +37,8 @@ import { classLetterColor } from '../utils/piInfo.js'
 export default {
   name: 'PiClassSlider',
   props: {
-    // null for every class, or 'D' / 'C' / 'B' / 'A'.
-    modelValue: { type: String, default: null },
+    // 'D' / 'C' / 'B' / 'A'.
+    modelValue: { type: String, default: 'C' },
     label: { type: String, default: 'Class' }
   },
   emits: ['update:modelValue'],
@@ -49,7 +46,6 @@ export default {
     return {
       // Slowest to fastest, the way the game orders them.
       options: [
-        { label: 'All', value: null },
         { label: 'D', value: 'D' },
         { label: 'C', value: 'C' },
         { label: 'B', value: 'B' },
@@ -62,7 +58,7 @@ export default {
       return Math.max(0, this.options.findIndex(o => o.value === this.modelValue))
     },
     selectedColor() {
-      return this.modelValue ? classLetterColor(this.modelValue) : null
+      return classLetterColor(this.modelValue)
     }
   },
   methods: {

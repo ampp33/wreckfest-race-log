@@ -1254,7 +1254,8 @@ grant execute on function wf1.get_total_race_count to anon, authenticated;
 -- public" policy then decides whose races count, so users who opted out are
 -- left out for everyone but themselves — no second copy of that rule here.
 -- Functions rather than client queries because PostgREST can't do the
--- group by / distinct on these need.
+-- group by / distinct on these need. Only races logged by the telemetry
+-- plugin (source = 'api') count, so hand-entered web races stay off the boards.
 -- =====================================================================
 
 -- The drivers with the most races logged, most first.
@@ -1271,6 +1272,7 @@ as $$
     select r.user_id, p.display_name, count(*) as race_count
     from wf1.races r
     left join wf1.profiles p on p.user_id = r.user_id
+    where r.source = 'api'
     group by r.user_id, p.display_name
     order by race_count desc, p.display_name
     limit least(greatest(coalesce(p_limit, 25), 1), 100)
@@ -1318,6 +1320,7 @@ as $$
         select distinct on (r.track_variation_id) r.*
         from wf1.races r
         where r.lap_time_ms > 0
+          and r.source = 'api'
           and (p_pi_class is null or r.pi_class = p_pi_class)
           and (p_vehicle_id is null or r.vehicle_id = p_vehicle_id)
         order by r.track_variation_id, r.lap_time_ms, r.datetime

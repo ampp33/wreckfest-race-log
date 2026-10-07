@@ -100,8 +100,8 @@ opt-out — decides whose races count):
 - `get_fastest_laps(pi_class, vehicle_id)` — the fastest lap on each variation
   (`distinct on (track_variation_id)`, earlier race wins a tie), optionally
   within one PI class and/or one vehicle, ordered by track then variation
-  name. Backs "Fastest laps", its All/D/C/B/A class slider and vehicle
-  dropdown; the page caches each class × vehicle combination after its first
+  name. Backs "Fastest laps", its D/C/B/A class slider (starting on C) and
+  vehicle dropdown; the page caches each class × vehicle combination after its first
   fetch.
 
 **Planned:**
@@ -114,7 +114,7 @@ opt-out — decides whose races count):
   exclude lone races, mirroring `isLoneRace()` in `src/utils/raceStats.js`.
 - `get_community_stats()` — site-wide totals.
 
-`source` stays public so boards can offer a "telemetry-logged only" filter —
+**Leaderboards count only telemetry-logged races** (`source = 'api'`) —
 web-logged races are hand-typed and can be faked.
 
 ## Frontend
@@ -204,7 +204,7 @@ default login redirect go to `/community/leaderboard`.
 5. **Leaderboard** — *done.* `get_most_races_leaderboard()` and
    `get_fastest_laps()` back `/community/leaderboard` (where sign-in, `/` and
    the logo land when signed in): Most races (top 25) and Fastest laps with the
-   All/D/C/B/A class slider and a vehicle dropdown. `/community/stats` is still a "coming soon"
+   D/C/B/A class slider (starting on C) and a vehicle dropdown. `/community/stats` is still a "coming soon"
    placeholder. Next, if wanted: `get_community_stats()` for that page, and
    `get_driver_totals(range)` for more boards.
 
