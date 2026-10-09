@@ -6,12 +6,13 @@ export async function getAllUsers() {
   return data ?? []
 }
 
-// When each race in the range was logged, unaggregated — the caller buckets
-// them by the viewer's local day (see src/utils/dailyBuckets.js).
-export async function getRaceLogTimes(range = '30d') {
-  const { data, error } = await supabase.rpc('get_race_log_times', { p_range: range })
+// Race counts per 15-minute UTC bin, as [{ at, count }] with `at` in epoch
+// ms — the caller regroups them by the viewer's local hour or day (see
+// src/utils/chartBuckets.js and get_race_log_bins() in supabase/schema.sql).
+export async function getRaceLogBins(range = '30d') {
+  const { data, error } = await supabase.rpc('get_race_log_bins', { p_range: range })
   if (error) throw error
-  return (data ?? []).map(row => row.logged_at)
+  return (data ?? []).map(([at, count]) => ({ at, count: Number(count) }))
 }
 
 export async function setUserRole(userId, role) {

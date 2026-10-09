@@ -326,8 +326,8 @@ import {
 } from 'chart.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getRaceLogTimes, setUserRole, setUserBanned } from '../services/adminService.js'
-import { growthDays, countPerDay, runningTotalPerDay } from '../utils/dailyBuckets.js'
+import { getAllUsers, getRaceLogBins, setUserRole, setUserBanned } from '../services/adminService.js'
+import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket } from '../utils/chartBuckets.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate, formatDateTime } from '../utils/dateFormat.js'
@@ -371,6 +371,12 @@ const currentUserId = computed(() => authStore.user?.id ?? null)
 // blob — drop them for dense ranges (1y/all) and let the line carry it.
 const DENSE_POINT_COUNT = 60
 
+function bucketLabel(bucket, unit) {
+  return unit === 'hour'
+    ? bucket.toLocaleTimeString(undefined, { hour: 'numeric' })
+    : bucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 function renderGrowthChart() {
   if (!growthCanvas.value || !growthData.value.length) return
 
@@ -379,10 +385,9 @@ function renderGrowthChart() {
   const color = dark ? '#E5332F' : '#C41E1E'
   const dense = growthData.value.length > DENSE_POINT_COUNT
 
-  const labels = growthData.value.map(row =>
-    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  )
-  const counts = growthData.value.map(row => Number(row.user_count))
+  const unit = bucketUnit(usersRange.value)
+  const labels = growthData.value.map(row => bucketLabel(row.bucket, unit))
+  const counts = growthData.value.map(row => row.user_count)
 
   renderGrowth({
     type: 'line',
@@ -445,10 +450,9 @@ function renderRacesChart() {
   const color = dark ? '#E5332F' : '#C41E1E'
   const dense = racesData.value.length > DENSE_POINT_COUNT
 
-  const labels = racesData.value.map(row =>
-    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  )
-  const counts = racesData.value.map(row => Number(row.race_count))
+  const unit = bucketUnit(racesRange.value)
+  const labels = racesData.value.map(row => bucketLabel(row.bucket, unit))
+  const counts = racesData.value.map(row => row.race_count)
 
   renderRaces({
     type: 'line',
@@ -516,18 +520,20 @@ watch(loading, (isLoading) => {
   if (!isLoading) nextTick(renderCharts)
 })
 
-// Both charts are bucketed here, by the viewer's local day (see
-// src/utils/dailyBuckets.js). User growth is a running total built from the
+// Both charts are bucketed here, by the viewer's local hour (1D) or day (see
+// src/utils/chartBuckets.js). User growth is a running total built from the
 // signup dates the users list already carries — no extra query.
 function buildUserGrowth() {
   const signups = users.value.map(u => u.created_at)
-  const days = growthDays(usersRange.value, signups)
-  growthData.value = runningTotalPerDay(signups, days).map(({ day, count }) => ({ day, user_count: count }))
+  const unit = bucketUnit(usersRange.value)
+  const buckets = growthBuckets(usersRange.value, signups)
+  growthData.value = runningTotalPerBucket(signups, buckets, unit).map(({ bucket, count }) => ({ bucket, user_count: count }))
 }
-// Races logged is a per-day count, not a running total.
-function buildRaceGrowth(loggedAt) {
-  const days = growthDays(racesRange.value, loggedAt)
-  racesData.value = countPerDay(loggedAt, days).map(({ day, count }) => ({ day, race_count: count }))
+// Races logged is a per-bucket count, not a running total.
+function buildRaceGrowth(bins) {
+  const unit = bucketUnit(racesRange.value)
+  const buckets = growthBuckets(racesRange.value, bins.map(b => b.at))
+  racesData.value = countPerBucket(bins, buckets, unit).map(({ bucket, count }) => ({ bucket, race_count: count }))
 }
 function onUsersRangeChange() {
   buildUserGrowth()
@@ -535,7 +541,7 @@ function onUsersRangeChange() {
 }
 async function loadRaceGrowth() {
   try {
-    buildRaceGrowth(await getRaceLogTimes(racesRange.value))
+    buildRaceGrowth(await getRaceLogBins(racesRange.value))
     nextTick(renderRacesChart)
   } catch (err) {
     pushToast(err.message || 'Failed to load race growth', 'error')
@@ -595,14 +601,14 @@ useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog()
 
 onMounted(async () => {
   try {
-    const [allUsers, raceLogTimes, raceCount] = await Promise.all([
+    const [allUsers, raceLogBins, raceCount] = await Promise.all([
       getAllUsers(),
-      getRaceLogTimes(racesRange.value),
+      getRaceLogBins(racesRange.value),
       getTotalRaceCount()
     ])
     users.value = allUsers
     buildUserGrowth()
-    buildRaceGrowth(raceLogTimes)
+    buildRaceGrowth(raceLogBins)
     totalRaces.value = raceCount
   } catch (err) {
     error.value = err.message || 'Failed to load users'

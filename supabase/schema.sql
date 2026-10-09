@@ -633,7 +633,7 @@ end;
 $$;
 
 -- Resolves a range keyword ('1d', '7d', '30d', '90d', '1y', 'all') to the
--- first day of the window. Only get_race_log_times() needs it now, but the
+-- first day of the window. Only get_race_log_bins() needs it now, but the
 -- keywords keep one definition here rather than drifting between callers.
 create or replace function wf1.resolve_growth_range_start(p_range text, p_earliest date)
 returns date
@@ -662,17 +662,25 @@ $$;
 -- the timestamps in the users table right above it. Only the browser knows
 -- where the viewer's midnight falls, so it now does the bucketing — user
 -- growth from the created_at values get_all_users_with_roles() already
--- returns, and races from the raw instants below.
+-- returns, and races from the 15-minute bins below.
 drop function if exists wf1.get_user_growth();
 drop function if exists wf1.get_user_growth(text);
 drop function if exists wf1.get_race_log_growth(text);
+-- Replaced by get_race_log_bins(): one row per race ran into PostgREST's
+-- 1000-row response cap, which (oldest first) silently dropped the newest races.
+drop function if exists wf1.get_race_log_times(text);
 
--- Returns when each race in the range was logged — admin only. Unaggregated
--- on purpose (see above). The extra day on the start covers viewers east of
--- UTC, whose first local day opens before the UTC day the range resolves to;
--- the browser trims the window back to the days it actually plots.
-create or replace function wf1.get_race_log_times(p_range text default '30d')
-returns table(logged_at timestamptz)
+-- Race counts in the range per 15-minute UTC bin, as a jsonb array of
+-- [bin start in epoch ms, count] pairs, empty bins omitted — admin only.
+-- 15 minutes is the coarsest bin that still lands wholly inside one local
+-- hour in every timezone (offsets come in :00, :30 and :45), so the browser
+-- can regroup bins into its own hours and days. A single jsonb value rather
+-- than a set of rows so the response is never truncated by the row cap.
+-- The extra day on the start covers viewers east of UTC, whose first local
+-- day opens before the UTC day the range resolves to; the browser trims the
+-- window back to what it actually plots.
+create or replace function wf1.get_race_log_bins(p_range text default '30d')
+returns jsonb
 language plpgsql
 security definer set search_path = wf1
 as $$
@@ -688,11 +696,16 @@ begin
         (select min(r.created_at)::date from wf1.races r)
     ) - 1;
 
-    return query
-    select r.created_at
-    from wf1.races r
-    where r.created_at >= start_day::timestamptz
-    order by r.created_at;
+    return coalesce((
+        select jsonb_agg(jsonb_build_array(b.bin_ms, b.race_count) order by b.bin_ms)
+        from (
+            select (floor(extract(epoch from r.created_at) / 900) * 900000)::bigint as bin_ms,
+                   count(*) as race_count
+            from wf1.races r
+            where r.created_at >= start_day::timestamptz
+            group by 1
+        ) b
+    ), '[]'::jsonb);
 end;
 $$;
 
