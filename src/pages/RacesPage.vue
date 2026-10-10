@@ -170,6 +170,10 @@
                       <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
                       <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
                     </div>
+                    <div v-if="columnVisibility.isVisible('parts')">
+                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Parts</div>
+                      <div><PartsBadge :parts="race.parts" /></div>
+                    </div>
                     <div v-if="columnVisibility.isVisible('place')">
                       <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
                       <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
@@ -292,6 +296,7 @@
                     <SortCaret :direction="sort.directionFor('assists')" />
                   </button>
                 </th>
+                <th v-if="columnVisibility.isVisible('parts')" class="w-px px-3.5 pb-2.5 font-medium text-center whitespace-nowrap">Parts</th>
                 <th v-if="columnVisibility.isVisible('place')" class="px-3.5 pb-2.5 font-medium text-right">
                   <span class="inline-flex items-center justify-end gap-1">
                     <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('place', 'Place')" :aria-label="sort.titleFor('place', 'Place')" @click="sort.toggle('place')">
@@ -368,6 +373,9 @@
                   </td>
                   <td v-if="columnVisibility.isVisible('assists')" class="px-3.5 py-2 text-center text-brand-secondary dark:text-brand-secondary-dark">
                     {{ formatAssists(race.assists) }}
+                  </td>
+                  <td v-if="columnVisibility.isVisible('parts')" class="w-px px-3.5 py-2 text-center whitespace-nowrap">
+                    <PartsBadge :parts="race.parts" />
                   </td>
                   <td v-if="columnVisibility.isVisible('place')" class="px-3.5 py-2 text-right tabular-nums">
                     {{ race.place != null ? race.place : '—' }}
@@ -491,6 +499,7 @@ import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
 import OnlineRaceIcon from '../components/OnlineRaceIcon.vue'
+import PartsBadge from '../components/PartsBadge.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import { buildOptions, sortOptions } from '../utils/filterOptions.js'
@@ -513,6 +522,7 @@ const TABLE_COLUMNS = [
   { key: 'weight', label: 'Weight' },
   { key: 'tune', label: 'Tune' },
   { key: 'assists', label: 'Assists' },
+  { key: 'parts', label: 'Parts' },
   { key: 'place', label: 'Place' },
   { key: 'laps', label: 'Laps' },
   { key: 'lapTime', label: 'Lap time' },
@@ -536,7 +546,7 @@ function piKey(race) { return race.performance_index != null ? race.performance_
 function placeKey(race) { return race.place != null ? race.place : '—' }
 function driverKey(race) { return race.user_id }
 
-// One value-getter per sortable column (everything but Actions), fed to
+// One value-getter per sortable column (everything but Parts/Actions), fed to
 // sortRows() — each returns either a number (or a date's timestamp) or a
 // display string, so sortRows can compare by the right datatype instead of
 // always doing a string compare.
@@ -568,7 +578,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { DriverScope, LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
+  components: { DriverScope, LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
   // A small Composition API bridge — `createColumnVisibility`/`createSortState`
   // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
   // lifecycle hooks, so they don't need this whole file converted to
@@ -650,8 +660,9 @@ export default {
     },
     // Feeds the mobile filter drawer's SortMenu — only currently-visible
     // columns, so it can't be pointed at a field the column picker has hidden.
+    // Parts has no single value to order by, so it's never sortable.
     sortableColumns() {
-      return this.tableColumns.filter(c => this.columnVisibility.isVisible(c.key))
+      return this.tableColumns.filter(c => c.key !== 'parts' && this.columnVisibility.isVisible(c.key))
     },
     driverOptions() {
       return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'driver')), driverKey, r => r.driverName))

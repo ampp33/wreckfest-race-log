@@ -104,8 +104,8 @@ alter table wf1.races add column if not exists server_name text;
 
 -- Engine and armor upgrades on the logging player's car, as the companion
 -- plugin reports them, e.g. {"engine": "sport", "engine_parts":
--- {"air_filter": "racing", ...}, "armor": {"front_bumper": {"code":
--- "bumper_front3", "name": "Mesh Guard"}, ...}}. Also present in that
+-- {"air_filter": "racing", ...}, "armor": {"front_bumper": {"name":
+-- "Mesh Guard", "weight_kg": 45}, ...}}. Also present in that
 -- player's results_roster entry; kept here so it can be queried directly.
 -- null for races logged before this existed, or where it couldn't be read.
 alter table wf1.races add column if not exists parts jsonb;

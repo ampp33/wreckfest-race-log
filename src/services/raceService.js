@@ -7,7 +7,7 @@ import { supabase } from './supabase.js'
 // null for anyone else's race; flattenRace() lifts them back onto the race
 // so callers keep reading race.notes / race.api_key like before.
 const RACE_COLUMNS =
-  'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, lap_count, lap_times_ms, results_roster, created_at, source'
+  'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, parts, lap_count, lap_times_ms, results_roster, created_at, source'
 const PRIVATE_EMBED = 'races_private(notes, api_key_id, api_key:api_keys(name))'
 const SELECT = `${RACE_COLUMNS}, ${PRIVATE_EMBED}`
 
