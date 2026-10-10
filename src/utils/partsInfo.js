@@ -2,30 +2,29 @@
 // engine/armor upgrades the companion plugin reports. See
 // docs/external-api.md for the stored shape; every key in it is optional.
 
-// Engine first, then its sub-parts in the order air flows through the
-// engine (filter → intake → fuel and spark → valvetrain → cooling →
-// exhaust). The shorthand's squares and the popup's rows both follow this.
+// The game's upgrade order, as the garage's Performance carousel lists it.
+// The shorthand's squares and the popup's rows both follow this.
 export const PERFORMANCE_PARTS = [
   { key: 'engine', label: 'Engine' },
   { key: 'air_filter', label: 'Air filter' },
+  { key: 'cooling', label: 'Cooling' },
   { key: 'intake_manifold', label: 'Intake manifold' },
   { key: 'fuel_system', label: 'Fuel system' },
   { key: 'ignition', label: 'Ignition' },
-  { key: 'camshaft', label: 'Camshaft' },
-  { key: 'valves', label: 'Valves' },
-  { key: 'pistons', label: 'Pistons' },
-  { key: 'cooling', label: 'Cooling' },
+  { key: 'exhaust', label: 'Exhaust' },
   { key: 'exhaust_manifold', label: 'Exhaust manifold' },
-  { key: 'exhaust', label: 'Exhaust' }
+  { key: 'valves', label: 'Valves' },
+  { key: 'camshaft', label: 'Camshaft' },
+  { key: 'pistons', label: 'Pistons' }
 ]
 
-// Front of the car to the back.
+// The game's order, as the garage's Armor carousel lists it.
 export const ARMOR_PARTS = [
   { key: 'front_bumper', label: 'Front bumper' },
-  { key: 'side_protector', label: 'Side protector' },
-  { key: 'window_bars', label: 'Window bars' },
+  { key: 'rear_bumper', label: 'Rear bumper' },
   { key: 'roll_cage', label: 'Roll cage' },
-  { key: 'rear_bumper', label: 'Rear bumper' }
+  { key: 'side_protector', label: 'Side protector' },
+  { key: 'window_bars', label: 'Window bars' }
 ]
 
 const TIER_LABELS = { stock: 'Stock', street: 'Street', sport: 'Sport', race: 'Race' }
