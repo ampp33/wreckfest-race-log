@@ -43,14 +43,8 @@ function titleCase(s) {
   return String(s).replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())
 }
 
-// Armor weight class from the part file name's trailing number
-// (`bumper_front0` = none, `dlc_side_protector03` = 3). Capped at 3, the
-// darkest step of the shorthand's red ramp — real per-part weights aren't
-// known yet, so this is the closest stand-in for "heavier".
-function armorLevel(code) {
-  const m = /(\d+)$/.exec(code || '')
-  return m ? Math.min(3, Number(m[1])) : 0
-}
+// Heaviest a single armor part gets — the darkest end of the red ramp.
+export const MAX_ARMOR_WEIGHT_KG = 150
 
 export function hasParts(parts) {
   return !!parts && typeof parts === 'object' && !Array.isArray(parts) && Object.keys(parts).length > 0
@@ -68,15 +62,17 @@ export function performanceParts(parts) {
   })
 }
 
-// [{ key, label, level: 0-3 | null, name }] — level null when the slot
-// wasn't reported. `name` is the game's display name, which the plugin
-// sends as null when it can't resolve one, so fall back to the file name.
+// [{ key, label, name, weightKg, fill }] — `fill` is the part's weight as a
+// 0–1 share of MAX_ARMOR_WEIGHT_KG, for the red ramp; null when there's no
+// armor in the slot (0 kg) or its weight wasn't reported. A slot the plugin
+// didn't report at all has name '—' and weightKg null.
 export function armorParts(parts) {
   const armor = parts?.armor || {}
   return ARMOR_PARTS.map(({ key, label }) => {
     const a = armor[key]
-    if (!a) return { key, label, level: null, name: '—' }
-    const level = armorLevel(a.code)
-    return { key, label, level, name: a.name || (level === 0 ? 'None' : a.code || '—') }
+    if (!a) return { key, label, name: '—', weightKg: null, fill: null }
+    const weightKg = typeof a.weight_kg === 'number' ? a.weight_kg : null
+    const fill = weightKg > 0 ? weightKg / MAX_ARMOR_WEIGHT_KG : null
+    return { key, label, name: a.name || (weightKg === 0 ? 'None' : '—'), weightKg, fill }
   })
 }

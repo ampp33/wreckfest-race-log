@@ -2,7 +2,7 @@
   <span v-if="!hasParts(parts)" class="text-brand-muted dark:text-brand-muted-dark">—</span>
   <span v-else class="inline-flex align-middle">
     <!-- Shorthand: one square per engine part on the top row (colored by
-         tier), one per armor slot below (red, darker for heavier). Hover
+         tier), one per armor slot below (red, darker the heavier it is). Hover
          previews the full list on a mouse; a click/tap pins it open. -->
     <button
       ref="triggerEl"
@@ -19,7 +19,7 @@
         <i v-for="p in performance" :key="p.key" class="sq" :class="tierClass(p.tier)"></i>
       </span>
       <span class="flex gap-[2px]">
-        <i v-for="a in armor" :key="a.key" class="sq" :class="armorClass(a.level)"></i>
+        <i v-for="a in armor" :key="a.key" class="sq" :class="armorClass(a)" :style="armorStyle(a)"></i>
       </span>
     </button>
 
@@ -29,7 +29,7 @@
         ref="panelEl"
         role="dialog"
         aria-label="Parts"
-        class="parts-palette fixed z-30 w-80 max-w-[calc(100vw-32px)] p-3.5 grid gap-2.5 text-sm text-left bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark border border-brand-border dark:border-brand-border-dark shadow-lg"
+        class="parts-palette fixed z-30 w-80 max-w-[calc(100vw-32px)] max-h-[calc(100vh-16px)] overflow-y-auto p-3.5 grid gap-2.5 text-sm text-left bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark border border-brand-border dark:border-brand-border-dark shadow-lg"
         :style="panelStyle"
         @mouseenter="onHoverStart"
         @mouseleave="onHoverEnd"
@@ -46,13 +46,12 @@
         </div>
 
         <div class="ov text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark pb-1">Armor</div>
-        <div class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 items-center">
+        <div class="grid grid-cols-[1fr_auto_auto_auto] gap-x-2 gap-y-1 items-center">
           <template v-for="a in armor" :key="a.key">
-            <span>{{ a.label }}</span>
-            <span class="inline-flex items-center gap-1.5 text-brand-secondary dark:text-brand-secondary-dark">
-              {{ a.name }}
-              <i class="sq" :class="armorClass(a.level)"></i>
-            </span>
+            <span class="pr-1">{{ a.label }}</span>
+            <span class="text-right text-brand-secondary dark:text-brand-secondary-dark">{{ a.name }}</span>
+            <span class="text-right tabular text-brand-muted dark:text-brand-muted-dark">{{ a.weightKg != null ? `${a.weightKg} kg` : '—' }}</span>
+            <i class="sq" :class="armorClass(a)" :style="armorStyle(a)"></i>
           </template>
         </div>
       </div>
@@ -75,15 +74,22 @@ const performance = computed(() => performanceParts(props.parts))
 const armor = computed(() => armorParts(props.parts))
 const summary = computed(() => {
   const engine = performance.value[0]
-  const armored = armor.value.filter(a => a.level).length
-  return `${engine.tierLabel} engine, ${armored} of ${armor.value.length} armor parts fitted`
+  const fitted = armor.value.filter(a => a.weightKg > 0)
+  const kg = fitted.reduce((sum, a) => sum + a.weightKg, 0)
+  return `${engine.tierLabel} engine, ${fitted.length} of ${armor.value.length} armor parts fitted (${kg} kg)`
 })
 
 function tierClass(tier) {
   return tier ? `t-${tier}` : 'sq-empty'
 }
-function armorClass(level) {
-  return level ? `a-${level}` : 'sq-empty'
+function armorClass(a) {
+  return a.fill == null ? 'sq-empty' : ''
+}
+// Light red at 0 kg through dark red at MAX_ARMOR_WEIGHT_KG, mixed in CSS
+// so the two ends follow the light/dark palette below.
+function armorStyle(a) {
+  if (a.fill == null) return null
+  return { background: `color-mix(in oklab, var(--a-light), var(--a-heavy) ${Math.round(a.fill * 100)}%)` }
 }
 
 const open = ref(false)
@@ -103,9 +109,14 @@ function position() {
   const w = panelEl.value.offsetWidth
   const h = panelEl.value.offsetHeight
   const left = Math.max(16, Math.min(rect.left, window.innerWidth - w - 16))
-  // Below the squares, or above them when there isn't room below.
+  // Below the squares, or above them when there isn't room below — and when
+  // neither fits, pulled up just far enough to stay on screen.
   const below = rect.bottom + 6
-  const top = below + h > window.innerHeight - 8 && rect.top - h - 6 > 8 ? rect.top - h - 6 : below
+  const above = rect.top - h - 6
+  let top = below
+  if (below + h > window.innerHeight - 8) {
+    top = above > 8 ? above : Math.max(8, window.innerHeight - h - 8)
+  }
   panelStyle.value = { top: `${top}px`, left: `${left}px` }
 }
 
@@ -160,8 +171,8 @@ useEventListener(window, 'resize', onReposition)
 
 <style>
 /* Tier colors (stock gray, street green, sport orange, race red, anything
- * else purple) and the armor ramp (light → dark red as the part gets
- * heavier). Unscoped, and set on both the trigger and the teleported popup
+ * else purple) and the two ends of the armor ramp (light red for the
+ * lightest part → dark red at 150 kg). Unscoped, and set on both the trigger and the teleported popup
  * since the popup isn't inside the trigger in the DOM — a scoped
  * `:global(.dark) .x` compiles down to a bare `.dark`, so the dark
  * overrides can't live in the scoped block below. */
@@ -171,9 +182,8 @@ useEventListener(window, 'resize', onReposition)
   --t-sport: #E8821E;
   --t-race: #D42A2A;
   --t-other: #8B4FD8;
-  --a-1: #F3B4B0;
-  --a-2: #DB5C55;
-  --a-3: #8E1B1B;
+  --a-light: #F3B4B0;
+  --a-heavy: #8E1B1B;
   --sq-border: theme('colors.brand.border.DEFAULT');
 }
 .dark .parts-palette {
@@ -183,9 +193,8 @@ useEventListener(window, 'resize', onReposition)
   --t-race: #E5332F;
   --t-other: #A06BEA;
   /* Heavier still reads as "more red" on a dark ground. */
-  --a-1: #6B2A27;
-  --a-2: #B23A33;
-  --a-3: #F0574F;
+  --a-light: #6B2A27;
+  --a-heavy: #F0574F;
   --sq-border: theme('colors.brand.border.dark');
 }
 </style>
@@ -204,9 +213,6 @@ useEventListener(window, 'resize', onReposition)
 .t-sport { background: var(--t-sport); }
 .t-race { background: var(--t-race); }
 .t-other { background: var(--t-other); }
-.a-1 { background: var(--a-1); }
-.a-2 { background: var(--a-2); }
-.a-3 { background: var(--a-3); }
 
 .pill {
   display: inline-block;
