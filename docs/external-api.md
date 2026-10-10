@@ -61,6 +61,7 @@ convention — field names must exactly match the SQL parameter names):
 | `vehicle_weight_kg`  | integer | no       | Vehicle weight in kg at race time. Must be `>= 0`. |
 | `server_name`        | string  | no       | Name of the online server the race was run on, exactly as the game reports it — **including** Wreckfest's color codes (`^` followed by one character, e.g. `^2`, `^:`), so the site can strip them or render the colors. Omit it for offline races. At most 256 characters; an empty string is stored as `null`. |
 | `plugin_version`     | string  | no       | Version of the companion plugin making the call (e.g. `"1.4.0"`). Stored privately with the race so we can track which plugin versions users are running, and trace bad or missing data back to the plugin release that sent it. Plugins should always send it. At most 64 characters; an empty string is stored as `null`. |
+| `parts`              | object  | no       | Engine and armor upgrades on the calling player's car, as a single JSON object — see shape below. Stored verbatim as `jsonb`. The same object may also appear in that player's `results_roster` entry. |
 
 #### `results_roster` entry shape
 
@@ -96,6 +97,19 @@ is simply absent from the stored object.
 
 Example: `{"shifting": "manual", "abs": "half", "traction_control": "off", "stability_control": "half"}`.
 
+#### `parts` shape
+
+Stored as-is. All three keys are optional; anything the plugin couldn't
+resolve is simply absent.
+
+| Key            | Value |
+|----------------|-------|
+| `engine`       | `"street"`, `"sport"` or `"race"`, or the raw engine part name for engines that don't fit that pattern (e.g. `"bigrig"`). |
+| `engine_parts` | Object of engine sub-part → raw preset name, e.g. `{"air_filter": "racing", "pistons": "sport"}`. Sub-parts seen: `air_filter`, `cooling`, `intake_manifold`, `fuel_system`, `ignition`, `exhaust`, `exhaust_manifold`, `valves`, `camshaft`, `pistons`. Presets seen: `"stock"`, `"street"`, `"sport"`, `"racing"`. |
+| `armor`        | Object of armor slot → `{"code": <part file name>, "name": <display name in the game's language, or null>}`. Slots: `front_bumper`, `rear_bumper`, `roll_cage`, `side_protector`, `window_bars`. |
+
+Example: `{"engine": "street", "engine_parts": {"air_filter": "racing", "pistons": "sport"}, "armor": {"front_bumper": {"code": "bumper_front3", "name": "Mesh Guard"}, "side_protector": {"code": "dlc_side_protector03", "name": null}}}`.
+
 The race's timestamp is always set to the server's current time — there
 is no way to submit a backdated race through this endpoint.
 
@@ -129,7 +143,15 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
     },
     "vehicle_weight_kg": 1069,
     "server_name": "^7WWF ^1| ^7Wednesday Wreck Fest ^1| ^7No Rules ^1| ^7Voting ^1",
-    "plugin_version": "1.4.0"
+    "plugin_version": "1.4.0",
+    "parts": {
+      "engine": "street",
+      "engine_parts": { "air_filter": "racing", "pistons": "sport" },
+      "armor": {
+        "front_bumper": { "code": "bumper_front3", "name": "Mesh Guard" },
+        "roll_cage": { "code": "roll_cage2", "name": "Driver Cage" }
+      }
+    }
   }'
 ```
 
@@ -173,6 +195,11 @@ error).
 **`assists` sent as something other than a JSON object:**
 ```json
 { "success": false, "error": "assists must be a JSON object" }
+```
+
+**`parts` sent as something other than a JSON object:**
+```json
+{ "success": false, "error": "parts must be a JSON object" }
 ```
 
 **Negative lap count:**

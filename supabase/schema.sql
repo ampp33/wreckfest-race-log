@@ -102,6 +102,14 @@ alter table wf1.races add column if not exists vehicle_weight_kg integer;
 -- before this existed, or where the companion tool couldn't resolve it.
 alter table wf1.races add column if not exists server_name text;
 
+-- Engine and armor upgrades on the logging player's car, as the companion
+-- plugin reports them, e.g. {"engine": "sport", "engine_parts":
+-- {"air_filter": "racing", ...}, "armor": {"front_bumper": {"code":
+-- "bumper_front3", "name": "Mesh Guard"}, ...}}. Also present in that
+-- player's results_roster entry; kept here so it can be queried directly.
+-- null for races logged before this existed, or where it couldn't be read.
+alter table wf1.races add column if not exists parts jsonb;
+
 -- Where the race was logged from: the web UI, or the external API (see
 -- races_private.api_key_id further down for which key).
 alter table wf1.races add column if not exists source text not null default 'web';
@@ -987,6 +995,11 @@ drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer, text
 );
+-- Drop the pre-parts version (20 params).
+drop function if exists wf1.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer, text, text
+);
 
 create or replace function wf1.insert_race_with_api_key_wf1(
     api_key            text,
@@ -1008,7 +1021,8 @@ create or replace function wf1.insert_race_with_api_key_wf1(
     assists            jsonb default null,
     vehicle_weight_kg  integer default null,
     server_name        text default null,
-    plugin_version     text default null
+    plugin_version     text default null,
+    parts              jsonb default null
 )
 returns json
 language plpgsql
@@ -1059,6 +1073,10 @@ begin
 
     if assists is not null and jsonb_typeof(assists) <> 'object' then
         return json_build_object('success', false, 'error', 'assists must be a JSON object');
+    end if;
+
+    if parts is not null and jsonb_typeof(parts) <> 'object' then
+        return json_build_object('success', false, 'error', 'parts must be a JSON object');
     end if;
 
     if lap_count is not null and lap_count < 0 then
@@ -1124,12 +1142,12 @@ begin
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
         performance_index, tuning, lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, server_name, source
+        assists, vehicle_weight_kg, server_name, parts, source
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
         performance_index, v_tuning, v_lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, nullif(server_name, ''), 'api'
+        assists, vehicle_weight_kg, nullif(server_name, ''), parts, 'api'
     )
     returning id into v_race_id;
 

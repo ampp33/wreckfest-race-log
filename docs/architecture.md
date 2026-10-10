@@ -203,6 +203,7 @@ you can always read your own; only the owner can write):
   `vehicle_weight_kg`, `place`, `lap_time_ms`, `total_time_ms`, `performance_index`,
   `pi_class` (generated A/B/C/D from the PI), `lap_count`, `lap_times_ms` (jsonb),
   `results_roster` (jsonb), `server_name` (raw, with color codes; null offline),
+  `parts` (jsonb — the logging player's engine/armor upgrades),
   `source` (`'web'` or `'api'`). **Every column here is public** — anything
   owner-only goes in `races_private`. Because of that, a query on `races` is
   not scoped to the current user unless it filters on `user_id` itself.
