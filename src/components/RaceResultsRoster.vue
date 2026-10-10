@@ -8,6 +8,7 @@
           <th class="py-2 pr-3 text-left font-medium">Car</th>
           <th class="py-2 pr-3 text-left font-medium">Class</th>
           <th v-if="hasTuning" class="py-2 pr-3 text-left font-medium">Tuning</th>
+          <th v-if="hasParts" class="w-px py-2 pr-3 text-left font-medium whitespace-nowrap">Parts</th>
           <th class="py-2 pr-3 text-right font-medium">Best lap</th>
           <th class="py-2 pr-3 text-right font-medium">Total</th>
           <th class="py-2 pr-3 text-right font-medium">Laps</th>
@@ -30,6 +31,7 @@
             <span v-else class="text-brand-muted dark:text-brand-muted-dark">—</span>
           </td>
           <td v-if="hasTuning" class="py-1.5 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTuning(row.tuning) }}</td>
+          <td v-if="hasParts" class="w-px py-1.5 pr-3 whitespace-nowrap"><PartsBadge :parts="row.parts" /></td>
           <td
             class="py-1.5 pr-3 text-right tabular"
             :class="isFastestLap(row) ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
@@ -47,13 +49,15 @@
 <script>
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { classLetterColor } from '../utils/piInfo.js'
+import PartsBadge from './PartsBadge.vue'
 
 export default {
   name: 'RaceResultsRoster',
+  components: { PartsBadge },
   props: {
     // JSON array stored on the race, see README / docs/external-api.md for
     // the entry shape (position, name, car, class, best_lap_ms,
-    // total_time_ms, dnf, laps_completed, and optionally tuning).
+    // total_time_ms, dnf, laps_completed, and optionally tuning and parts).
     roster: { type: Array, default: () => [] }
   },
   computed: {
@@ -62,6 +66,9 @@ export default {
     },
     hasTuning() {
       return this.rows.some(r => r && 'tuning' in r)
+    },
+    hasParts() {
+      return this.rows.some(r => r && 'parts' in r)
     },
     fastestLapMs() {
       const times = this.rows

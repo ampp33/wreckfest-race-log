@@ -299,6 +299,7 @@
                     <SortCaret :direction="sort.directionFor('assists')" />
                   </button>
                 </th>
+                <th v-if="isShown('parts')" class="w-px py-2 pr-3 text-center whitespace-nowrap">Parts</th>
                 <th v-if="isShown('place')" class="py-2 pr-3 text-center">
                   <span class="inline-flex items-center justify-center gap-1">
                     <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('place', 'Place')" :aria-label="sort.titleFor('place', 'Place')" @click="sort.toggle('place')">
@@ -460,6 +461,7 @@ const TABLE_COLUMNS = [
   { key: 'weight', label: 'Weight' },
   { key: 'tune', label: 'Tune' },
   { key: 'assists', label: 'Assists' },
+  { key: 'parts', label: 'Parts' },
   { key: 'place', label: 'Place' },
   { key: 'laps', label: 'Laps' },
   { key: 'lap', label: 'Lap time' },
@@ -492,9 +494,10 @@ function isShown(key) {
 }
 const sort = createSortState()
 // Feeds the mobile filter drawer's SortMenu — only currently-visible,
-// sortable columns (Notes isn't sortable, and a hidden column shouldn't be
-// pickable either).
-const sortableColumns = computed(() => availableColumns.value.filter(c => c.key !== 'notes' && columnVisibility.isVisible(c.key)))
+// sortable columns (Notes and Parts aren't sortable, and a hidden column
+// shouldn't be pickable either).
+const UNSORTABLE_COLUMNS = ['notes', 'parts']
+const sortableColumns = computed(() => availableColumns.value.filter(c => !UNSORTABLE_COLUMNS.includes(c.key) && columnVisibility.isVisible(c.key)))
 
 const loading = ref(true)
 const track = ref(null)
@@ -576,7 +579,7 @@ function driverKey(race) {
   return race.user_id
 }
 
-// One value-getter per sortable column (everything but Notes/Actions), fed
+// One value-getter per sortable column (everything but Notes/Parts/Actions), fed
 // to sortRows() — each returns either a number (or a date's timestamp) or a
 // display string, so sortRows can compare by the right datatype instead of
 // always doing a string compare.

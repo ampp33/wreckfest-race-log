@@ -41,6 +41,10 @@
               <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
               <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
             </div>
+            <div v-if="isColVisible('parts')">
+              <div class="ov text-brand-accent dark:text-brand-accent-dark">Parts</div>
+              <div><PartsBadge :parts="race.parts" /></div>
+            </div>
             <div v-if="isColVisible('place')">
               <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
               <div>{{ race.place || '—' }}</div>
@@ -139,6 +143,9 @@
       <td v-if="isColVisible('weight')" class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
       <td v-if="isColVisible('tune')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
       <td v-if="isColVisible('assists')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
+      <td v-if="isColVisible('parts')" class="w-px py-2 pr-3 text-center whitespace-nowrap">
+        <PartsBadge :parts="race.parts" />
+      </td>
       <td v-if="isColVisible('place')" class="py-2 pr-3 text-center tabular">{{ race.place || '—' }}</td>
       <td v-if="isColVisible('laps')" class="py-2 pr-3 text-center tabular text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</td>
       <td
@@ -206,6 +213,7 @@ import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import OnlineRaceIcon from './OnlineRaceIcon.vue'
+import PartsBadge from './PartsBadge.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import apiIcon from '../assets/icons/api.svg?raw'
@@ -218,7 +226,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon },
+  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
