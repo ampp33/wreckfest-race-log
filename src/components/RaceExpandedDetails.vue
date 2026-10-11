@@ -4,7 +4,7 @@
     <div class="mt-2 text-sm leading-relaxed whitespace-pre-wrap break-words text-brand-text dark:text-brand-text-dark">{{ notes || notesFallback }}</div>
   </template>
 
-  <div v-if="divider && (serverName || hasLapTimes || hasRoster)" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
+  <div v-if="divider && showNotesSection && (serverName || hasLapTimes || hasRoster)" class="mt-3 border-t border-brand-border dark:border-brand-border-dark"></div>
 
   <template v-if="serverName">
     <div :class="['mt-3', headingClass]">Server</div>
