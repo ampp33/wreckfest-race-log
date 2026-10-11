@@ -106,9 +106,9 @@ resolve is simply absent.
 |----------------|-------|
 | `engine`       | `"street"`, `"sport"` or `"race"`, or the raw engine part name for engines that don't fit that pattern (e.g. `"bigrig"`). |
 | `engine_parts` | Object of engine sub-part → raw preset name, e.g. `{"air_filter": "racing", "pistons": "sport"}`. Sub-parts seen: `air_filter`, `cooling`, `intake_manifold`, `fuel_system`, `ignition`, `exhaust`, `exhaust_manifold`, `valves`, `camshaft`, `pistons`. Presets seen: `"stock"`, `"street"`, `"sport"`, `"racing"`. |
-| `armor`        | Object of armor slot → `{"name": <display name in the game's language, or null>, "weight_kg": <weight the part adds, 0–150>}`. An empty slot is `{"name": "None", "weight_kg": 0}`. Slots: `front_bumper`, `rear_bumper`, `roll_cage`, `side_protector`, `window_bars`. |
+| `armor`        | Object of armor slot → `{"name": <display name in the game's language, or null>, "weight_kg": <integer kg the part adds to the car — 0 for "None" parts — or null>}`. Slots: `front_bumper`, `rear_bumper`, `roll_cage`, `side_protector`, `window_bars`. |
 
-Example: `{"engine": "street", "engine_parts": {"air_filter": "racing", "pistons": "sport"}, "armor": {"front_bumper": {"name": "Mesh Guard", "weight_kg": 45}, "window_bars": {"name": "Avenger Bars", "weight_kg": 50}}}`.
+Example: `{"engine": "street", "engine_parts": {"air_filter": "racing", "pistons": "sport"}, "armor": {"front_bumper": {"name": "Mesh Guard", "weight_kg": 20}, "side_protector": {"name": "Combat Bars", "weight_kg": 120}}}`.
 
 The race's timestamp is always set to the server's current time — there
 is no way to submit a backdated race through this endpoint.
@@ -148,8 +148,8 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
       "engine": "street",
       "engine_parts": { "air_filter": "racing", "pistons": "sport" },
       "armor": {
-        "front_bumper": { "name": "Mesh Guard", "weight_kg": 45 },
-        "roll_cage": { "name": "Driver Cage", "weight_kg": 80 }
+        "front_bumper": { "name": "Mesh Guard", "weight_kg": 20 },
+        "roll_cage": { "name": "Driver Cage", "weight_kg": 30 }
       }
     }
   }'

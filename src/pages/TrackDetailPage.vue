@@ -483,7 +483,7 @@ const availableColumns = computed(() => TABLE_COLUMNS.filter(c => (
 const columnOptions = computed(() => availableColumns.value.map(c => ({ value: c.key, label: c.label })))
 // Shown only on a first-ever visit, before the column picker has written
 // anything to localStorage — after that, whatever the user has chosen wins.
-const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists']
+const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists', 'parts']
 const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
 const visibleColumnKeys = computed(() => availableColumns.value.map(c => c.key).filter(columnVisibility.isVisible))
 // Whether a column's header renders — must agree with what RaceRow renders

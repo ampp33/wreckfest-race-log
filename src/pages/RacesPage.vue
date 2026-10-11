@@ -534,7 +534,7 @@ const TABLE_COLUMNS = [
 const COMMUNITY_TABLE_COLUMNS = [TABLE_COLUMNS[0], { key: 'driver', label: 'Driver' }, ...TABLE_COLUMNS.slice(1)]
 // Shown only on a first-ever visit, before the column picker has written
 // anything to localStorage — after that, whatever the user has chosen wins.
-const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'assists']
+const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'assists', 'parts']
 
 function trackVariationKey(race) { return race.trackSlug && race.variationSlug ? race.track_variation_id : UNRESOLVED_VARIATION }
 function trackVariationLabel(race) { return race.trackSlug && race.variationSlug ? `${race.trackName} — ${race.variationName}` : '—' }
