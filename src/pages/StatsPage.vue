@@ -4,7 +4,7 @@
       Stats
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">
-      Aggregated from all of {{ isOwnView ? 'your' : 'their' }} saved races.
+      Aggregated from all of {{ isOwnView ? 'your' : 'their' }} saved {{ prefs.piClass ? `class ${prefs.piClass} ` : '' }}races.
     </p>
 
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
@@ -97,6 +97,7 @@ import { getStats } from '../services/statsService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import { authStore } from '../stores/authStore.js'
+import { prefsStore } from '../stores/prefsStore.js'
 import RaceActivityChart from '../components/RaceActivityChart.vue'
 import StatsSummaryTiles from '../components/StatsSummaryTiles.vue'
 import BiggestImprovementsList from '../components/BiggestImprovementsList.vue'
@@ -107,6 +108,7 @@ export default {
   components: { DriverScope, RaceActivityChart, StatsSummaryTiles, BiggestImprovementsList },
   data() {
     return {
+      prefs: prefsStore,
       loading: true,
       stats: {
         mostUsedVehicle: null,
@@ -134,6 +136,10 @@ export default {
   watch: {
     userId() {
       if (this.$route.name === 'driver-stats') this.load()
+    },
+    // The nav's car-class filter.
+    'prefs.piClass'() {
+      if (this.$route.name === 'driver-stats') this.load()
     }
   },
   mounted() {
@@ -142,12 +148,15 @@ export default {
   methods: {
     async load() {
       this.loading = true
+      // Switching driver or class mid-load starts another; only the newest lands.
+      const token = (this.loadToken = (this.loadToken || 0) + 1)
       try {
-        this.stats = await getStats(this.userId, { includeGoals: this.isOwnView })
+        const stats = await getStats(this.userId, { includeGoals: this.isOwnView, piClass: this.prefs.piClass })
+        if (token === this.loadToken) this.stats = stats
       } catch (err) {
-        pushToast(err.message || 'Failed to load stats', 'error')
+        if (token === this.loadToken) pushToast(err.message || 'Failed to load stats', 'error')
       } finally {
-        this.loading = false
+        if (token === this.loadToken) this.loading = false
       }
     },
     format(ms) {

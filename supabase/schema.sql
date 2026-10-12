@@ -1289,9 +1289,11 @@ grant execute on function wf1.get_total_race_count to anon, authenticated;
 -- plugin (source = 'api') count, so hand-entered web races stay off the boards.
 -- =====================================================================
 
--- The drivers with the most races logged, most first.
+-- The drivers with the most races logged, most first — across every PI
+-- class, or just one ('A'..'D', see races.pi_class).
 drop function if exists wf1.get_most_races_leaderboard(integer);
-create or replace function wf1.get_most_races_leaderboard(p_limit integer default 25)
+drop function if exists wf1.get_most_races_leaderboard(integer, text);
+create or replace function wf1.get_most_races_leaderboard(p_limit integer default 25, p_pi_class text default null)
 returns table(
     user_id      uuid,
     display_name text,
@@ -1304,6 +1306,7 @@ as $$
     from wf1.races r
     left join wf1.profiles p on p.user_id = r.user_id
     where r.source = 'api'
+      and (p_pi_class is null or r.pi_class = p_pi_class)
     group by r.user_id, p.display_name
     order by race_count desc, p.display_name
     limit least(greatest(coalesce(p_limit, 25), 1), 100)

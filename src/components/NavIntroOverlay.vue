@@ -2,8 +2,8 @@
   <!-- One-time introduction to the scope nav, shown the first time a signed-in
        user lands on a page with the NavBar. Everything is washed in the accent
        colour except the nav's scope controls (`data-nav-intro` in NavBar.vue —
-       the scope icon and its views from 1200px, the scope icon and menu button
-       below that), which a white arrow points at. Dismissing it is remembered
+       the scope and class icons and the views from 1200px, the scope and class
+       icons and menu button below that), which a white arrow points at. Dismissing it is remembered
        per user, in this browser. -->
   <div
     v-if="open && spot"
@@ -57,7 +57,7 @@
             </p>
             <p class="font-body text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-4">
               You can look at anyone's log, not just yours.
-              <b class="text-white">{{ isDesktop ? 'The icon' : 'Tap the icon' }}</b> up there picks <b class="text-white">whose races</b> you're looking at:
+              <b class="text-white">{{ isDesktop ? 'The first icon' : 'Tap the first icon' }}</b> up there picks <b class="text-white">whose races</b> you're looking at:
             </p>
             <ul class="mt-3 space-y-1.5 font-body text-[15px]">
               <li v-for="item in legend" :key="item.kind" class="flex items-center gap-3">
@@ -75,6 +75,11 @@
                 <b class="text-white">The menu button lists the views</b> of those races — Leaderboard, Tracks, Races, Stats.
               </template>
               Switch the scope and you stay on the same view, but the data will change.
+            </p>
+            <p class="font-body text-[15px] sm:text-[16px] leading-relaxed text-white/90 mt-4">
+              <span class="inline-flex align-[-5px] mr-1 w-6 h-6 items-center justify-center bg-white"><ClassIcon icon-class="w-3.5 h-3.5" /></span>
+              <b class="text-white">{{ isDesktop ? 'The icon next to it' : 'Tap the icon next to it' }}</b> to pick a <b class="text-white">car class</b> — All, D, C, B or A.
+              It narrows every page — leaderboards, tracks, races and stats — to that class, whoever's races you're looking at, and stays picked until you change it.
             </p>
             <p class="font-body text-[14px] leading-relaxed text-white/80 mt-4">
               Rather keep your races to yourself?
@@ -110,6 +115,7 @@
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import ScopeIcon from './ScopeIcon.vue'
+import ClassIcon from './ClassIcon.vue'
 import AppShot from './AppShot.vue'
 
 const STORAGE_PREFIX = 'wreckfest:navIntroSeen:'
@@ -136,7 +142,7 @@ function markSeen(userId) {
 
 export default {
   name: 'NavIntroOverlay',
-  components: { ScopeIcon, AppShot },
+  components: { ScopeIcon, ClassIcon, AppShot },
   data() {
     return {
       auth: authStore,
@@ -174,10 +180,12 @@ export default {
       return this.isDesktop
         ? [
             { name: 'nav-scope-menu', alt: "The nav's scope menu open: Everyone, You, recently viewed drivers and Find a driver", caption: "Click the icon to choose: everyone, you, a driver you've looked at lately, or find one by name." },
-            { name: 'nav-viewing-driver', alt: "The nav while viewing another driver's tracks", caption: "Viewing someone else: their initial takes the icon's place, and the line above the title says whose log it is." }
+            { name: 'nav-class-menu', alt: "The nav's car class menu open: All classes, then classes D, C, B and A with their PI ranges", caption: 'Click the icon beside it to narrow every page to one car class.' },
+            { name: 'nav-viewing-driver', alt: "The nav while viewing another driver's races in class C", caption: "Viewing someone else: their initial takes the icon's place, and the line above the title says whose log it is, and in which class." }
           ]
         : [
-            { name: 'nav-scope-menu-mobile', alt: 'The scope menu open on a phone', caption: 'Tap the icon to choose whose races.' },
+            { name: 'nav-scope-menu-mobile', alt: 'The scope menu open on a phone', caption: 'Tap the first icon to choose whose races.' },
+            { name: 'nav-class-menu-mobile', alt: 'The car class menu open on a phone', caption: 'Tap the next one for a car class.' },
             { name: 'nav-views-menu-mobile', alt: "The menu open on a phone, listing Everyone's views", caption: 'Tap the menu for their views.' }
           ]
     }

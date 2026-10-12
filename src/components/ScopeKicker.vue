@@ -1,7 +1,8 @@
 <template>
   <!-- The line above a page's title naming whose races it shows —
-       "Everyone", "Your log · Ampp33", "Viewing Thainnn" — so the nav's
-       scope icon is never the only clue. -->
+       "Everyone", "Your log · Ampp33", "Viewing Thainnn" — and, while the
+       nav's class filter is on, which class, so the nav's icons
+       are never the only clue. -->
   <div
     v-if="scope"
     class="ov flex items-center gap-2 mb-3"
@@ -13,6 +14,10 @@
     ><ScopeIcon kind="driver" :name="driverName" /></span>
     <ScopeIcon v-else :kind="scope.kind" icon-class="w-3.5 h-3.5" />
     <span>{{ label }}</span>
+    <template v-if="piClass">
+      <span aria-hidden="true">·</span>
+      <span class="font-semibold" :style="{ color: classColor }">Class {{ piClass }}</span>
+    </template>
   </div>
 </template>
 
@@ -20,7 +25,9 @@
 import ScopeIcon from './ScopeIcon.vue'
 import { authStore } from '../stores/authStore.js'
 import { getProfile } from '../services/profileService.js'
+import { prefsStore } from '../stores/prefsStore.js'
 import { scopeOfRoute } from '../utils/scope.js'
+import { classLetterColor } from '../utils/piInfo.js'
 
 export default {
   name: 'ScopeKicker',
@@ -28,12 +35,19 @@ export default {
   data() {
     return {
       auth: authStore,
+      prefs: prefsStore,
       driverName: ''
     }
   },
   computed: {
     scope() {
       return scopeOfRoute(this.$route, this.auth.user?.id)
+    },
+    piClass() {
+      return this.prefs.piClass
+    },
+    classColor() {
+      return classLetterColor(this.piClass)
     },
     label() {
       if (!this.scope) return ''

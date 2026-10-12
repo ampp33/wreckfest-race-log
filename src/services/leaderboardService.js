@@ -4,9 +4,10 @@ import { supabase } from './supabase.js'
 // supabase/schema.sql. Both run as the caller, so drivers who opted out of
 // public visibility are left out (except, for you, yourself).
 
-// [{ user_id, display_name, race_count }], most races first.
-export async function getMostRacesLeaderboard(limit = 25) {
-  const { data, error } = await supabase.rpc('get_most_races_leaderboard', { p_limit: limit })
+// [{ user_id, display_name, race_count }], most races first — across every
+// class, or just one ('A'..'D').
+export async function getMostRacesLeaderboard(limit = 25, piClass = null) {
+  const { data, error } = await supabase.rpc('get_most_races_leaderboard', { p_limit: limit, p_pi_class: piClass })
   if (error) throw error
   return (data ?? []).map(row => ({ ...row, race_count: Number(row.race_count) }))
 }

@@ -228,9 +228,9 @@
             @delete="onDeleteRace"
           />
           <p v-if="!races.length" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-            <template v-if="isOwnView">No races yet — click <span class="font-semibold">+ Add Race</span> to log one.</template>
-            <template v-else-if="isCommunity">No one has logged a race here yet.</template>
-            <template v-else>No races logged here yet.</template>
+            <template v-if="isOwnView">No races{{ classSuffix }} yet — click <span class="font-semibold">+ Add Race</span> to log one.</template>
+            <template v-else-if="isCommunity">No one has logged a race{{ classSuffix }} here yet.</template>
+            <template v-else>No races logged{{ classSuffix }} here yet.</template>
           </p>
           <p v-else-if="!filteredRaces.length" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
             No races match the current filter.
@@ -353,9 +353,9 @@
               />
               <tr v-if="!races.length">
                 <td :colspan="visibleColumnKeys.length + 1" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-                  <template v-if="isOwnView">No races yet — click <span class="font-semibold">+ Add Race</span> to log one.</template>
-                  <template v-else-if="isCommunity">No one has logged a race here yet.</template>
-                  <template v-else>No races logged here yet.</template>
+                  <template v-if="isOwnView">No races{{ classSuffix }} yet — click <span class="font-semibold">+ Add Race</span> to log one.</template>
+                  <template v-else-if="isCommunity">No one has logged a race{{ classSuffix }} here yet.</template>
+                  <template v-else>No races logged{{ classSuffix }} here yet.</template>
                 </td>
               </tr>
               <tr v-else-if="!filteredRaces.length">
@@ -424,6 +424,7 @@ import { getAnnotationsForVariation, saveAnnotations } from '../services/annotat
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { authStore } from '../stores/authStore.js'
+import { prefsStore } from '../stores/prefsStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import editIcon from '../assets/icons/edit.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
@@ -452,6 +453,9 @@ const isOwnView = computed(() => !!userId.value && authStore.user?.id === userId
 const isCommunity = computed(() => route.meta.scope === 'community')
 // Where variation/back links point: this driver's pages, or the community ones.
 const basePath = computed(() => isCommunity.value ? '/community' : `/${userId.value}`)
+// The nav's car-class filter narrows every race shown here; " in class C"
+// for the empty states while it's on.
+const classSuffix = computed(() => prefsStore.piClass ? ` in class ${prefsStore.piClass}` : '')
 
 const TABLE_COLUMNS = [
   { key: 'when', label: 'Date' },
@@ -652,22 +656,32 @@ function resetColumnFilters() {
   columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [] }
 }
 
+// Switching variation or class mid-load starts another load; only the newest
+// one lands (and an older page from loadMoreRaces() is dropped).
+let loadToken = 0
 async function loadRaces() {
+  const token = ++loadToken
+  const piClass = prefsStore.piClass
   if (isCommunity.value) {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id })
+    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass })
+    if (token !== loadToken) return
     races.value = page
     fetchedCount = page.length
     hasMore.value = page.length === COMMUNITY_PAGE_SIZE
     return
   }
-  races.value = await getRacesByVariation(currentVariation.value.id, userId.value)
+  const rows = await getRacesByVariation(currentVariation.value.id, userId.value, { piClass })
+  if (token !== loadToken) return
+  races.value = rows
   hasMore.value = false
 }
 // Same offset paging (and overlap de-dupe) as RacesPage's loadMore().
 async function loadMoreRaces() {
   loadingMore.value = true
+  const token = loadToken
   try {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id, offset: fetchedCount })
+    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass: prefsStore.piClass, offset: fetchedCount })
+    if (token !== loadToken) return
     const seen = new Set(races.value.map(r => r.id))
     races.value = races.value.concat(page.filter(r => !seen.has(r.id)))
     fetchedCount += page.length
@@ -819,6 +833,11 @@ async function onSaveGoal() {
 }
 
 watch(() => route.params, loadAll)
+watch(() => prefsStore.piClass, () => {
+  if (!currentVariation.value) return
+  resetColumnFilters()
+  loadRaces().catch(err => pushToast(err.message || 'Failed to load races', 'error'))
+})
 watch(() => quickAddStore.open, (isOpen) => {
   if (!isOpen && quickAddOpenedHere) {
     quickAddOpenedHere = false

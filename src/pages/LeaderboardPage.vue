@@ -18,7 +18,9 @@
         <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-4">
           Most <em class="signal">races</em>
         </h2>
-        <p v-if="!mostRaces.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged yet.</p>
+        <p v-if="mostRacesFailed[classKey]" class="text-sm text-brand-accent dark:text-brand-accent-dark">Couldn't load this board — change the class and back to retry.</p>
+        <p v-else-if="!(classKey in mostRacesByClass)" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
+        <p v-else-if="!mostRaces.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">No races logged{{ piClass ? ` in class ${piClass}` : '' }} yet.</p>
         <table v-else class="w-full text-sm">
           <thead>
             <tr class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
@@ -55,8 +57,8 @@
         <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4">
           The quickest lap logged on every track and variation{{ filterSuffix }}.
         </p>
+        <!-- The car class comes from the nav's class filter. -->
         <div class="flex flex-wrap items-center gap-4 mb-5">
-          <PiClassSlider v-model="piClass" label="Car class" />
           <!-- The native arrow hugs the right border, so it's swapped for the
                nav's chevron with room around it. -->
           <div class="relative">
@@ -173,7 +175,6 @@
 
 <script>
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
-import PiClassSlider from '../components/PiClassSlider.vue'
 import ScopeKicker from '../components/ScopeKicker.vue'
 import { getMostRacesLeaderboard, getFastestLaps } from '../services/leaderboardService.js'
 import { getVehicles } from '../services/vehicleService.js'
@@ -181,20 +182,22 @@ import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDate } from '../utils/dateFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
+import { prefsStore } from '../stores/prefsStore.js'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
-  components: { PerformanceIndexBadge, PiClassSlider, ScopeKicker },
+  components: { PerformanceIndexBadge, ScopeKicker },
   data() {
     return {
       loading: true,
       error: null,
-      mostRaces: [],
-      // Fastest laps per filter combination (class slider stop × vehicle),
+      // Most races per car class, fetched the first time each is picked.
+      mostRacesByClass: {},
+      mostRacesFailed: {},
+      prefs: prefsStore,
+      // Fastest laps per filter combination (the nav's car class × vehicle),
       // fetched the first time each is picked and kept, so going back is instant.
-      // C is where most racing happens, so it's the starting class.
-      piClass: 'C',
       vehicleId: null,
       vehicles: [],
       lapsByFilter: {},
@@ -203,8 +206,18 @@ export default {
     }
   },
   computed: {
+    // The nav's car-class filter: 'A'..'D', or null for every class.
+    piClass() {
+      return this.prefs.piClass
+    },
+    classKey() {
+      return this.piClass || 'all'
+    },
+    mostRaces() {
+      return this.mostRacesByClass[this.classKey] || []
+    },
     lapsKey() {
-      return `${this.piClass}|${this.vehicleId || 'all'}`
+      return `${this.piClass || 'all'}|${this.vehicleId || 'all'}`
     },
     fastestLaps() {
       return this.lapsByFilter[this.lapsKey] || []
@@ -214,10 +227,11 @@ export default {
     lapsLoading() {
       return !(this.lapsKey in this.lapsByFilter) && !this.lapsFailed[this.lapsKey]
     },
-    // " in class C", plus " in the Nexus RX" when a vehicle is picked.
+    // " in class C" when a class is picked, plus " in the Nexus RX" when a
+    // vehicle is.
     filterSuffix() {
       const vehicle = this.vehicles.find(v => v.id === this.vehicleId)
-      return ` in class ${this.piClass}` + (vehicle ? ` in the ${vehicle.name}` : '')
+      return (this.piClass ? ` in class ${this.piClass}` : '') + (vehicle ? ` in the ${vehicle.name}` : '')
     },
     topRaceCount() {
       return this.mostRaces[0]?.race_count || 1
@@ -225,15 +239,15 @@ export default {
   },
   async mounted() {
     // Captured up front: the filters may change while this loads.
-    const { lapsKey, piClass, vehicleId } = this
+    const { classKey, lapsKey, piClass, vehicleId } = this
     try {
       const [mostRaces, fastestLaps] = await Promise.all([
-        getMostRacesLeaderboard(25),
+        getMostRacesLeaderboard(25, piClass),
         getFastestLaps(piClass, vehicleId),
         // The dropdown is a nice-to-have; without it the boards still work.
         getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {})
       ])
-      this.mostRaces = mostRaces
+      this.mostRacesByClass = { ...this.mostRacesByClass, [classKey]: mostRaces }
       this.lapsByFilter = { ...this.lapsByFilter, [lapsKey]: fastestLaps }
     } catch (err) {
       this.error = err.message || 'Failed to load leaderboards'
@@ -242,6 +256,17 @@ export default {
     }
   },
   watch: {
+    async classKey(key) {
+      if (key in this.mostRacesByClass) return
+      this.mostRacesFailed = { ...this.mostRacesFailed, [key]: false }
+      try {
+        const rows = await getMostRacesLeaderboard(25, this.piClass)
+        this.mostRacesByClass = { ...this.mostRacesByClass, [key]: rows }
+      } catch (err) {
+        this.mostRacesFailed = { ...this.mostRacesFailed, [key]: true }
+        pushToast(err.message || 'Failed to load most races', 'error')
+      }
+    },
     async lapsKey(key) {
       if (key in this.lapsByFilter) return
       this.lapsFailed = { ...this.lapsFailed, [key]: false }

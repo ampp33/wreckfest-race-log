@@ -11,7 +11,8 @@
             Press <b class="text-brand-text dark:text-brand-text-dark">T</b> to search from anywhere.
           </template>
           <template v-else-if="isCommunity">
-            Every track in the game. Pick one to see everyone's races and the best laps there.
+            Every track in the game. Pick one to see everyone's races and the best laps there —
+            only races logged by the <router-link to="/plugin" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Telemetry plugin</router-link> count.
           </template>
           <template v-else>
             Every track in the game. Pick one to see their races and lap times there.

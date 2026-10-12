@@ -11,9 +11,11 @@ import { placementRate } from '../utils/raceStats.js'
 // Goals are private and RLS-scoped to the signed-in user, so they're only
 // loaded for your own stats — on another driver's page they'd be *your*
 // goals measured against *their* laps.
-export async function getStats(userId, { includeGoals = false } = {}) {
+//
+// `piClass` ('A'..'D') narrows every stat to races in that car class.
+export async function getStats(userId, { includeGoals = false, piClass = null } = {}) {
   const [races, vehicles, tracks, goals] = await Promise.all([
-    getAllRaces({ userId }),
+    getAllRaces({ userId, piClass }),
     getVehicles(),
     getTracks(),
     includeGoals ? getAllGoals() : []

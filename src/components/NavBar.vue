@@ -5,42 +5,68 @@
          controls on the right. Below that there isn't room, so it switches
          to the phone layout — scope icon and hamburger, views in the menu. -->
     <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-6">
-      <!-- A size smaller on phones, where it shares the row with two buttons. -->
-      <router-link :to="homePath" class="flex items-baseline gap-2 sm:gap-2.5 min-w-0">
+      <!-- A size smaller on phones, where it shares the row with up to three
+           buttons — too many for "RACE LOG" to fit beside the wordmark, so
+           it tucks underneath instead. -->
+      <router-link :to="homePath" class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2.5 min-w-0">
         <span class="font-display font-black tracking-tightest leading-none text-[21px] sm:text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
-        <span class="ov-lg whitespace-nowrap text-[12px] sm:text-[16px] text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
+        <span class="ov-lg max-sm:leading-none whitespace-nowrap text-[12px] sm:text-[16px] text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
       </router-link>
 
-      <!-- Desktop: whose races (the scope icon) and which view of them. On
-           pages outside any scope — News, admin — it keeps the last scope
-           you were in, with no view lit. `data-nav-intro` (here and on the
-           mobile pair below) is what NavIntroOverlay spotlights. -->
+      <!-- Desktop: whose races (the scope icon), which car class, and which
+           view of them. On pages outside any scope —
+           News, admin — it keeps the last scope you were in, with no view lit.
+           `data-nav-intro` (here and on the mobile group below) is what
+           NavIntroOverlay spotlights. -->
       <div data-nav-intro class="hidden min-[1200px]:flex items-center gap-6 shrink-0">
-        <div ref="scopePicker" class="relative">
-          <button
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
-            :class="scopeButtonClass(desktopScopeOpen)"
-            :aria-expanded="desktopScopeOpen"
-            aria-haspopup="true"
-            :aria-label="`Whose races: ${scopeKickerLabel}`"
-            :title="scopeKickerLabel"
-            @click="desktopScopeOpen = !desktopScopeOpen"
-          >
-            <ScopeIcon :kind="scope.kind" :name="scopeName" />
-          </button>
-          <div
-            v-if="desktopScopeOpen"
-            class="absolute left-0 top-full mt-2 z-50 w-80 bg-brand-slab dark:bg-brand-surface-dark dark:border dark:border-brand-border-dark px-4 pb-4 shadow-[0_18px_40px_rgba(10,10,10,0.3)]"
-          >
-            <ScopeMenu
-              variant="dark"
-              :current="scope"
-              :my-id="myId"
-              :my-name="myName"
-              :recent="recentDrivers"
-              @pick="pickScope"
-            />
+        <div class="flex items-center gap-2">
+          <div ref="scopePicker" class="relative">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+              :class="scopeButtonClass(desktopScopeOpen)"
+              :aria-expanded="desktopScopeOpen"
+              aria-haspopup="true"
+              :aria-label="`Whose races: ${scopeKickerLabel}`"
+              :title="scopeKickerLabel"
+              @click="desktopScopeOpen = !desktopScopeOpen"
+            >
+              <ScopeIcon :kind="scope.kind" :name="scopeName" />
+            </button>
+            <div
+              v-if="desktopScopeOpen"
+              class="absolute left-0 top-full mt-2 z-50 w-80 bg-brand-slab dark:bg-brand-surface-dark dark:border dark:border-brand-border-dark px-4 pb-4 shadow-[0_18px_40px_rgba(10,10,10,0.3)]"
+            >
+              <ScopeMenu
+                variant="dark"
+                :current="scope"
+                :my-id="myId"
+                :my-name="myName"
+                :recent="recentDrivers"
+                @pick="pickScope"
+              />
+            </div>
+          </div>
+          <div ref="classPicker" class="relative">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+              :class="classButtonClass(desktopClassOpen)"
+              :style="classButtonStyle(desktopClassOpen)"
+              :aria-expanded="desktopClassOpen"
+              aria-haspopup="true"
+              :aria-label="`Car class: ${classLabel}`"
+              :title="classLabel"
+              @click="desktopClassOpen = !desktopClassOpen"
+            >
+              <ClassIcon :cls="prefs.piClass" />
+            </button>
+            <div
+              v-if="desktopClassOpen"
+              class="absolute left-0 top-full mt-2 z-50 w-72 bg-brand-slab dark:bg-brand-surface-dark dark:border dark:border-brand-border-dark px-4 pb-4 shadow-[0_18px_40px_rgba(10,10,10,0.3)]"
+            >
+              <ClassMenu :current="prefs.piClass" @pick="pickClass" />
+            </div>
           </div>
         </div>
         <nav class="flex items-center gap-5 text-[13px] font-body" aria-label="Views">
@@ -161,8 +187,8 @@
         </div>
       </div>
 
-      <!-- Mobile: whose races (scope) and the menu, each opening its own red
-           drop-down. Only one is open at a time; the open one turns red. -->
+      <!-- Mobile: whose races (scope), car class and the menu, each opening its own red drop-down. Only one is open at a
+           time; the open one turns red. -->
       <div data-nav-intro class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
         <button
           type="button"
@@ -173,6 +199,17 @@
           @click="toggleMobileMenu('scope')"
         >
           <ScopeIcon :kind="scope.kind" :name="scopeName" />
+        </button>
+        <button
+          type="button"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+          :class="classButtonClass(mobileMenu === 'class')"
+          :style="classButtonStyle(mobileMenu === 'class')"
+          :aria-expanded="mobileMenu === 'class'"
+          :aria-label="`Car class: ${classLabel}`"
+          @click="toggleMobileMenu('class')"
+        >
+          <ClassIcon :cls="prefs.piClass" />
         </button>
         <button
           type="button"
@@ -189,7 +226,8 @@
       </div>
     </div>
 
-    <!-- Mobile drop-downs: red slabs, full bleed, squared off. They slide
+    <!-- Mobile drop-downs: red slabs (the class one dark, like its desktop
+         dropdown), full bleed, squared off. They slide
          open/closed via a grid-template-rows 0fr->1fr transition rather
          than height, since height:auto can't be animated directly and the
          content's height varies. -->
@@ -213,6 +251,14 @@
               :recent="recentDrivers"
               @pick="pickScope"
             />
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="mobileMenu === 'class'" key="class" class="min-[1200px]:hidden grid bg-brand-slab dark:bg-brand-surface-dark dark:border-b dark:border-brand-border-dark font-body">
+        <div class="overflow-hidden">
+          <div class="max-w-7xl mx-auto px-6 pt-1 pb-4">
+            <ClassMenu :current="prefs.piClass" @pick="pickClass" />
           </div>
         </div>
       </div>
@@ -315,6 +361,8 @@
 <script>
 import ScopeIcon from './ScopeIcon.vue'
 import ScopeMenu from './ScopeMenu.vue'
+import ClassIcon from './ClassIcon.vue'
+import ClassMenu from './ClassMenu.vue'
 import { authStore, clearAuthSession } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { recentDriversStore, rememberDriver } from '../stores/recentDriversStore.js'
@@ -323,6 +371,7 @@ import { pushToast } from '../stores/toastStore.js'
 import { openFeedback } from '../stores/feedbackStore.js'
 import { getProfile } from '../services/profileService.js'
 import { scopeOfRoute, scopeViews, viewOfRoute, pathForScope, sameScope } from '../utils/scope.js'
+import { classLetterColor } from '../utils/piInfo.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
 import signOutIcon from '../assets/icons/sign-out.svg?raw'
@@ -342,15 +391,16 @@ const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
-  components: { ScopeIcon, ScopeMenu },
+  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu },
   data() {
     return {
       auth: authStore,
       prefs: prefsStore,
       recent: recentDriversStore,
-      // Which mobile drop-down is open: 'scope', 'menu' or null.
+      // Which mobile drop-down is open: 'scope', 'class', 'menu' or null.
       mobileMenu: null,
       desktopScopeOpen: false,
+      desktopClassOpen: false,
       // The scope of the last scoped page you were on, so pages outside any
       // scope (News, admin) keep the picker and tabs where you left them.
       lastScope: null,
@@ -411,6 +461,9 @@ export default {
       if (this.scope.kind === 'driver') return `Viewing ${this.scopeLabel}`
       return this.scopeLabel
     },
+    classLabel() {
+      return this.prefs.piClass ? `Class ${this.prefs.piClass}` : 'All classes'
+    },
     views() {
       const onScope = sameScope(this.routeScope, this.scope)
       const current = viewOfRoute(this.$route)
@@ -442,6 +495,7 @@ export default {
       handler() {
         this.mobileMenu = null
         this.desktopScopeOpen = false
+        this.desktopClassOpen = false
         if (this.routeScope) this.lastScope = this.routeScope
       }
     },
@@ -483,6 +537,29 @@ export default {
       }
       return 'border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'
     },
+    // The class button, desktop or mobile: the dark of the desktop dropdown
+    // while its menu is open, filled with the class's own colour while
+    // filtered to one — the inverse of the scope button, so a class letter
+    // never reads as another driver's outlined initial — otherwise like the
+    // other tiles.
+    classButtonClass(open) {
+      if (open) {
+        // In dark mode the slab is the nav's own colour, so a step lighter.
+        return 'border bg-brand-slab dark:bg-brand-border-dark border-brand-slab dark:border-brand-border-dark text-white'
+      }
+      if (this.prefs.piClass) return 'border text-white'
+      return 'border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'
+    },
+    classButtonStyle(open) {
+      if (open || !this.prefs.piClass) return undefined
+      const color = classLetterColor(this.prefs.piClass)
+      return { backgroundColor: color, borderColor: color }
+    },
+    pickClass(piClass) {
+      this.mobileMenu = null
+      this.desktopClassOpen = false
+      this.prefs.piClass = piClass
+    },
     toggleMobileMenu(which) {
       this.mobileMenu = this.mobileMenu === which ? null : which
     },
@@ -491,15 +568,19 @@ export default {
       this.desktopScopeOpen = false
       this.$router.push(pathForScope(this.$route, scope, this.myId))
     },
-    // Close the desktop picker on a click anywhere outside it.
+    // Close a desktop picker on a click anywhere outside it.
     onDocumentClick(event) {
       if (this.desktopScopeOpen && !this.$refs.scopePicker?.contains(event.target)) {
         this.desktopScopeOpen = false
+      }
+      if (this.desktopClassOpen && !this.$refs.classPicker?.contains(event.target)) {
+        this.desktopClassOpen = false
       }
     },
     onDocumentKeydown(event) {
       if (event.key === 'Escape') {
         this.desktopScopeOpen = false
+        this.desktopClassOpen = false
         this.mobileMenu = null
       }
     },

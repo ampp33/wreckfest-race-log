@@ -4,11 +4,12 @@
       Races
     </h1>
     <p v-if="isCommunity" class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
-      The newest races from every driver — <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ totalUnfiltered }}</span> loaded.
+      The newest {{ classPhrase }}races from every driver — <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ totalUnfiltered }}</span> loaded.
+      Only races logged by the <router-link to="/plugin" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Telemetry plugin</router-link> show here.
       <template v-if="hasMore">Sorting and filters apply to the races loaded so far; load older ones at the end of the list.</template>
     </p>
     <p v-else class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
-      <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span> logged, newest first.
+      <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span><template v-if="prefs.piClass"> class {{ prefs.piClass }} {{ total === 1 ? 'race' : 'races' }}</template> logged, newest first.
       <template v-if="isFiltered">
         — filtered to races logged {{ apiKeyIdFilter ? 'with this API key' : `via the ${sourceFilter === 'api' ? 'Telemetry API' : 'web app'}` }}.
         <router-link :to="$route.path" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Clear filter</router-link>
@@ -484,6 +485,7 @@
 <script>
 import { getAllRaces, getCommunityRaces, COMMUNITY_PAGE_SIZE, updateRace, deleteRace } from '../services/raceService.js'
 import { authStore } from '../stores/authStore.js'
+import { prefsStore } from '../stores/prefsStore.js'
 import DriverScope from '../components/DriverScope.vue'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
@@ -593,6 +595,7 @@ export default {
   },
   data() {
     return {
+      prefs: prefsStore,
       loading: true,
       refreshing: false,
       error: null,
@@ -651,6 +654,10 @@ export default {
       if (!this.isOwnView) return null
       const apiKeyId = this.$route.query.api_key_id
       return typeof apiKeyId === 'string' && apiKeyId ? apiKeyId : null
+    },
+    // "class C " while the nav's car-class filter is on, for the community intro.
+    classPhrase() {
+      return this.prefs.piClass ? `class ${this.prefs.piClass} ` : ''
     },
     isFiltered() {
       return !!(this.sourceFilter || this.apiKeyIdFilter)
@@ -745,6 +752,12 @@ export default {
       this.editing = {}
       this.load()
     },
+    // The nav's car-class filter, applied server-side — so a fresh load.
+    'prefs.piClass'() {
+      if (!this.isRacesRoute()) return
+      this.currentPage = 1
+      this.load()
+    },
     columnFilters: {
       deep: true,
       handler() {
@@ -786,15 +799,20 @@ export default {
     // rather than replacing the whole page with an error line.
     async load({ refresh = false } = {}) {
       if (refresh) this.refreshing = true
+      // Switching driver, filter or class mid-load starts another load; only
+      // the newest one lands (and an older page from loadMore() is dropped).
+      const token = (this.loadToken = (this.loadToken || 0) + 1)
       try {
         // Community mode loads the newest page only; loadMore() fetches older.
+        const piClass = this.prefs.piClass
         const [races, tracks, vehicles] = await Promise.all([
           this.isCommunity
-            ? getCommunityRaces()
-            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter }),
+            ? getCommunityRaces({ piClass })
+            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, piClass }),
           getTracks(),
           getVehicles()
         ])
+        if (token !== this.loadToken) return
 
         this.vehicles = vehicles
         this.buildLookups(tracks, vehicles)
@@ -811,12 +829,15 @@ export default {
         this.error = null
         if (refresh) pushToast('Races refreshed', 'success', 1500)
       } catch (err) {
+        if (token !== this.loadToken) return
         const message = err.message || 'Failed to load races'
         if (!refresh) this.error = message
         pushToast(message, 'error')
       } finally {
-        this.loading = false
-        this.refreshing = false
+        if (token === this.loadToken) {
+          this.loading = false
+          this.refreshing = false
+        }
       }
     },
     // Name lookups for the track/vehicle columns, kept (non-reactively) so
@@ -852,8 +873,10 @@ export default {
     // is dropped by id rather than shown twice.
     async loadMore() {
       this.loadingMore = true
+      const token = this.loadToken
       try {
-        const races = await getCommunityRaces({ offset: this.fetchedCount })
+        const races = await getCommunityRaces({ piClass: this.prefs.piClass, offset: this.fetchedCount })
+        if (token !== this.loadToken) return
         const seen = new Set(this.rows.map(r => r.id))
         this.rows = this.rows.concat(races.filter(r => !seen.has(r.id)).map(this.decorateRace))
         this.fetchedCount += races.length
