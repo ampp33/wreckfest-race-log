@@ -79,7 +79,7 @@
             </div>
             <div class="flex items-baseline gap-4 py-3">
               <dt class="w-14 shrink-0"><kbd class="font-display font-black text-[13px] px-2.5 py-1.5 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">P</kbd></dt>
-              <dd class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark">Prep for a race. Pick a track to see the fastest lap in each class — vehicle, tune, parts, PI and weight — or pick your car to see its best setup. Also the button in the bottom right.</dd>
+              <dd class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark">Prep for a race. Pick a track to see the fastest lap in each class — vehicle, tune, parts, PI and weight — or pick your car to see its best setup. Below that, the track map with your own annotations. Also the button in the bottom right.</dd>
             </div>
             <div class="flex items-baseline gap-4 py-3">
               <dt class="w-14 shrink-0"><kbd class="font-display font-black text-[13px] px-2.5 py-1.5 border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark">A</kbd></dt>
@@ -94,7 +94,7 @@
             <AppShot name="track-search" alt="The track search dialog opened with T" caption="T — go to track" img-class="border border-brand-border dark:border-brand-border-dark object-cover object-top h-[220px]" />
             <AppShot name="quick-add-top" alt="The quick add race dialog opened with Q" caption="Q — quick add race" img-class="border border-brand-border dark:border-brand-border-dark object-cover object-top h-[220px]" />
           </div>
-          <AppShot name="prep-race" alt="The prep for race dialog opened with P: the fastest lap in each class on Rattlesnake Racepark, with vehicle, tune, parts, PI and weight" caption="P — prep for race" class="mt-6" img-class="border border-brand-border dark:border-brand-border-dark max-w-xl" />
+          <AppShot name="prep-race" alt="The prep for race dialog opened with P on Savolax Sandpit: the fastest lap in each class with vehicle, tune, parts, PI and weight, then the track map with your numbered annotation pins and their notes listed below" caption="P — prep for race" class="mt-6" img-class="border border-brand-border dark:border-brand-border-dark max-w-xl" />
         </section>
 
         <section id="telemetry" class="scroll-mt-8">
@@ -172,7 +172,7 @@
         <section id="track" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">The track page</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-2xl">
-            One track, one variation — reached via the <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">T</kbd> hotkey, via the Tracks screen, or from any track link. This is where you can focus on improving a specific race. Notes, map annotations and the goal only appear on your own log; anyone's log shows the chart, best lap and races.
+            One track, one variation — reached via the <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">T</kbd> hotkey, via the Tracks screen, or from any track link. This is where you can focus on improving a specific race. The goal only appears on your own log; your notes and map annotations show on any log, including Everyone and other drivers' (they're still only yours, and only you can see them). Anyone's log shows the chart, best lap and races.
           </p>
         </section>
 

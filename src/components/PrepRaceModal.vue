@@ -72,15 +72,23 @@
         </table>
       </div>
 
-      <div class="mt-5 pt-5 border-t border-brand-border dark:border-brand-border-dark [&_svg]:max-h-72 [&_img]:max-h-72 [&_img]:object-contain">
+      <div class="mt-5 pt-5 border-t border-brand-border dark:border-brand-border-dark">
         <AnnotationMap
           :image-url="variationImageUrl(chosen.track.slug, chosen.variation.slug)"
           :alt="chosen.variation.name"
           :track-slug="chosen.track.slug"
           :variation-slug="chosen.variation.slug"
           :ring-label="`${chosen.track.name} — ${chosen.variation.name}`"
+          :annotations="annotations"
           :editable="false"
+          :max-height="288"
         />
+        <ol v-if="annotations.length" class="mt-4 space-y-1.5 text-sm text-brand-secondary dark:text-brand-secondary-dark">
+          <li v-for="ann in sortedAnnotations" :key="ann.id" class="flex gap-2.5">
+            <span class="shrink-0 w-6 h-6 rounded-full bg-brand-accent dark:bg-brand-accent-dark text-white text-xs font-bold tabular flex items-center justify-center">{{ ann.number }}</span>
+            <span class="pt-0.5 whitespace-pre-line">{{ ann.note || '—' }}</span>
+          </li>
+        </ol>
       </div>
     </div>
   </BaseModal>
@@ -100,6 +108,8 @@ import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { getFastestCommunityLaps } from '../services/raceService.js'
 import { pushToast } from '../stores/toastStore.js'
+import { authStore } from '../stores/authStore.js'
+import { getAnnotationsForVariation } from '../services/annotationService.js'
 
 const META_VEHICLES = ['Raiden RS', 'Super Venom', 'Hammerhead RS', 'Speedie']
 
@@ -116,10 +126,15 @@ export default {
       excludeMeta: false,
       vehicleId: null,
       loadingLaps: false,
-      laps: []
+      laps: [],
+      // Your own pins for the chosen variation (RLS returns only yours).
+      annotations: []
     }
   },
   computed: {
+    sortedAnnotations() {
+      return [...this.annotations].sort((a, b) => a.number - b.number)
+    },
     metaVehicleIds() {
       return new Set(this.vehicles.filter(v => META_VEHICLES.includes(v.name)).map(v => v.id))
     },
@@ -162,9 +177,20 @@ export default {
     onTrackSelected({ track, variation }) {
       this.chosen = { track, variation }
       this.loadLaps()
+      this.loadAnnotations(variation.id)
     },
     // shortcut: client-side filtering only sees the fastest 1000 laps on the variation;
     // move the per-class pick into SQL if a track ever logs more than that.
+    async loadAnnotations(variationId) {
+      this.annotations = []
+      if (!authStore.isAuthenticated) return
+      try {
+        const annotations = await getAnnotationsForVariation(variationId)
+        if (this.chosen?.variation.id === variationId) this.annotations = annotations
+      } catch (err) {
+        pushToast(err.message || 'Failed to load annotations', 'error')
+      }
+    },
     async loadLaps() {
       const variationId = this.chosen.variation.id
       this.latestVariationId = variationId

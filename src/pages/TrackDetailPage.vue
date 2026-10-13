@@ -56,8 +56,12 @@
         </div>
       </div>
 
+      <!-- Your own track notes and annotations, on any log you're viewing —
+           they're private, and only ever load and save as yours. -->
+      <p v-if="isSignedIn && !isOwnView" class="ov text-brand-muted dark:text-brand-muted-dark mb-2">Your notes &amp; annotations — only you can see these</p>
+
       <!-- Track Notes (private — stored on your goal for this variation) -->
-      <div v-if="isOwnView" class="mb-8 rule-top pt-4">
+      <div v-if="isSignedIn" class="mb-8 rule-top pt-4">
         <div v-if="!notesEditMode" class="flex items-start gap-2">
           <div
             v-if="trackNotesHtml"
@@ -102,7 +106,7 @@
 
       <!-- Turn Annotations (private) -->
       <VariationAnnotations
-        v-if="currentVariation && isOwnView"
+        v-if="currentVariation && isSignedIn"
         :image-url="variationMapImage"
         :alt="currentVariation.name"
         :track-slug="track.slug"
@@ -443,11 +447,13 @@ import SortMenu from '../components/SortMenu.vue'
 
 const route = useRoute()
 
-// Whose races these are — from the /<userId>/track/... URL. Goals, track
-// notes and annotations are private, so they only load and render (and
-// races are only editable) when that's you.
+// Whose races these are — from the /<userId>/track/... URL. The goal tiles
+// render (and races are editable) only when that's you; your own track
+// notes and annotations show on any log while you're signed in.
 const userId = computed(() => route.params.userId)
 const isOwnView = computed(() => !!userId.value && authStore.user?.id === userId.value)
+// Track notes and annotations are always the viewer's own, on any log.
+const isSignedIn = computed(() => !!authStore.user)
 // /community/track/...: every public driver's races at this variation.
 const isCommunity = computed(() => route.meta.scope === 'community')
 // Where variation/back links point: this driver's pages, or the community ones.
@@ -690,14 +696,15 @@ async function loadMoreRaces() {
     loadingMore.value = false
   }
 }
-// Goals and annotations are RLS-scoped to the signed-in user, so on another
-// driver's page these would fetch *yours* — skip them there.
+// Goals and annotations are RLS-scoped to the signed-in user, so these always
+// fetch *yours*, even on another driver's page — where only your track notes
+// and annotations show, but your goal must still load so saving notes keeps it.
 async function loadGoal() {
-  goal.value = isOwnView.value ? await getGoalForVariation(currentVariation.value.id) : null
+  goal.value = isSignedIn.value ? await getGoalForVariation(currentVariation.value.id) : null
   goalInputMs.value = goal.value ? goal.value.goal_lap_time_ms : null
 }
 async function loadAnnotations() {
-  annotations.value = isOwnView.value ? await getAnnotationsForVariation(currentVariation.value.id) : []
+  annotations.value = isSignedIn.value ? await getAnnotationsForVariation(currentVariation.value.id) : []
 }
 async function loadAll() {
   loading.value = true

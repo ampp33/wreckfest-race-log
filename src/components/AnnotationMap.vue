@@ -3,6 +3,7 @@
     ref="container"
     class="relative select-none overflow-hidden bg-brand-surface dark:bg-brand-surface-dark"
     :class="editMode ? 'cursor-crosshair' : ''"
+    :style="sizeStyle"
     @click="onContainerClick"
   >
     <!-- The layout drawn as its own name, set round the racing line. Only
@@ -58,6 +59,7 @@
       :alt="alt"
       class="w-full h-auto block pointer-events-none map-art"
       draggable="false"
+      @load="e => imgAspect = e.target.naturalWidth / e.target.naturalHeight"
     />
 
     <!-- Edit mode hint -->
@@ -121,7 +123,7 @@
           : 'bg-brand-accent dark:bg-brand-accent-dark hover:scale-105',
         editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
       ]"
-      :style="{ left: ann.x + '%', top: ann.y + '%' }"
+      :style="markerStyle(ann)"
       @click.stop="$emit('select', ann.id)"
       @pointerdown.stop="onMarkerPointerDown($event, ann)"
       @pointermove.stop="onMarkerPointerMove($event, ann)"
@@ -166,6 +168,9 @@ export default {
     selectedId: { type: String, default: null },
     trackSlug: { type: String, default: '' },
     variationSlug: { type: String, default: '' },
+    // Caps the map's height (px) by narrowing the box to the track's own
+    // shape, so markers never land on letterboxing.
+    maxHeight: { type: Number, default: null },
     // What gets written round the line. Defaults to the variation's own name.
     ringLabel: { type: String, default: '' }
   },
@@ -178,6 +183,7 @@ export default {
       ringPath: null,
       // [x, y, w, h] hugging the drawn line; only used when not editable.
       cropBox: null,
+      imgAspect: null,
       // One entry per stroke — a junction layout carries several.
       reps: [],
       tracking: [],
@@ -197,8 +203,17 @@ export default {
     // Turn markers sit at percentages of the full artwork, so only a map
     // that can't carry them is cropped to the line itself.
     viewBox() {
-      if (!this.editable && this.cropBox) return this.cropBox.join(' ')
-      return `0 0 ${this.ringPath.w} ${this.ringPath.h}`
+      return this.frame.join(' ')
+    },
+    // [x, y, w, h] of the artwork currently on screen.
+    frame() {
+      if (!this.editable && this.cropBox) return this.cropBox
+      return [0, 0, this.ringPath.w, this.ringPath.h]
+    },
+    sizeStyle() {
+      const aspect = this.ringPath ? this.frame[2] / this.frame[3] : this.imgAspect
+      if (!this.maxHeight || !aspect) return null
+      return { maxWidth: `${this.maxHeight * aspect}px`, marginLeft: 'auto', marginRight: 'auto' }
     },
     ringUnit() {
       const label = (this.ringLabel || this.alt || 'Track').toUpperCase()
@@ -246,6 +261,16 @@ export default {
     this.resolvePath()
   },
   methods: {
+    // Markers are stored as percentages of the full artwork; a cropped ring
+    // shows only part of it, so map them into the visible frame.
+    markerStyle(ann) {
+      if (!this.ringPath) return { left: ann.x + '%', top: ann.y + '%' }
+      const [fx, fy, fw, fh] = this.frame
+      return {
+        left: (ann.x / 100 * this.ringPath.w - fx) / fw * 100 + '%',
+        top: (ann.y / 100 * this.ringPath.h - fy) / fh * 100 + '%'
+      }
+    },
     setSegRef(el, i) { if (el) this.segEls[i] = el },
     setTextRef(el, i) { if (el) this.textEls[i] = el },
     // One repeat count per stroke; the template asks for these before fitRing
