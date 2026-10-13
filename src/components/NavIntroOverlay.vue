@@ -252,7 +252,7 @@ export default {
     unlockScroll() {
       document.documentElement.style.overflow = ''
     },
-    // Capture phase, so App's Q/T shortcuts don't open dialogs underneath.
+    // Capture phase, so App's Q/T/P shortcuts don't open dialogs underneath.
     onKeydown(event) {
       if (!this.open) return
       if (event.key === 'Escape') {

@@ -5,7 +5,8 @@
     @mousedown.self="$emit('close')"
   >
     <div
-      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
+      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
+      :class="wide ? 'max-w-2xl' : 'max-w-lg'"
       role="dialog"
       aria-modal="true"
       :aria-labelledby="titleId"
@@ -41,7 +42,9 @@ let idSeq = 0
 export default {
   name: 'BaseModal',
   props: {
-    open: { type: Boolean, default: false }
+    open: { type: Boolean, default: false },
+    // For a table-heavy body (prep for race).
+    wide: { type: Boolean, default: false }
   },
   emits: ['close'],
   data() {

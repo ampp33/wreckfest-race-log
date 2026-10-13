@@ -101,7 +101,15 @@
           active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
         >News</router-link>
 
-        <div class="relative group">
+        <!-- Signed out there's only the setup guide (API keys need an
+             account), so a plain link rather than a one-item dropdown. -->
+        <router-link
+          v-if="!auth.isAuthenticated"
+          to="/plugin"
+          class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
+          active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+        >Install Telemetry</router-link>
+        <div v-else class="relative group">
           <button
             type="button"
             class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
@@ -145,9 +153,9 @@
           </div>
         </div>
 
-        <!-- Icon-only control cluster, same sun/moon + door icons as
-             PublicHeader's compact controls, grouped with a tighter gap than
-             the text links so the three tiles read as one set. -->
+        <!-- Icon-only control cluster (sun/moon, feedback, door), grouped
+             with a tighter gap than the text links so the tiles read as one
+             set. -->
         <div class="flex items-center gap-2">
           <button
             type="button"
@@ -178,7 +186,6 @@
             <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
           </button>
 
-          <!-- Same treatment as PublicHeader's sign-in button. -->
           <router-link
             v-if="!auth.isAuthenticated"
             :to="signInRoute"
@@ -276,15 +283,27 @@
               @click="mobileMenu = null"
             >{{ view.label }}</router-link>
 
-            <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
-            <router-link
-              v-for="item in telemetryItems"
-              :key="item.to"
-              :to="item.to"
-              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-              active-class="font-bold"
-              @click="mobileMenu = null"
-            >{{ item.label }}</router-link>
+            <!-- Same as the desktop row: one plain link while signed out. -->
+            <template v-if="auth.isAuthenticated">
+              <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
+              <router-link
+                v-for="item in telemetryItems"
+                :key="item.to"
+                :to="item.to"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >{{ item.label }}</router-link>
+            </template>
+            <template v-else>
+              <div class="ov text-white/70 pt-4 pb-2">More</div>
+              <router-link
+                to="/plugin"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >Install Telemetry</router-link>
+            </template>
 
             <template v-if="auth.isAdmin">
               <div class="ov text-white/70 pt-4 pb-2">Admin</div>

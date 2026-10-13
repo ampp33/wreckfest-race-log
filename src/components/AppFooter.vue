@@ -15,7 +15,7 @@
                  picker can only be opened from a real user gesture on a
                  form control, so this has to be a label+input, not a click
                  handler that calls .click() itself). The plain <span> case
-                 stays for the two keyboard-shortcut hints below, which
+                 stays for the keyboard-shortcut hints below, which
                  aren't clickable at all — cursor-pointer is added to the
                  other three, but deliberately left off those, since they
                  don't do anything when clicked and shouldn't look like
@@ -126,7 +126,8 @@ export default {
         ] },
         { title: 'Keyboard', links: [
           { label: 'Q — quick add a race' },
-          { label: 'T — search tracks' }
+          { label: 'T — search tracks' },
+          { label: 'P — prep for a race' }
         ] },
         { title: 'Your data', links: [
           { label: 'Profile', to: '/settings/profile' },

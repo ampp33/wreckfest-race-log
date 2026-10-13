@@ -156,7 +156,7 @@ body {
  * a graphic this size without crowding the text.
  *
  * The `top 88px` in background-position clears the header's own height at
- * this breakpoint exactly (PublicHeader/NavBar are 88px tall here) — a
+ * this breakpoint exactly (NavBar is 88px tall here) — a
  * vw-based offset doesn't work for this because vw grows with viewport
  * width while the header's height is fixed, so any header-height-minus-Nvw
  * value still goes negative (bleeding back into the header) at

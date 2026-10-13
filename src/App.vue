@@ -17,6 +17,7 @@
 
     <QuickAddModal v-if="auth.isAuthenticated" />
     <TrackSearchModal />
+    <PrepRaceModal />
     <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
@@ -30,6 +31,7 @@ import AppFooter from './components/AppFooter.vue'
 import WF2Banner from './components/WF2Banner.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
+import PrepRaceModal from './components/PrepRaceModal.vue'
 import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
@@ -38,10 +40,11 @@ import { authStore } from './stores/authStore.js'
 import { prefsStore, applyDarkModeClass } from './stores/prefsStore.js'
 import { openQuickAdd, quickAddStore } from './stores/quickAddStore.js'
 import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
+import { openPrepRace, prepRaceStore } from './stores/prepRaceStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
+  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, PrepRaceModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
     return {
       auth: authStore,
@@ -55,12 +58,9 @@ export default {
     isHomeRoute() {
       return this.$route && this.$route.name === 'home'
     },
-    // Signed out, the plugin page brings its own PublicHeader; every other
-    // public page (the landing page, community, driver pages) gets the real nav.
+    // Every page but sign-in gets the real nav, signed in or not.
     showNavBar() {
-      if (this.isLoginRoute) return false
-      if (authStore.isAuthenticated) return true
-      return this.$route?.name !== 'telemetry'
+      return !this.isLoginRoute
     }
   },
   mounted() {
@@ -78,13 +78,18 @@ export default {
       if (event.key === 'q' || event.key === 'Q') {
         // Quick add writes to your own log, so it stays signed-in only.
         if (!authStore.isAuthenticated) return
-        if (quickAddStore.open || trackSearchStore.open) return
+        if (quickAddStore.open || trackSearchStore.open || prepRaceStore.open) return
         event.preventDefault()
         openQuickAdd()
       } else if (event.key === 't' || event.key === 'T') {
-        if (trackSearchStore.open || quickAddStore.open) return
+        if (trackSearchStore.open || quickAddStore.open || prepRaceStore.open) return
         event.preventDefault()
         openTrackSearch()
+      } else if (event.key === 'p' || event.key === 'P') {
+        // Community lap times are public, so like T this works signed out too.
+        if (prepRaceStore.open || quickAddStore.open || trackSearchStore.open) return
+        event.preventDefault()
+        openPrepRace()
       }
     },
     isTypingTarget(el) {

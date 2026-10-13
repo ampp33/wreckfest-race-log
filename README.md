@@ -39,7 +39,7 @@ progression charts, and your biggest improvements.
 ### Built to be fast to use
 
 The site allows you to use hotkeys to quickly jump to the pages that matter most: `T` to jump to a track page, `Q` to quick-add a
-race from anywhere, `A` to add a race to the track you're looking at, `Esc` to
+race from anywhere, `P` to prep for a race with each class's fastest laps on a track, `A` to add a race to the track you're looking at, `Esc` to
 close. You can export your whole log to JSON at any time.
 
 ### See how everyone else is doing

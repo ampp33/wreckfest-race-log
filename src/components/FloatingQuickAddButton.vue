@@ -2,35 +2,43 @@
   <button
     v-if="visible"
     type="button"
-    class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-brand-accent hover:opacity-85 active:opacity-70 text-white text-2xl font-black shadow-lg flex items-center justify-center transition-opacity"
-    aria-label="Quick add race (Q)"
-    title="Quick add race (Q)"
+    class="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-brand-accent hover:opacity-85 active:opacity-70 text-white shadow-lg flex items-center justify-center transition-opacity"
+    aria-label="Prep for race (P)"
+    title="Prep for race (P)"
     @click="onClick"
   >
-    +
+    <!-- Checkered flag: white squares filled, dark ones left open so the
+         button's red shows through. -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.40 3.20 6.87 2.94 7.35 2.69 7.82 2.47 8.29 2.27 8.77 2.12 9.24 2.01 9.55 3.17 9.86 4.33 9.39 4.44 8.91 4.59 8.44 4.78 7.97 5.01 7.49 5.26 7.02 5.52 6.71 4.36ZM12.08 2.43 12.55 2.63 13.03 2.85 13.50 3.07 13.97 3.28 14.45 3.48 14.92 3.64 15.23 4.80 15.54 5.96 15.07 5.80 14.59 5.60 14.12 5.39 13.65 5.17 13.17 4.95 12.70 4.75 12.39 3.59ZM17.76 3.65 18.23 3.48 18.71 3.27 19.18 3.03 19.65 2.78 20.13 2.52 20.60 2.26 20.91 3.42 21.22 4.58 20.75 4.83 20.27 5.10 19.80 5.35 19.33 5.59 18.85 5.80 18.38 5.97 18.07 4.81ZM9.86 4.33 10.33 4.28 10.81 4.28 11.28 4.33 11.75 4.43 12.23 4.57 12.70 4.75 13.01 5.91 13.32 7.07 12.85 6.89 12.38 6.75 11.90 6.65 11.43 6.60 10.96 6.60 10.48 6.65 10.17 5.49ZM15.54 5.96 16.01 6.09 16.49 6.16 16.96 6.19 17.43 6.17 17.91 6.09 18.38 5.97 18.69 7.13 19.00 8.29 18.53 8.41 18.06 8.49 17.58 8.51 17.11 8.48 16.64 8.40 16.16 8.28 15.85 7.12ZM7.64 7.84 8.12 7.58 8.59 7.33 9.06 7.10 9.54 6.91 10.01 6.76 10.48 6.65 10.79 7.81 11.10 8.97 10.63 9.07 10.16 9.23 9.68 9.42 9.21 9.65 8.74 9.89 8.26 10.15 7.95 9.00ZM13.32 7.07 13.80 7.27 14.27 7.49 14.74 7.71 15.22 7.92 15.69 8.11 16.16 8.28 16.47 9.44 16.78 10.60 16.31 10.43 15.84 10.24 15.36 10.03 14.89 9.81 14.42 9.59 13.94 9.38 13.63 8.23ZM19.00 8.29 19.48 8.11 19.95 7.91 20.42 7.67 20.90 7.41 21.37 7.15 21.84 6.90 22.15 8.06 22.46 9.21 21.99 9.47 21.52 9.73 21.04 9.99 20.57 10.22 20.10 10.43 19.62 10.60 19.31 9.44ZM11.10 8.97 11.58 8.92 12.05 8.91 12.52 8.97 13.00 9.06 13.47 9.21 13.94 9.38 14.25 10.54 14.56 11.70 14.09 11.53 13.62 11.38 13.14 11.28 12.67 11.23 12.20 11.23 11.72 11.29 11.41 10.13ZM16.78 10.60 17.26 10.72 17.73 10.80 18.20 10.83 18.68 10.81 19.15 10.73 19.62 10.60 19.93 11.76 20.24 12.92 19.77 13.05 19.30 13.12 18.82 13.15 18.35 13.12 17.88 13.04 17.40 12.91 17.09 11.76Z"/>
+      <path d="M6.40 3.20 6.99 2.88 7.58 2.58 8.18 2.32 8.77 2.12 9.36 2.00 9.95 1.95 10.54 1.99 11.13 2.11 11.72 2.29 12.32 2.53 12.91 2.80 13.50 3.07 14.09 3.34 14.68 3.56 15.28 3.74 15.87 3.85 16.46 3.87 17.05 3.82 17.64 3.68 18.23 3.48 18.82 3.21 19.42 2.91 20.01 2.58 20.60 2.26 21.84 6.90 23.08 11.53 22.49 11.85 21.90 12.18 21.31 12.49 20.72 12.75 20.13 12.96 19.53 13.09 18.94 13.15 18.35 13.12 17.76 13.01 17.17 12.84 16.58 12.61 15.98 12.34 15.39 12.07 14.80 11.80 14.21 11.57 13.62 11.38 13.03 11.27 12.43 11.23 11.84 11.27 11.25 11.39 10.66 11.59 10.07 11.85 9.48 12.15 8.88 12.47 7.64 7.84Z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
+      <path d="M5.20 2.60L10.01 20.57" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    </svg>
   </button>
 </template>
 
 <script>
 import { authStore } from '../stores/authStore.js'
-import { openQuickAdd, quickAddStore } from '../stores/quickAddStore.js'
+import { quickAddStore } from '../stores/quickAddStore.js'
+import { openPrepRace, prepRaceStore } from '../stores/prepRaceStore.js'
 
 export default {
   name: 'FloatingQuickAddButton',
   data() {
     return {
       auth: authStore,
-      qa: quickAddStore
+      qa: quickAddStore,
+      pr: prepRaceStore
     }
   },
   computed: {
     visible() {
-      return this.auth.isAuthenticated && !this.qa.open
+      return this.auth.isAuthenticated && !this.qa.open && !this.pr.open
     }
   },
   methods: {
     onClick() {
-      openQuickAdd()
+      openPrepRace()
     }
   }
 }

@@ -87,6 +87,22 @@ export async function getCommunityRaces({ variationId, piClass, offset = 0, limi
   return (data || []).map(({ driver, ...race }) => ({ ...race, driverName: driver?.display_name ?? '—' }))
 }
 
+// A variation's community laps, quickest first, across every car class
+// (races_variation_class_lap_idx backs it). Plugin-logged races only, like
+// getCommunityRaces().
+export async function getFastestCommunityLaps(variationId, { limit = 1000 } = {}) {
+  const { data, error } = await supabase
+    .from('races')
+    .select('id, vehicle_id, tuning, parts, performance_index, pi_class, vehicle_weight_kg, lap_time_ms')
+    .eq('source', 'api')
+    .eq('track_variation_id', variationId)
+    .gt('lap_time_ms', 0)
+    .order('lap_time_ms', { ascending: true })
+    .limit(limit)
+  if (error) throw error
+  return data || []
+}
+
 export async function createRace(race, userId) {
   const { notes, ...publicFields } = race
   const { data, error } = await supabase

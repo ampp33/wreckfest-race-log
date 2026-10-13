@@ -333,7 +333,6 @@
                     <SortCaret :direction="sort.directionFor('total')" />
                   </button>
                 </th>
-                <th v-if="isShown('notes')" class="py-2 pr-3">Notes</th>
                 <th class="py-2 pr-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -470,15 +469,14 @@ const TABLE_COLUMNS = [
   { key: 'laps', label: 'Laps' },
   { key: 'lap', label: 'Lap time' },
   { key: 'gap', label: 'Δ goal' },
-  { key: 'total', label: 'Total time' },
-  { key: 'notes', label: 'Notes' }
+  { key: 'total', label: 'Total time' }
   // 'Actions' is intentionally left out — it's always shown, since hiding it
   // would remove the row's only in-table way to edit/delete a race.
 ]
-// Δ goal needs your goal and Notes are private, so neither exists on
-// another driver's page — not as a column, nor in the column picker.
+// Δ goal needs your goal, so it doesn't exist on another driver's page —
+// not as a column, nor in the column picker. (Notes show in the expanded row.)
 // Driver only exists on the community page, where rows come from many drivers.
-const OWNER_ONLY_COLUMNS = ['gap', 'notes']
+const OWNER_ONLY_COLUMNS = ['gap']
 const COMMUNITY_ONLY_COLUMNS = ['driver']
 const availableColumns = computed(() => TABLE_COLUMNS.filter(c => (
   (isOwnView.value || !OWNER_ONLY_COLUMNS.includes(c.key)) &&
@@ -500,7 +498,7 @@ const sort = createSortState()
 // Feeds the mobile filter drawer's SortMenu — only currently-visible,
 // sortable columns (Notes and Parts aren't sortable, and a hidden column
 // shouldn't be pickable either).
-const UNSORTABLE_COLUMNS = ['notes', 'parts']
+const UNSORTABLE_COLUMNS = ['parts']
 const sortableColumns = computed(() => availableColumns.value.filter(c => !UNSORTABLE_COLUMNS.includes(c.key) && columnVisibility.isVisible(c.key)))
 
 const loading = ref(true)

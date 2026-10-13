@@ -90,6 +90,7 @@ that a store library would be more ceremony than help.
 | `prefsStore` | Dark mode + last-used vehicle/tuning, persisted to `localStorage`. |
 | `quickAddStore` | Quick Add modal open state + a "race saved" callback hook. |
 | `trackSearchStore` | Track search modal open state. |
+| `prepRaceStore` | Prep for race modal open state. |
 | `feedbackStore` | Feedback modal open state. |
 | `toastStore` | Toast queue. |
 
@@ -277,7 +278,7 @@ Full request/response contract: [external-api.md](external-api.md).
 
 The shell mounts the NavBar (for signed-out visitors too, except on `/plugin`,
 which carries its own `PublicHeader`, and `/login`, which has none), the modals any screen can
-open (Quick Add, track search, feedback, toasts), `NavIntroOverlay` (a
+open (Quick Add, track search, prep for race, feedback, toasts), `NavIntroOverlay` (a
 one-time walkthrough of the scope nav, shown to each signed-in user once per
 browser: everything but the nav's `data-nav-intro` controls is washed in the
 accent colour, with screenshots from `public/images/getting-started/nav-*`),
@@ -287,6 +288,7 @@ is in an input:
 | Key | Action |
 | --- | --- |
 | `Q` | Quick-add a race from anywhere (signed in) |
+| `P` | Prep for race — pick a track, see the fastest community lap per class (vehicle, tune, parts, PI, weight), optionally for one vehicle; also the floating bottom-right button |
 | `T` | Track search — stays in context: community pages → community track, a driver's pages → that driver's, else your own (or community, signed out) |
 | `A` | Add a race to the open variation (your own track page only) |
 | `Esc` | Close the open dialog |

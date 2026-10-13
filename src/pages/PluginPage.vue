@@ -1,5 +1,4 @@
 <template>
-  <PublicHeader />
   <div class="max-w-7xl mx-auto px-6 py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       Wreckfest <em class="signal ml-2">Telemetry</em> Plugin
@@ -57,10 +56,7 @@
 </template>
 
 <script>
-import PublicHeader from '../components/PublicHeader.vue'
-
 export default {
-  name: 'TelemetryPage',
-  components: { PublicHeader }
+  name: 'TelemetryPage'
 }
 </script>

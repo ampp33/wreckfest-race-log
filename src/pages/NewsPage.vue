@@ -31,6 +31,16 @@ export default {
     return {
       entries: [
         {
+          id: 8,
+          title: 'Prep for Race: See What\'s Fast Before You Start',
+          date: '2026-10-12',
+          items: [
+            'The round button in the bottom right used to quick-add a race. It\'s now <b class="text-brand-text dark:text-brand-text-dark">Prep for race</b> — look for the checkered flag.',
+            'Pick a track and it shows the fastest lap anyone has set there in each class (D, C, B and A), with the car that set it: its <b>tune</b>, <b>parts</b>, PI and weight. The track map is at the bottom so you can see the layout at a glance.',
+            'Press <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">P</kbd> on any screen to open it. Quick add hasn\'t gone anywhere: <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">Q</kbd> still opens it.'
+          ]
+        },
+        {
           id: 7,
           title: 'Going Public: Leaderboards, Everyone\'s Races, and a New Nav',
           date: '2026-10-06',

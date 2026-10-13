@@ -29,7 +29,7 @@
         ref="panelEl"
         role="dialog"
         aria-label="Parts"
-        class="parts-palette fixed z-30 w-80 max-w-[calc(100vw-32px)] max-h-[calc(100vh-16px)] overflow-y-auto p-3.5 grid gap-2.5 text-sm text-left bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark border border-brand-border dark:border-brand-border-dark shadow-lg"
+        class="parts-palette fixed z-50 w-80 max-w-[calc(100vw-32px)] max-h-[calc(100vh-16px)] overflow-y-auto p-3.5 grid gap-2.5 text-sm text-left bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark border border-brand-border dark:border-brand-border-dark shadow-lg"
         :style="panelStyle"
         @mouseenter="onHoverStart"
         @mouseleave="onHoverEnd"

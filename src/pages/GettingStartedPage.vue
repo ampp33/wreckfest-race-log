@@ -43,10 +43,30 @@
 
       <!-- CONTENT -->
       <div class="min-w-0 space-y-14">
+        <section id="nav" class="scroll-mt-8">
+          <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">The top menu</h2>
+          <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
+            Races are public, so you can look at anyone's log, not just yours. Three things up top decide what every page shows:
+          </p>
+          <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 mb-6 max-w-2xl">
+            <li><b class="text-brand-text dark:text-brand-text-dark">Whose races</b> — the first icon. Everyone, your own log, a driver you've looked at lately, or find one by name. Clicking a driver's name anywhere opens their log too.</li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">Car class</b> — the icon beside it. All, D, C, B or A narrows leaderboards, tracks, races and stats to that class, and stays picked until you change it.</li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">The view</b> — Leaderboard (everyone only), Tracks, Races, Stats, and Profile on your own log. Switch whose races and you stay on the same view.</li>
+          </ul>
+          <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mb-6 max-w-2xl">
+            Rather keep your races to yourself? Make them private in <router-link to="/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Profile settings</router-link>. Notes, map annotations, goals and API keys are always yours alone.
+          </p>
+          <div class="grid sm:grid-cols-2 gap-6 mb-6">
+            <AppShot name="nav-scope-menu" alt="The nav's scope menu open: Everyone, You, recently viewed drivers and Find a driver" caption="Whose races" />
+            <AppShot name="nav-class-menu" alt="The nav's car class menu open: All classes, then classes D, C, B and A with their PI ranges" caption="Car class" />
+          </div>
+          <AppShot name="nav-viewing-driver" alt="The nav while viewing another driver's races in class C" caption="Viewing another driver, in class C" img-class="border border-brand-border dark:border-brand-border-dark max-w-xl" />
+        </section>
+
         <section id="shortcuts" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Keyboard shortcuts</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-5 max-w-2xl">
-            Four keys, live on every screen, to help you get around the site faster.
+            Five keys, live on every screen, to help you get around the site faster.
           </p>
           <dl class="border-y border-brand-border dark:border-brand-border-dark divide-y divide-brand-border dark:divide-brand-border-dark mb-6 max-w-2xl">
             <div class="flex items-baseline gap-4 py-3">
@@ -56,6 +76,10 @@
             <div class="flex items-baseline gap-4 py-3">
               <dt class="w-14 shrink-0"><kbd class="font-display font-black text-[13px] px-2.5 py-1.5 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">Q</kbd></dt>
               <dd class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark">Quick add a race by hand, from any screen.</dd>
+            </div>
+            <div class="flex items-baseline gap-4 py-3">
+              <dt class="w-14 shrink-0"><kbd class="font-display font-black text-[13px] px-2.5 py-1.5 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">P</kbd></dt>
+              <dd class="font-body text-[15px] text-brand-secondary dark:text-brand-secondary-dark">Prep for a race. Pick a track to see the fastest lap in each class — vehicle, tune, parts, PI and weight — or pick your car to see its best setup. Also the button in the bottom right.</dd>
             </div>
             <div class="flex items-baseline gap-4 py-3">
               <dt class="w-14 shrink-0"><kbd class="font-display font-black text-[13px] px-2.5 py-1.5 border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark">A</kbd></dt>
@@ -70,6 +94,7 @@
             <AppShot name="track-search" alt="The track search dialog opened with T" caption="T — go to track" img-class="border border-brand-border dark:border-brand-border-dark object-cover object-top h-[220px]" />
             <AppShot name="quick-add-top" alt="The quick add race dialog opened with Q" caption="Q — quick add race" img-class="border border-brand-border dark:border-brand-border-dark object-cover object-top h-[220px]" />
           </div>
+          <AppShot name="prep-race" alt="The prep for race dialog opened with P: the fastest lap in each class on Rattlesnake Racepark, with vehicle, tune, parts, PI and weight" caption="P — prep for race" class="mt-6" img-class="border border-brand-border dark:border-brand-border-dark max-w-xl" />
         </section>
 
         <section id="telemetry" class="scroll-mt-8">
@@ -80,26 +105,66 @@
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-5 max-w-2xl">
             Worth the ten minutes twice over: you stop logging races by hand, and it's the only way to get <b class="text-brand-text dark:text-brand-text-dark">per-lap splits</b> and the <b class="text-brand-text dark:text-brand-text-dark">full finishing roster</b> — there's no field to type those into.
           </p>
+          <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-2 max-w-2xl">
+            Everything it records for every race:
+          </p>
+          <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark list-disc pl-5 space-y-1.5 mb-6 max-w-2xl marker:text-brand-accent dark:marker:text-brand-accent-dark">
+            <li><b class="text-brand-text dark:text-brand-text-dark">Where</b> — track and variation, plus the server name for online races</li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">Your result</b>
+              <ul class="list-[circle] pl-5 mt-1 space-y-1">
+                <li>Finishing place</li>
+                <li>Best lap and total race time</li>
+                <li>Number of laps, and the time of every single lap</li>
+              </ul>
+            </li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">Your car</b>
+              <ul class="list-[circle] pl-5 mt-1 space-y-1">
+                <li>Vehicle, class and PI</li>
+                <li>Weight</li>
+                <li>Tune — suspension, gear ratio, differential and brake balance</li>
+                <li>Assists — shifting, ABS, traction control and stability control</li>
+                <li>Performance parts — the engine, and the tier of each of its ten upgrades: air filter, cooling, intake manifold, fuel system, ignition, exhaust, exhaust manifold, valves, camshaft and pistons</li>
+                <li>Armor — which part is fitted in each slot and what it weighs: front bumper, rear bumper, roll cage, side protector and window bars</li>
+              </ul>
+            </li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">Everyone else in the race</b>, in finishing order
+              <ul class="list-[circle] pl-5 mt-1 space-y-1">
+                <li>Name, and whether they're a human or AI</li>
+                <li>Vehicle, class and PI</li>
+                <li>Best lap, total time and laps completed, or a DNF</li>
+                <li>Their tune and parts, the same detail as yours</li>
+              </ul>
+            </li>
+          </ul>
           <div class="flex flex-wrap gap-3">
             <router-link to="/plugin" class="ov min-h-[44px] px-6 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85">Full instructions →</router-link>
           </div>
         </section>
 
+        <section id="leaderboard" class="scroll-mt-8">
+          <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Leaderboard</h2>
+          <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-5 max-w-2xl">
+            <b class="text-brand-text dark:text-brand-text-dark">Most races</b> ranks drivers by how much they've logged; <b class="text-brand-text dark:text-brand-text-dark">Fastest laps</b> lists the quickest lap anyone has set on every track and variation — narrow it to one vehicle with the dropdown, or to one class with the class icon up top. Only races logged by the telemetry plugin count, and a clicking driver's name opens their log.
+          </p>
+          <AppShot name="leaderboard" alt="The Most races board and the start of the Fastest laps table" />
+        </section>
+
         <section id="races" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">The Races page</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Every race you've logged, newest first — <b><i>the screen to open right after a race or session</i></b>, while you still remember what went right (or wrong).
+            Every race in whichever log you've picked, newest first. On your own log it's <b><i>the screen to open right after a race or session</i></b>, while you still remember what went right (or wrong). Under Everyone it adds a Driver column, and shows only telemetry-logged races.
           </p>
           <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 mb-6 max-w-2xl">
-            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="expandIcon"></span>Expands the race to show additional details: your notes, the lap-by-lap chart, and the full roster with everyone's best lap and finishing time.</li>
-            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="editIcon"></span>Edits the race entry in place — the fastest way to add a note or make a change.</li>
-            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="trashIcon"></span>Deletes the entry, after a confirm.</li>
+            <li><span class="w-5 h-5 inline-block align-text-bottom mr-1.5" v-html="expandIcon"></span>Expands the race to show additional details: your notes, the lap-by-lap chart, and the full roster with everyone's best lap and finishing time.</li>
+            <li><span class="w-5 h-5 inline-block align-text-bottom mr-1.5" v-html="editIcon"></span>Edits the race entry in place — the fastest way to add a note or make a change. Your own races only.</li>
+            <li><span class="w-5 h-5 inline-block align-text-bottom mr-1.5" v-html="trashIcon"></span>Deletes the entry, after a confirm. Your own races only.</li>
+            <li>Column headers sort the table; click again to flip the order.</li>
             <li>Track names link to that track and variation page.</li>
-            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="filterIcon"></span>On a column header, lets you filter the table by that column's values — uncheck what you don't want, search the list, or click a value's name to jump filter by that one value.</li>
-            <li><span class="w-4 h-4 inline-block align-text-bottom mr-1.5" v-html="columnsIcon"></span>Top right of the table, picks which columns are shown. Weight, Tune, Assists and Δ goal start hidden to keep the table tidy, but they're one click away — and your choice is remembered next time you visit.</li>
+            <li><span class="w-5 h-5 inline-block align-text-bottom mr-1.5" v-html="filterIcon"></span>On a column header, lets you filter the table by that column's values — uncheck what you don't want, search the list, or click a single value's text to only filter by that one value.</li>
+            <li><span class="w-5 h-5 inline-block align-text-bottom mr-1.5" v-html="columnsIcon"></span>Top right of the table, picks which columns are shown. Weight, Tune, Assists and Parts start hidden to keep the table tidy, but they're one click away — and your choice is remembered next time you visit.</li>
           </ul>
           <div class="space-y-6">
-            <AppShot name="races-expanded" alt="The Races table with one row expanded: notes, lap time chart and finishing roster" caption="One race, expanded" />
+            <AppShot name="races-expanded" alt="The Races table with one row expanded: notes, server, lap time chart and the finishing roster with each driver's tuning and parts, one parts popup open" caption="One race, expanded" />
             <AppShot name="races-filters" alt="The Track/Variation filter popup open, with a search box and checked values narrowing the Races table down to one track" caption="Filtering by Track / Variation" />
           </div>
         </section>
@@ -107,7 +172,7 @@
         <section id="track" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">The track page</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-2xl">
-            One track, one variation — reached via the <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">T</kbd> hotkey, via the Tracks screen, of from any track link. Five tools live here, and this is where you can focus on improving a specific race.
+            One track, one variation — reached via the <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">T</kbd> hotkey, via the Tracks screen, or from any track link. This is where you can focus on improving a specific race. Notes, map annotations and the goal only appear on your own log; anyone's log shows the chart, best lap and races.
           </p>
         </section>
 
@@ -122,7 +187,7 @@
         <section id="annotations" class="scroll-mt-8">
           <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Map annotations</h3>
           <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            A note fixed to the corner it describes — braking points, hazards, where the pack piles up.
+            Notes you can add to specific parts of the track's map — braking points, hazards, tricks, shortcuts, etc.
           </p>
           <ol class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-2 mb-5 max-w-2xl">
             <li><span class="ov text-brand-accent dark:text-brand-accent-dark mr-2">01</span>Open <b class="text-brand-text dark:text-brand-text-dark">Track Map &amp; Annotations</b> and click the pencil on the map.</li>
@@ -135,11 +200,14 @@
         </section>
 
         <section id="goal" class="scroll-mt-8">
-          <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Goal lap time</h3>
-          <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Type a target into the Goal tile — it saves as soon as you click away. <b class="text-brand-text dark:text-brand-text-dark">Gap to goal</b> is your personal best minus that target: red while you're chasing it, green the moment it's beaten. It also feeds Δ goal on every race row and the Goal progress panel on Stats.
+          <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Goal lap time &amp; top finishes</h3>
+          <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-3 max-w-2xl">
+            Type a target into the Goal tile — it saves as soon as you click away. <b class="text-brand-text dark:text-brand-text-dark">Gap to goal</b> is your personal best minus that target: red while you're chasing it, green the moment it's beaten. It also feeds the Δ goal column in Logged races and the Goal progress panel on Stats.
           </p>
-          <AppShot name="goal-tiles" alt="Personal best, goal lap time, gap to goal and races here tiles" />
+          <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
+            Below that, <b class="text-brand-text dark:text-brand-text-dark">Top 3 / 5 / 10 finishes</b>: how often you place that high here. Races with no place, or with nobody else in the roster, don't count.
+          </p>
+          <AppShot name="goal-tiles" alt="Personal best, goal lap time, gap to goal and races here tiles, with top 3, 5 and 10 finish rates below" />
         </section>
 
         <section id="lap-chart" class="scroll-mt-8">
@@ -153,7 +221,7 @@
         <section id="track-races" class="scroll-mt-8">
           <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Logged races</h3>
           <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Every run at this exact track and variation, with a <b class="text-brand-text dark:text-brand-text-dark">Δ goal</b> per race, a ★ on your personal best and the notes previewed inline. Same expand / edit / delete / filter / column controls as the Races page.
+            Every run at this exact track and variation, with a ★ on the personal best. Expand a race to read its notes. Same expand / edit / delete / sort / filter / column controls as the Races page, and the same columns hidden at first — plus <b class="text-brand-text dark:text-brand-text-dark">Δ goal</b>, each race's gap to your goal, which the column picker turns on.
           </p>
           <AppShot name="track-races" alt="Logged races for one variation with a delta-to-goal column" />
         </section>
@@ -161,7 +229,7 @@
         <section id="stats" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Stats</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6 max-w-2xl">
-            Your whole history, aggregated: most used vehicle, most raced variation, lifetime race count, and a bar chart of when you actually race — by hour today, or by day across a week, month or year. Two panels below that are worth acting on.
+            A driver's whole log, aggregated — yours or anyone else's: most used vehicle, most raced variation, race count, top 3 / 5 / 10 finish rates, and a bar chart of when the racing happens — by hour today, or by day across a week, month or year. Two panels below that are worth acting on; Goal progress only shows on your own log.
           </p>
           <div class="space-y-7">
             <div>
@@ -183,6 +251,17 @@
               <AppShot name="stats-activity" alt="Race activity bar chart with day, week, month and year tabs" />
             </div>
           </div>
+        </section>
+
+        <section id="profile" class="scroll-mt-8">
+          <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Profile</h2>
+          <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
+            Under Profile on your own log, or straight to <router-link to="/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Profile settings</router-link>. How you show up to everyone else:
+          </p>
+          <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 max-w-2xl">
+            <li><b class="text-brand-text dark:text-brand-text-dark">Display name</b> — what other racers see on leaderboards, track pages and race lists. 3–24 characters, and no two drivers can share one.</li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">Who can see your races</b> — Public or Private. Private takes you off the leaderboards and community pages, and your log shows nothing to anyone else. Notes, track notes, goals, map annotations, API keys and your email are private either way.</li>
+          </ul>
         </section>
 
         <section id="feedback" class="scroll-mt-8">
@@ -223,7 +302,7 @@ export default {
   components: { AppShot },
   data() {
     return {
-      active: 'shortcuts',
+      active: 'nav',
       feedbackIcon,
       expandIcon,
       editIcon,
@@ -231,16 +310,19 @@ export default {
       filterIcon,
       columnsIcon,
       toc: [
+        { id: 'nav',         label: 'Top menu' },
         { id: 'shortcuts',   label: 'Shortcuts' },
         { id: 'telemetry',   label: 'Telemetry' },
+        { id: 'leaderboard', label: 'Leaderboard' },
         { id: 'races',       label: 'Races page' },
         { id: 'track',       label: 'Track page' },
         { id: 'track-notes', label: 'Notes', sub: true },
         { id: 'annotations', label: 'Annotations', sub: true },
-        { id: 'goal',        label: 'Goal lap time', sub: true },
+        { id: 'goal',        label: 'Goal & top finishes', sub: true },
         { id: 'lap-chart',   label: 'Lap times chart', sub: true },
         { id: 'track-races', label: 'Logged races', sub: true },
         { id: 'stats',       label: 'Stats' },
+        { id: 'profile',     label: 'Profile' },
         { id: 'feedback',    label: 'Feedback' }
       ],
       observer: null

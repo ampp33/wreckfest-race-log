@@ -11,7 +11,7 @@
     <svg
       v-if="ringPath"
       ref="mapImg"
-      :viewBox="`0 0 ${ringPath.w} ${ringPath.h}`"
+      :viewBox="viewBox"
       class="block w-full h-auto"
       role="img"
       :aria-label="`${alt} layout`"
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Controls: pencil in view mode, discard+save in edit mode -->
-    <div class="absolute top-2 right-2 flex gap-1 z-10">
+    <div v-if="editable" class="absolute top-2 right-2 flex gap-1 z-10">
       <template v-if="!editMode">
         <button
           type="button"
@@ -161,6 +161,8 @@ export default {
     alt: { type: String, default: 'Track map' },
     annotations: { type: Array, default: () => [] },
     editMode: { type: Boolean, default: false },
+    // false shows the map alone, with no pencil (e.g. the prep for race dialog).
+    editable: { type: Boolean, default: true },
     selectedId: { type: String, default: null },
     trackSlug: { type: String, default: '' },
     variationSlug: { type: String, default: '' },
@@ -174,6 +176,8 @@ export default {
       closeIcon,
       checkIcon,
       ringPath: null,
+      // [x, y, w, h] hugging the drawn line; only used when not editable.
+      cropBox: null,
       // One entry per stroke — a junction layout carries several.
       reps: [],
       tracking: [],
@@ -190,6 +194,12 @@ export default {
     }
   },
   computed: {
+    // Turn markers sit at percentages of the full artwork, so only a map
+    // that can't carry them is cropped to the line itself.
+    viewBox() {
+      if (!this.editable && this.cropBox) return this.cropBox.join(' ')
+      return `0 0 ${this.ringPath.w} ${this.ringPath.h}`
+    },
     ringUnit() {
       const label = (this.ringLabel || this.alt || 'Track').toUpperCase()
       return `${label} · `
@@ -272,6 +282,7 @@ export default {
     // stops the reset and the re-measure chasing each other.
     fitRing() {
       if (!this.ringPath) return
+      if (!this.editable) this.measureCrop()
       const n = this.ringPath.paths.length
       this.reps = new Array(n).fill(1)
       this.tracking = new Array(n).fill(BASE_TRACKING)
@@ -324,6 +335,17 @@ export default {
       // A shorter label may now fit several times, so measure again before
       // settling; otherwise go straight to spacing.
       this.$nextTick(() => (shrank ? this.fitPass(pass + 1) : this.applyTracking()))
+    },
+    measureCrop() {
+      const boxes = this.segEls.filter(Boolean).map(el => el.getBBox())
+      if (!boxes.length) return
+      // Half the 30-wide ribbon, plus a little air.
+      const pad = 25
+      const x = Math.min(...boxes.map(b => b.x)) - pad
+      const y = Math.min(...boxes.map(b => b.y)) - pad
+      const r = Math.max(...boxes.map(b => b.x + b.width)) + pad
+      const b = Math.max(...boxes.map(b => b.y + b.height)) + pad
+      this.cropBox = [x, y, r - x, b - y]
     },
     applyTracking() {
       if (!this.ringPath) return

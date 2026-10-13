@@ -69,12 +69,6 @@
               <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</div>
             </div>
           </div>
-
-          <!-- Notes preview, expanded/collapsed via the icon in the button cluster to the right. -->
-          <div v-if="!readOnly && isColVisible('notes') && (race.notes || hasLapTimes || hasRoster)" class="mt-3">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Notes</div>
-            <div class="text-sm truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || 'No notes' }}</div>
-          </div>
         </div>
 
         <RaceRowActions
@@ -155,9 +149,6 @@
       >{{ formatLap }}</td>
       <td v-if="isColVisible('gap')" class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
       <td v-if="isColVisible('total')" class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
-      <td v-if="isColVisible('notes')" class="py-2 pr-3 max-w-[18ch]" :title="race.notes">
-        <span class="block truncate text-brand-muted dark:text-brand-muted-dark">{{ race.notes || '—' }}</span>
-      </td>
       <td class="py-2 pr-3 text-right whitespace-nowrap">
         <RaceRowActions
           :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
