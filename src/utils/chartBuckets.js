@@ -84,6 +84,17 @@ export function countPerBucket(entries, buckets, unit) {
   return buckets.map(b => ({ bucket: b, count: blankFuture(b, counts.get(b.getTime())) }))
 }
 
+// How many distinct users in `entries` ({ userId, at }) have an entry in the
+// `windowMs` before the end of each bucket.
+export function activeUsersPerBucket(entries, buckets, unit, windowMs) {
+  return buckets.map(b => {
+    const end = nextBucket(b, unit).getTime()
+    const users = new Set()
+    for (const { userId, at } of entries) if (at < end && at >= end - windowMs) users.add(userId)
+    return { bucket: b, count: blankFuture(b, users.size) }
+  })
+}
+
 // How many of `timestamps` fall before the end of each bucket — a running
 // total that includes everything before the range starts.
 export function runningTotalPerBucket(timestamps, buckets, unit) {

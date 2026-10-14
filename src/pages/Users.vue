@@ -16,6 +16,11 @@
           <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ users.length }}</div>
         </div>
 
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block" title="Raced in the last 60 days">
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Active users</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ activeUserCount }}</div>
+        </div>
+
         <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
           <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races logged</div>
           <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ totalRaces }}</div>
@@ -326,8 +331,8 @@ import {
 } from 'chart.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getRaceLogBins, setUserRole, setUserBanned } from '../services/adminService.js'
-import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket } from '../utils/chartBuckets.js'
+import { getAllUsers, getRaceLogBins, getUserActivityBins, setUserRole, setUserBanned } from '../services/adminService.js'
+import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket, activeUsersPerBucket } from '../utils/chartBuckets.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate, formatDateTime } from '../utils/dateFormat.js'
@@ -364,6 +369,12 @@ const { render: renderGrowth } = useChart(growthCanvas)
 const racesCanvas = ref(null)
 const { render: renderRaces } = useChart(racesCanvas)
 
+const ACTIVE_WINDOW_MS = 60 * 24 * 60 * 60 * 1000
+const activityBins = ref([])
+const activeUserCount = computed(() =>
+  users.value.filter(u => u.last_race_at && Date.now() - new Date(u.last_race_at).getTime() <= ACTIVE_WINDOW_MS).length
+)
+
 const isDark = computed(() => prefsStore.darkMode)
 const currentUserId = computed(() => authStore.user?.id ?? null)
 
@@ -383,11 +394,13 @@ function renderGrowthChart() {
   const dark = isDark.value
   const theme = getChartTheme(dark)
   const color = dark ? '#E5332F' : '#C41E1E'
+  const activeColor = dark ? '#FF6B61' : '#F0443A'
   const dense = growthData.value.length > DENSE_POINT_COUNT
 
   const unit = bucketUnit(usersRange.value)
   const labels = growthData.value.map(row => bucketLabel(row.bucket, unit))
   const counts = growthData.value.map(row => row.user_count)
+  const activeCounts = growthData.value.map(row => row.active_count)
 
   renderGrowth({
     type: 'line',
@@ -406,6 +419,19 @@ function renderGrowthChart() {
         pointBorderWidth: 2,
         tension: 0.35,
         fill: true
+      }, {
+        label: 'Active users',
+        data: activeCounts,
+        borderColor: activeColor,
+        backgroundColor: activeColor + '33',
+        borderWidth: 2.5,
+        pointRadius: dense ? 0 : 3,
+        pointHoverRadius: dense ? 4 : 6,
+        pointBackgroundColor: activeColor,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true
       }]
     },
     options: {
@@ -413,11 +439,11 @@ function renderGrowthChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false },
+        legend: { display: true, align: 'end', labels: { color: theme.tickColor, boxHeight: 2, font: { size: 11 } } },
         tooltip: {
           ...theme.tooltip,
           callbacks: {
-            label: ctx => `  ${ctx.parsed.y} users`
+            label: ctx => `  ${ctx.parsed.y} ${ctx.dataset.label.toLowerCase()}`
           }
         }
       },
@@ -522,12 +548,15 @@ watch(loading, (isLoading) => {
 
 // Both charts are bucketed here, by the viewer's local hour (1D) or day (see
 // src/utils/chartBuckets.js). User growth is a running total built from the
-// signup dates the users list already carries — no extra query.
+// signup dates the users list already carries; active users (raced in the
+// trailing 60 days) from the per-user activity bins.
 function buildUserGrowth() {
   const signups = users.value.map(u => u.created_at)
   const unit = bucketUnit(usersRange.value)
   const buckets = growthBuckets(usersRange.value, signups)
-  growthData.value = runningTotalPerBucket(signups, buckets, unit).map(({ bucket, count }) => ({ bucket, user_count: count }))
+  const active = activeUsersPerBucket(activityBins.value, buckets, unit, ACTIVE_WINDOW_MS)
+  growthData.value = runningTotalPerBucket(signups, buckets, unit)
+    .map(({ bucket, count }, i) => ({ bucket, user_count: count, active_count: active[i].count }))
 }
 // Races logged is a per-bucket count, not a running total.
 function buildRaceGrowth(bins) {
@@ -535,9 +564,14 @@ function buildRaceGrowth(bins) {
   const buckets = growthBuckets(racesRange.value, bins.map(b => b.at))
   racesData.value = countPerBucket(bins, buckets, unit).map(({ bucket, count }) => ({ bucket, race_count: count }))
 }
-function onUsersRangeChange() {
-  buildUserGrowth()
-  nextTick(renderGrowthChart)
+async function onUsersRangeChange() {
+  try {
+    activityBins.value = await getUserActivityBins(usersRange.value)
+    buildUserGrowth()
+    nextTick(renderGrowthChart)
+  } catch (err) {
+    pushToast(err.message || 'Failed to load user growth', 'error')
+  }
 }
 async function loadRaceGrowth() {
   try {
@@ -601,12 +635,14 @@ useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog()
 
 onMounted(async () => {
   try {
-    const [allUsers, raceLogBins, raceCount] = await Promise.all([
+    const [allUsers, raceLogBins, raceCount, userActivityBins] = await Promise.all([
       getAllUsers(),
       getRaceLogBins(racesRange.value),
-      getTotalRaceCount()
+      getTotalRaceCount(),
+      getUserActivityBins(usersRange.value)
     ])
     users.value = allUsers
+    activityBins.value = userActivityBins
     buildUserGrowth()
     buildRaceGrowth(raceLogBins)
     totalRaces.value = raceCount

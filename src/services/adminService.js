@@ -15,6 +15,14 @@ export async function getRaceLogBins(range = '30d') {
   return (data ?? []).map(([at, count]) => ({ at, count: Number(count) }))
 }
 
+// Distinct (user, 15-minute UTC bin) race pairs as [{ userId, at }], reaching
+// 60 days before the range — see get_user_activity_bins() in supabase/schema.sql.
+export async function getUserActivityBins(range = '30d') {
+  const { data, error } = await supabase.rpc('get_user_activity_bins', { p_range: range })
+  if (error) throw error
+  return (data ?? []).map(([userId, at]) => ({ userId, at }))
+}
+
 export async function setUserRole(userId, role) {
   const { error } = await supabase.rpc('set_user_role', {
     target_user_id: userId,

@@ -717,6 +717,40 @@ begin
 end;
 $$;
 
+-- Which users raced in each 15-minute UTC bin, as a jsonb array of distinct
+-- [user id, bin start in epoch ms] pairs — admin only. Feeds the "Active
+-- users" line (raced within the trailing 60 days), so it reaches 60 days
+-- before the range plus the same extra day get_race_log_bins() takes. Keyed
+-- on races.datetime to match last_race_at in get_all_users_with_roles().
+create or replace function wf1.get_user_activity_bins(p_range text default '30d')
+returns jsonb
+language plpgsql
+security definer set search_path = wf1
+as $$
+declare
+    start_day date;
+begin
+    if not wf1.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    start_day := wf1.resolve_growth_range_start(
+        p_range,
+        (select min(r.datetime)::date from wf1.races r)
+    ) - 61;
+
+    return coalesce((
+        select jsonb_agg(jsonb_build_array(b.user_id, b.bin_ms))
+        from (
+            select distinct r.user_id,
+                   (floor(extract(epoch from r.datetime) / 900) * 900000)::bigint as bin_ms
+            from wf1.races r
+            where r.datetime >= start_day::timestamptz
+        ) b
+    ), '[]'::jsonb);
+end;
+$$;
+
 -- Sets the role of a target user — admin only.
 -- Replaces all current role assignments with the single new role.
 create or replace function wf1.set_user_role(target_user_id uuid, new_role text)
