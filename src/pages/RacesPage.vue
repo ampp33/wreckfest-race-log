@@ -47,6 +47,7 @@
           <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
         </ColumnFilterMenu>
         <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
+        <ColumnFilterMenu v-if="isSignedIn" inline label="Favorites" v-model="columnFilters.favorite" :options="favoriteOptions" />
         <ColumnFilterMenu
           inline
           label="Columns"
@@ -202,7 +203,9 @@
                   :editable="isOwnView"
                   @edit="editing[race.id] = true"
                   @delete="onDelete(race)"
-                />
+                >
+                  <FavoriteStar v-if="isSignedIn" :race-id="race.id" />
+                </RaceRowActions>
               </div>
 
               <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
@@ -235,6 +238,11 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark">
+                <th v-if="isSignedIn" class="w-px p-0 pb-2.5 font-medium">
+                  <span class="flex w-5 justify-center">
+                    <ColumnFilterMenu label="Favorites" :icon="columnFilters.favorite.length ? starFillIcon : starIcon" icon-size="w-4 h-4" v-model="columnFilters.favorite" :options="favoriteOptions" />
+                  </span>
+                </th>
                 <th v-if="columnVisibility.isVisible('date')" class="px-3.5 pb-2.5 font-medium">
                   <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('date', 'Date')" :aria-label="sort.titleFor('date', 'Date')" @click="sort.toggle('date')">
                     Date
@@ -331,6 +339,9 @@
             <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
               <template v-for="race in pageRows" :key="race.id">
                 <tr v-if="!editing[race.id]" class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
+                  <td v-if="isSignedIn" class="w-px p-0">
+                    <FavoriteStar compact :race-id="race.id" />
+                  </td>
                   <td v-if="columnVisibility.isVisible('date')" class="px-3.5 py-2 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
                     <span class="inline-flex items-center gap-1">
                       {{ formatDateTime(race.datetime) }}
@@ -402,7 +413,7 @@
                   </td>
                 </tr>
                 <tr v-else>
-                  <td :colspan="visibleColumnKeys.length + 1" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td :colspan="tableColspan" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceForm
                       :vehicles="vehicles"
                       :defaults="editDefaultsFor(race)"
@@ -414,7 +425,7 @@
                   </td>
                 </tr>
                 <tr v-if="!editing[race.id] && expanded[race.id]">
-                  <td :colspan="visibleColumnKeys.length + 1" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+                  <td :colspan="tableColspan" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceExpandedDetails
                       :notes="race.notes || ''"
                       :notes-fallback="isOwnView ? 'No notes' : ''"
@@ -502,9 +513,11 @@ import RaceRowActions from '../components/RaceRowActions.vue'
 import RaceExpandedDetails from '../components/RaceExpandedDetails.vue'
 import OnlineRaceIcon from '../components/OnlineRaceIcon.vue'
 import PartsBadge from '../components/PartsBadge.vue'
+import FavoriteStar from '../components/FavoriteStar.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
-import { buildOptions, sortOptions } from '../utils/filterOptions.js'
+import { buildOptions, sortOptions, FAVORITE_OPTION_LABELS } from '../utils/filterOptions.js'
+import { isFavorite } from '../stores/favoritesStore.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import { createSortState, sortRows } from '../utils/sortState.js'
 import SortCaret from '../components/SortCaret.vue'
@@ -512,6 +525,8 @@ import SortMenu from '../components/SortMenu.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
 import refreshIcon from '../assets/icons/refresh.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
+import starIcon from '../assets/icons/star.svg?raw'
+import starFillIcon from '../assets/icons/star-fill.svg?raw'
 
 const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
 const UNRESOLVED_VARIATION = '__unresolved_variation__'
@@ -547,6 +562,7 @@ function vehicleKey(race) { return race.vehicleName === '—' ? UNRESOLVED_VEHIC
 function piKey(race) { return race.performance_index != null ? race.performance_index : null }
 function placeKey(race) { return race.place != null ? race.place : '—' }
 function driverKey(race) { return race.user_id }
+function favoriteKey(race) { return isFavorite(race.id) ? 'favorite' : 'other' }
 
 // One value-getter per sortable column (everything but Parts/Actions), fed to
 // sortRows() — each returns either a number (or a date's timestamp) or a
@@ -580,7 +596,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RacesPage',
-  components: { DriverScope, LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
+  components: { DriverScope, LapSplitsChart, RaceResultsRoster, RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, FavoriteStar, ColumnFilterMenu, FilterDrawer, SortCaret, SortMenu },
   // A small Composition API bridge — `createColumnVisibility`/`createSortState`
   // (shared with TrackDetailPage.vue) are built on `reactive`/`watch`, not
   // lifecycle hooks, so they don't need this whole file converted to
@@ -607,7 +623,7 @@ export default {
       editing: {},
       saving: {},
       confirmDeleteRace: null,
-      columnFilters: { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] },
+      columnFilters: { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [], favorite: [] },
       // Community mode only: whether the server has older races than the ones
       // loaded so far, and how many rows have been fetched (the next page's
       // offset — not rows.length, which drops duplicates).
@@ -617,7 +633,9 @@ export default {
       COMMUNITY_PAGE_SIZE,
       apiIcon,
       refreshIcon,
-      columnsIcon
+      columnsIcon,
+      starIcon,
+      starFillIcon
     }
   },
   computed: {
@@ -642,6 +660,14 @@ export default {
     },
     isOwnView() {
       return !!this.userId && authStore.user?.id === this.userId
+    },
+    // Favorites are the signed-in viewer's own, on anyone's races.
+    isSignedIn() {
+      return !!authStore.user
+    },
+    // Every visible column, plus Actions, plus the favorite star's when signed in.
+    tableColspan() {
+      return this.visibleColumnKeys.length + 1 + (this.isSignedIn ? 1 : 0)
     },
     sourceFilter() {
       if (this.isCommunity) return null
@@ -692,6 +718,9 @@ export default {
     },
     placeOptions() {
       return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'place')), placeKey, placeKey), { numeric: true })
+    },
+    favoriteOptions() {
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'favorite')), favoriteKey, r => FAVORITE_OPTION_LABELS[favoriteKey(r)]))
     },
     filteredRows() {
       return this.rows.filter(race => this.matchesFilters(race))
@@ -776,7 +805,7 @@ export default {
       return this.$route.name === 'driver-races' || this.$route.name === 'community-races'
     },
     resetColumnFilters() {
-      this.columnFilters = { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [] }
+      this.columnFilters = { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [], favorite: [] }
     },
     // Matches a race against every column filter except `exceptKey` — used
     // to build each column's own option list off what's visible once every
@@ -790,6 +819,7 @@ export default {
       if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
       if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
       if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
+      if (exceptKey !== 'favorite' && f.favorite.includes(favoriteKey(race))) return false
       return true
     },
     // Shared by the initial mount and the header's refresh button. A refresh

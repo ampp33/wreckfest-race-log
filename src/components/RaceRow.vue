@@ -79,7 +79,9 @@
           :editable="!readOnly"
           @edit="editing = true"
           @delete="onDelete"
-        />
+        >
+          <FavoriteStar v-if="favoritable" :race-id="race.id" />
+        </RaceRowActions>
       </div>
 
       <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
@@ -112,6 +114,9 @@
     class="border-t border-brand-border dark:border-brand-border-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
   >
     <template v-if="!editing">
+      <td v-if="favoritable" class="w-px py-2 pl-0 pr-2">
+        <FavoriteStar compact :race-id="race.id" />
+      </td>
       <td v-if="isColVisible('when')" class="py-2 pl-0 pr-3 whitespace-nowrap tabular text-xs text-brand-muted dark:text-brand-muted-dark">
         <span class="inline-flex items-center gap-1">
           {{ formattedDate }}
@@ -205,6 +210,7 @@ import RaceRowActions from './RaceRowActions.vue'
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import OnlineRaceIcon from './OnlineRaceIcon.vue'
 import PartsBadge from './PartsBadge.vue'
+import FavoriteStar from './FavoriteStar.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import apiIcon from '../assets/icons/api.svg?raw'
@@ -217,7 +223,7 @@ function toLocalIsoMinute(isoString) {
 
 export default {
   name: 'RaceRow',
-  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge },
+  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, FavoriteStar },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -234,7 +240,10 @@ export default {
     // Community track page: where a driver's name links, under their prefix —
     // e.g. '/track/<t>/<v>' to open that driver's page for this variation.
     // Only used when the 'driver' column is visible.
-    driverPathSuffix: { type: String, default: '/races' }
+    driverPathSuffix: { type: String, default: '/races' },
+    // Signed in: shows the favorite star, in its own always-on first column
+    // (and just under the expand button on cards).
+    favoritable: { type: Boolean, default: false }
   },
   emits: ['update', 'delete'],
   data() {
@@ -251,7 +260,8 @@ export default {
       return `/${this.race.user_id}${this.driverPathSuffix}`
     },
     rowColspan() {
-      return this.visibleColumns.length + 1 // +1 for the always-shown Actions column
+      // +1 for the always-shown Actions column, +1 more for the favorite star's
+      return this.visibleColumns.length + 1 + (this.favoritable ? 1 : 0)
     },
     apiSourceTitle() {
       return this.race.api_key?.name

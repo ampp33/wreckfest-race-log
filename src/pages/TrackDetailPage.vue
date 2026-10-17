@@ -183,6 +183,7 @@
         </ColumnFilterMenu>
         <ColumnFilterMenu inline label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
         <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
+        <ColumnFilterMenu v-if="isSignedIn" inline label="Favorites" v-model="columnFilters.favorite" :options="favoriteOptions" />
         <ColumnFilterMenu
           inline
           label="Columns"
@@ -228,6 +229,7 @@
             :visible-columns="visibleColumnKeys"
             :read-only="!isOwnView"
             :driver-path-suffix="`/track/${track.slug}/${currentVariation.slug}`"
+            :favoritable="isSignedIn"
             @update="onUpdateRace"
             @delete="onDeleteRace"
           />
@@ -247,6 +249,11 @@
           <table class="min-w-full text-sm">
             <thead class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark">
               <tr>
+                <th v-if="isSignedIn" class="w-px py-2 pl-0 pr-2">
+                  <span class="flex w-5 justify-center">
+                    <ColumnFilterMenu label="Favorites" :icon="columnFilters.favorite.length ? starFillIcon : starIcon" icon-size="w-4 h-4" v-model="columnFilters.favorite" :options="favoriteOptions" />
+                  </span>
+                </th>
                 <th v-if="isShown('when')" class="py-2.5 pl-0 pr-3">
                   <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('when', 'Date')" :aria-label="sort.titleFor('when', 'Date')" @click="sort.toggle('when')">
                     Date
@@ -351,18 +358,19 @@
                 :visible-columns="visibleColumnKeys"
                 :read-only="!isOwnView"
                 :driver-path-suffix="`/track/${track.slug}/${currentVariation.slug}`"
+                :favoritable="isSignedIn"
                 @update="onUpdateRace"
                 @delete="onDeleteRace"
               />
               <tr v-if="!races.length">
-                <td :colspan="visibleColumnKeys.length + 1" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                <td :colspan="tableColspan" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
                   <template v-if="isOwnView">No races{{ classSuffix }} yet — click <span class="font-semibold">+ Add Race</span> to log one.</template>
                   <template v-else-if="isCommunity">No one has logged a race{{ classSuffix }} here yet.</template>
                   <template v-else>No races logged{{ classSuffix }} here yet.</template>
                 </td>
               </tr>
               <tr v-else-if="!filteredRaces.length">
-                <td :colspan="visibleColumnKeys.length + 1" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+                <td :colspan="tableColspan" class="py-6 text-center font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
                   No races match the current filter.
                   <button type="button" class="text-brand-accent dark:text-brand-accent-dark underline" @click="resetColumnFilters">Clear filters</button>
                 </td>
@@ -436,12 +444,15 @@ import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 import { useEventListener } from '../composables/useEventListener.js'
-import { buildOptions, sortOptions } from '../utils/filterOptions.js'
+import { buildOptions, sortOptions, FAVORITE_OPTION_LABELS } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import { createSortState, sortRows } from '../utils/sortState.js'
 import { placementRate } from '../utils/raceStats.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
+import starIcon from '../assets/icons/star.svg?raw'
+import starFillIcon from '../assets/icons/star-fill.svg?raw'
+import { isFavorite } from '../stores/favoritesStore.js'
 import SortCaret from '../components/SortCaret.vue'
 import SortMenu from '../components/SortMenu.vue'
 
@@ -500,6 +511,8 @@ const visibleColumnKeys = computed(() => availableColumns.value.map(c => c.key).
 function isShown(key) {
   return visibleColumnKeys.value.includes(key)
 }
+// Every visible column, plus Actions, plus the favorite star's when signed in.
+const tableColspan = computed(() => visibleColumnKeys.value.length + 1 + (isSignedIn.value ? 1 : 0))
 const sort = createSortState()
 // Feeds the mobile filter drawer's SortMenu — only currently-visible,
 // sortable columns (Notes and Parts aren't sortable, and a hidden column
@@ -521,7 +534,7 @@ const notesInput = ref('')
 const notesTextarea = ref(null)
 
 const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
-const columnFilters = ref({ driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [] })
+const columnFilters = ref({ driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] })
 // Community mode pages through races COMMUNITY_PAGE_SIZE at a time, like /community/races.
 const hasMore = ref(false)
 const loadingMore = ref(false)
@@ -586,6 +599,9 @@ function placeKey(race) {
 function driverKey(race) {
   return race.user_id
 }
+function favoriteKey(race) {
+  return isFavorite(race.id) ? 'favorite' : 'other'
+}
 
 // One value-getter per sortable column (everything but Notes/Parts/Actions), fed
 // to sortRows() — each returns either a number (or a date's timestamp) or a
@@ -623,6 +639,7 @@ function matchesFilters(race, exceptKey) {
   if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
   if (exceptKey !== 'tuning' && f.tuning.includes(tuneKey(race))) return false
   if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
+  if (exceptKey !== 'favorite' && f.favorite.includes(favoriteKey(race))) return false
   return true
 }
 
@@ -649,6 +666,10 @@ const placeOptions = computed(() => sortOptions(
   { numeric: true }
 ))
 
+const favoriteOptions = computed(() => sortOptions(
+  buildOptions(races.value.filter(r => matchesFilters(r, 'favorite')), favoriteKey, r => FAVORITE_OPTION_LABELS[favoriteKey(r)])
+))
+
 const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
 const sortedRaces = computed(() => sortRows(filteredRaces.value, sort.state, SORT_VALUE_GETTERS))
 
@@ -657,7 +678,7 @@ const top5Rate = computed(() => placementRate(filteredRaces.value, 5))
 const top10Rate = computed(() => placementRate(filteredRaces.value, 10))
 
 function resetColumnFilters() {
-  columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [] }
+  columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] }
 }
 
 // Switching variation or class mid-load starts another load; only the newest

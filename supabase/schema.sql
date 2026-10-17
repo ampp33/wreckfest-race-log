@@ -963,6 +963,45 @@ create policy "races_private delete own"
     to authenticated
     using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
+-- Race favorites: the races a user has starred. Any race they can see, not
+-- just their own — so unlike races_private there's no ownership check on
+-- the race, only that it's visible to them (the races select policy applies
+-- inside the exists). Private to the user who starred it: nobody else can
+-- see who favorited what. Goes when either the race or the user does.
+create table if not exists wf1.race_favorites (
+    user_id uuid not null references auth.users(id) on delete cascade,
+    race_id uuid not null references wf1.races(id) on delete cascade,
+    created_at timestamptz not null default now(),
+    primary key (user_id, race_id)
+);
+
+create index if not exists race_favorites_race_idx
+    on wf1.race_favorites (race_id);
+
+alter table wf1.race_favorites enable row level security;
+
+drop policy if exists "race_favorites select own" on wf1.race_favorites;
+create policy "race_favorites select own"
+    on wf1.race_favorites for select
+    to authenticated
+    using (auth.uid() = user_id);
+
+drop policy if exists "race_favorites insert own" on wf1.race_favorites;
+create policy "race_favorites insert own"
+    on wf1.race_favorites for insert
+    to authenticated
+    with check (
+        auth.uid() = user_id
+        and not wf1.is_banned(auth.uid())
+        and exists (select 1 from wf1.races r where r.id = race_id)
+    );
+
+drop policy if exists "race_favorites delete own" on wf1.race_favorites;
+create policy "race_favorites delete own"
+    on wf1.race_favorites for delete
+    to authenticated
+    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+
 alter table wf1.api_keys enable row level security;
 
 drop policy if exists "api_keys select own" on wf1.api_keys;

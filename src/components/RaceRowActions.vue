@@ -9,6 +9,9 @@
     >
       <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
     </button>
+    <!-- Extra controls that sit between expand and edit — the mobile cards'
+         favorite star. -->
+    <slot />
     <button
       v-if="editable"
       type="button"

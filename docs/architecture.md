@@ -70,6 +70,7 @@ resolving the session.
 | `raceService.js` | Race CRUD, per-variation and all-races queries, bulk import, vehicle→PI map. Every read filters on `user_id` explicitly (see [Data model](#data-model)); writes split notes into `races_private`. |
 | `goalService.js` | Per-variation goal lap times. |
 | `annotationService.js` | Track-map pins for a variation. |
+| `favoriteService.js` | The races you've starred — anyone's, not just your own. |
 | `statsService.js` | The user's aggregate stats. |
 | `profileService.js` | Update your own display name and public/private switch. |
 | `leaderboardService.js` | Community leaderboards: `get_most_races_leaderboard()`, `get_fastest_laps()`. |
@@ -92,6 +93,7 @@ that a store library would be more ceremony than help.
 | `trackSearchStore` | Track search modal open state. |
 | `prepRaceStore` | Prep for race modal open state. |
 | `feedbackStore` | Feedback modal open state. |
+| `favoritesStore` | The signed-in user's favorited race ids, loaded once per sign-in and shared by every race table. |
 | `toastStore` | Toast queue. |
 
 ### Composition API usage
@@ -221,6 +223,10 @@ you can always read your own; only the owner can write):
   null on anyone else's race.
 - `goals` — target lap time + notes per variation
 - `variation_annotations` — numbered map pins (`x`, `y`, `number`, `note`)
+- `race_favorites` — `(user_id, race_id)` pairs for the races you've starred.
+  Any race you can see, not just your own; nobody else sees your stars.
+  The star column in the race tables is always shown when signed in (it's
+  not in the column picker) and is filterable like any other column.
 - `api_keys` — per-user keys for external submission. Only a SHA-256 `key_hash`
   is stored; the raw key is generated in the browser, shown once, and never
   persisted. Revocation is soft (`revoked_at`) so past races keep their

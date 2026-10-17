@@ -24,3 +24,7 @@ export function sortOptions(options, { numeric = false } = {}) {
     : (a, b) => String(a.label).localeCompare(String(b.label)))
   return [...real, ...none]
 }
+
+// Option labels for the favorites filter, keyed by the 'favorite' / 'other'
+// bucket each race page sorts races into.
+export const FAVORITE_OPTION_LABELS = { favorite: 'Favorites', other: 'Not favorited' }
