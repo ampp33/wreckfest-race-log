@@ -35,8 +35,7 @@
           <strong class="text-brand-text dark:text-brand-text-dark">Steam + Linux (Proton) only:</strong>
           add
           <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">WINEDLLOVERRIDES="version=n,b" %command%</code>
-          to Wreckfest's launch options in Steam, so Wine loads the real proxy DLL instead of its
-          own built-in stub. Not needed on native Windows.
+          to Wreckfest's launch options in Steam.  Not needed on Windows.
         </li>
         <li>
           Complete a race in Wreckfest — the entry should appear at the top of the table on the
