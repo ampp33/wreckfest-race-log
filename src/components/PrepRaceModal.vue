@@ -60,7 +60,7 @@
               <td class="py-2 pr-2 font-display font-black" :style="{ color: classLetterColor(c.letter) }" :title="classRangeLabel(c.letter)">{{ c.letter }}</td>
               <td v-if="!c.lap" colspan="6" class="py-2 text-brand-muted dark:text-brand-muted-dark">No laps logged.</td>
               <template v-else>
-                <td class="py-2 pr-2 truncate text-brand-text dark:text-brand-text-dark">{{ vehicleName(c.lap.vehicle_id) }}</td>
+                <td class="py-2 pr-2 truncate text-brand-text dark:text-brand-text-dark">{{ vehicleName(c.lap) }}</td>
                 <td class="py-2 pr-2 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.tuning ?? '—' }}</td>
                 <td class="py-2 pr-2"><PartsBadge :parts="c.lap.parts" /></td>
                 <td class="py-2 pr-2 whitespace-nowrap"><PerformanceIndexBadge :value="c.lap.performance_index" /></td>
@@ -106,7 +106,7 @@ import { CLASS_LETTERS, classLetterColor, classRangeLabel } from '../utils/piInf
 import { prepRaceStore, closePrepRace } from '../stores/prepRaceStore.js'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
-import { getFastestCommunityLaps } from '../services/raceService.js'
+import { getFastestLapsPerVehicleOnVariation } from '../services/raceService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { authStore } from '../stores/authStore.js'
 import { getAnnotationsForVariation } from '../services/annotationService.js'
@@ -179,8 +179,6 @@ export default {
       this.loadLaps()
       this.loadAnnotations(variation.id)
     },
-    // shortcut: client-side filtering only sees the fastest 1000 laps on the variation;
-    // move the per-class pick into SQL if a track ever logs more than that.
     async loadAnnotations(variationId) {
       this.annotations = []
       if (!authStore.isAuthenticated) return
@@ -196,7 +194,7 @@ export default {
       this.latestVariationId = variationId
       this.loadingLaps = true
       try {
-        const laps = await getFastestCommunityLaps(variationId)
+        const laps = await getFastestLapsPerVehicleOnVariation(variationId)
         // A quicker track change already superseded this one.
         if (this.latestVariationId !== variationId) return
         this.laps = laps
@@ -206,8 +204,10 @@ export default {
         if (this.latestVariationId === variationId) this.loadingLaps = false
       }
     },
-    vehicleName(id) {
-      return this.vehicles.find(v => v.id === id)?.name ?? '—'
+    // The roster names its car, so vehicle_name is there even when it
+    // matched no vehicle (and vehicle_id is null).
+    vehicleName(lap) {
+      return lap.vehicle_name ?? '—'
     },
     onClose() {
       closePrepRace()

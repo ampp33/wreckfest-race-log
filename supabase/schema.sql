@@ -148,6 +148,12 @@ create index if not exists races_variation_class_lap_idx
     on wf1.races (track_variation_id, pi_class, lap_time_ms)
     where lap_time_ms > 0;
 
+-- The plugin-logged races on a variation that carry a roster, for
+-- get_fastest_laps_per_vehicle_on_variation() to unpack.
+create index if not exists races_variation_roster_idx
+    on wf1.races (track_variation_id)
+    where source = 'api' and results_roster is not null;
+
 -- Variation annotations: per-user turn notes pinned to a map image position.
 create table if not exists wf1.variation_annotations (
     id uuid primary key default gen_random_uuid(),
@@ -1440,6 +1446,88 @@ as $$
 $$;
 
 grant execute on function wf1.get_fastest_laps to anon, authenticated;
+
+-- The quickest lap on one variation for each PI class + vehicle pair,
+-- quickest first. Laps come from both the races themselves and every entry
+-- in their results rosters, so other drivers in a logged race count too. A
+-- roster entry names its car rather than giving an id, so it's matched to
+-- wf1.vehicles by name; one that doesn't match keeps its name with a null
+-- vehicle_id. Rosters carry no weight, so vehicle_weight_kg is null on those
+-- laps — on a tie the race row (the logging driver's own roster entry) wins,
+-- so it keeps its weight. tuning is the same four-digit code races.tuning
+-- stores. Dropped under its first name, get_prep_race_laps, too.
+drop function if exists wf1.get_prep_race_laps(uuid);
+create or replace function wf1.get_fastest_laps_per_vehicle_on_variation(p_variation_id uuid)
+returns table(
+    vehicle_id        uuid,
+    vehicle_name      text,
+    tuning            integer,
+    parts             jsonb,
+    performance_index integer,
+    pi_class          text,
+    vehicle_weight_kg integer,
+    lap_time_ms       integer
+)
+language sql
+stable set search_path = wf1
+as $$
+    with laps as (
+        select
+            r.vehicle_id, v.name as vehicle_name, r.tuning, r.parts,
+            r.performance_index, r.pi_class, r.vehicle_weight_kg,
+            r.lap_time_ms, 0 as source_rank
+        from wf1.races r
+        left join wf1.vehicles v on v.id = r.vehicle_id
+        where r.source = 'api'
+          and r.track_variation_id = p_variation_id
+          and r.lap_time_ms > 0
+          and r.pi_class is not null
+
+        union all
+
+        select
+            v.id, coalesce(v.name, e.entry->>'car'),
+            case when e.entry->'tuning'->>'suspension' ~ '^\d$'
+                  and e.entry->'tuning'->>'gear_ratio' ~ '^\d$'
+                  and e.entry->'tuning'->>'differential' ~ '^\d$'
+                  and e.entry->'tuning'->>'brake_balance' ~ '^\d$'
+                then (e.entry->'tuning'->>'suspension')::int * 1000
+                   + (e.entry->'tuning'->>'gear_ratio')::int * 100
+                   + (e.entry->'tuning'->>'differential')::int * 10
+                   + (e.entry->'tuning'->>'brake_balance')::int
+            end,
+            e.entry->'parts',
+            case when e.rating ~ '^\d{1,6}$' then e.rating::int end,
+            e.letter, null::integer,
+            (e.entry->>'best_lap_ms')::int, 1
+        from wf1.races r
+        cross join lateral (
+            select x as entry,
+                   split_part(btrim(x->>'class'), ' ', 1) as letter,
+                   split_part(btrim(x->>'class'), ' ', 2) as rating
+            from jsonb_array_elements(r.results_roster) x
+            where jsonb_typeof(x) = 'object'
+        ) e
+        left join wf1.vehicles v on lower(v.name) = lower(e.entry->>'car')
+        where r.source = 'api'
+          and r.track_variation_id = p_variation_id
+          and r.results_roster is not null
+          and jsonb_typeof(r.results_roster) = 'array'
+          and e.letter in ('A', 'B', 'C', 'D')
+          and case when e.entry->>'best_lap_ms' ~ '^\d{1,9}$'
+                   then (e.entry->>'best_lap_ms')::int > 0 end
+    )
+    select vehicle_id, vehicle_name, tuning, parts, performance_index,
+           pi_class, vehicle_weight_kg, lap_time_ms
+    from (
+        select distinct on (pi_class, lower(vehicle_name)) *
+        from laps
+        order by pi_class, lower(vehicle_name), lap_time_ms, source_rank
+    ) best
+    order by lap_time_ms, source_rank
+$$;
+
+grant execute on function wf1.get_fastest_laps_per_vehicle_on_variation to anon, authenticated;
 
 -- Returns all feedback entries with the submitting user's email, newest
 -- first — admin only. The "feedback select admin" RLS policy already
