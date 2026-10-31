@@ -102,7 +102,7 @@ import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import AnnotationMap from './AnnotationMap.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
-import { CLASS_LETTERS, classLetterColor, classRangeLabel } from '../utils/piInfo.js'
+import { CLASS_LETTERS, META_VEHICLES, classLetterColor, classRangeLabel } from '../utils/piInfo.js'
 import { prepRaceStore, closePrepRace } from '../stores/prepRaceStore.js'
 import { getTracks } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
@@ -110,8 +110,6 @@ import { getFastestLapsPerVehicleOnVariation } from '../services/raceService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { authStore } from '../stores/authStore.js'
 import { getAnnotationsForVariation } from '../services/annotationService.js'
-
-const META_VEHICLES = ['Raiden RS', 'Super Venom', 'Hammerhead RS', 'Speedie']
 
 export default {
   name: 'PrepRaceModal',

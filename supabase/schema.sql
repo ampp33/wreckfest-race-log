@@ -1395,14 +1395,16 @@ grant execute on function wf1.get_most_races_leaderboard to anon, authenticated;
 
 -- The fastest lap ever logged on each track variation, one row per
 -- variation, ordered by track then variation name — optionally only laps in
--- one PI class ('A'..'D', see races.pi_class) and/or in one vehicle.
+-- one PI class ('A'..'D', see races.pi_class) and/or in one vehicle, and
+-- optionally leaving out some vehicles (the "meta" cars).
 -- lap_time_ms = 0 means no lap was completed, so it's never a record. On a
 -- tie the earlier race wins. Each added parameter changed the signature, so
 -- the old overloads go too.
 drop function if exists wf1.get_fastest_laps();
 drop function if exists wf1.get_fastest_laps(text);
 drop function if exists wf1.get_fastest_laps(text, uuid);
-create or replace function wf1.get_fastest_laps(p_pi_class text default null, p_vehicle_id uuid default null)
+drop function if exists wf1.get_fastest_laps(text, uuid, uuid[]);
+create or replace function wf1.get_fastest_laps(p_pi_class text default null, p_vehicle_id uuid default null, p_exclude_vehicle_ids uuid[] default null)
 returns table(
     race_id            uuid,
     track_variation_id uuid,
@@ -1436,6 +1438,7 @@ as $$
           and r.source = 'api'
           and (p_pi_class is null or r.pi_class = p_pi_class)
           and (p_vehicle_id is null or r.vehicle_id = p_vehicle_id)
+          and (p_exclude_vehicle_ids is null or r.vehicle_id is null or r.vehicle_id <> all(p_exclude_vehicle_ids))
         order by r.track_variation_id, r.lap_time_ms, r.datetime
     ) best
     join wf1.track_variations tv on tv.id = best.track_variation_id

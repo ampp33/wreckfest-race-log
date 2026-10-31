@@ -77,6 +77,10 @@
               v-html="chevronDownIcon"
             ></span>
           </div>
+          <label class="flex items-center gap-2 text-sm text-brand-secondary dark:text-brand-secondary-dark cursor-pointer">
+            <input v-model="excludeMeta" type="checkbox" class="accent-brand-accent" />
+            Exclude Meta Vehicles (Raiden, Super Venom, Hammerhead RS, Speedie)
+          </label>
         </div>
 
         <p v-if="lapsLoading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
@@ -183,6 +187,7 @@ import { formatDate } from '../utils/dateFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
+import { META_VEHICLES } from '../utils/piInfo.js'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 
 export default {
@@ -199,6 +204,7 @@ export default {
       // Fastest laps per filter combination (the nav's car class × vehicle),
       // fetched the first time each is picked and kept, so going back is instant.
       vehicleId: null,
+      excludeMeta: false,
       vehicles: [],
       lapsByFilter: {},
       lapsFailed: {},
@@ -216,8 +222,14 @@ export default {
     mostRaces() {
       return this.mostRacesByClass[this.classKey] || []
     },
+    // A picked vehicle wins over the meta checkbox, so picking a meta car
+    // still shows its laps.
+    excludeVehicleIds() {
+      if (this.vehicleId || !this.excludeMeta) return null
+      return this.vehicles.filter(v => META_VEHICLES.includes(v.name)).map(v => v.id)
+    },
     lapsKey() {
-      return `${this.piClass || 'all'}|${this.vehicleId || 'all'}`
+      return `${this.piClass || 'all'}|${this.vehicleId || (this.excludeVehicleIds ? 'no-meta' : 'all')}`
     },
     fastestLaps() {
       return this.lapsByFilter[this.lapsKey] || []
@@ -271,7 +283,7 @@ export default {
       if (key in this.lapsByFilter) return
       this.lapsFailed = { ...this.lapsFailed, [key]: false }
       try {
-        const laps = await getFastestLaps(this.piClass, this.vehicleId)
+        const laps = await getFastestLaps(this.piClass, this.vehicleId, this.excludeVehicleIds)
         this.lapsByFilter = { ...this.lapsByFilter, [key]: laps }
       } catch (err) {
         this.lapsFailed = { ...this.lapsFailed, [key]: true }

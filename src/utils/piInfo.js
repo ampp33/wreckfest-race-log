@@ -28,3 +28,6 @@ export function classRangeLabel(letter) {
   if (i === 0) return `PI ${PI_CLASSES[0].min}+`
   return `PI ${PI_CLASSES[i].min}–${PI_CLASSES[i - 1].min - 1}`
 }
+
+// Cars so far ahead of their class that they're optionally left out.
+export const META_VEHICLES = ['Raiden RS', 'Super Venom', 'Hammerhead RS', 'Speedie']

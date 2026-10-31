@@ -14,12 +14,12 @@ export async function getMostRacesLeaderboard(limit = 25, piClass = null) {
 
 // The fastest lap on each track variation, ordered by track then variation
 // name — across every class, or just one ('A'..'D'), and every vehicle, or
-// just one:
+// just one, optionally leaving out excludeVehicleIds:
 // [{ race_id, track_name, track_slug, variation_name, variation_slug,
 // user_id, display_name, lap_time_ms, vehicle_name, performance_index,
 // tuning, assists, datetime, ... }].
-export async function getFastestLaps(piClass = null, vehicleId = null) {
-  const { data, error } = await supabase.rpc('get_fastest_laps', { p_pi_class: piClass, p_vehicle_id: vehicleId })
+export async function getFastestLaps(piClass = null, vehicleId = null, excludeVehicleIds = null) {
+  const { data, error } = await supabase.rpc('get_fastest_laps', { p_pi_class: piClass, p_vehicle_id: vehicleId, p_exclude_vehicle_ids: excludeVehicleIds })
   if (error) throw error
   return data ?? []
 }
