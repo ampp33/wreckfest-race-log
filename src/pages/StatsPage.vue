@@ -38,74 +38,45 @@
         :daily-counts="stats.raceCounts.dailyCounts"
       />
 
-      <div v-if="isOwnView" class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
+      <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
         <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-3">
-          Goal <em class="signal">progress</em>
+          Number of races per <em class="signal">vehicle</em>
         </h2>
-        <p v-if="!stats.goalProgress.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-          No goals set — open a track and set a goal lap time to track your progress here.
+        <p v-if="!stats.vehicleCounts.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
+          No races logged yet.
         </p>
-        <ul v-else class="divide-y divide-brand-border dark:divide-brand-border-dark">
-          <li
-            v-for="row in stats.goalProgress"
-            :key="row.trackSlug + row.variationSlug"
-            class="flex items-center justify-between py-2.5 text-sm"
-          >
-            <router-link
-              :to="`/${userId}/track/${row.trackSlug}/${row.variationSlug}`"
-              class="text-brand-accent hover:underline font-body"
-            >
-              {{ row.trackName }}
-              <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ row.variationName }}</span>
-            </router-link>
-            <div class="flex items-center gap-4 shrink-0 ml-4">
-              <div class="text-right">
-                <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark leading-none mb-0.5">goal</div>
-                <div class="font-mono text-sm">{{ format(row.goalMs) }}</div>
-              </div>
-              <div class="text-right">
-                <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark leading-none mb-0.5">best</div>
-                <div class="font-mono text-sm">{{ row.pbMs != null ? format(row.pbMs) : '—' }}</div>
-              </div>
-              <div class="text-right min-w-[3.5rem]">
-                <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark leading-none mb-0.5">delta</div>
+        <table v-else class="w-full text-sm">
+          <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
+            <tr v-for="row in stats.vehicleCounts" :key="row.name">
+              <td class="pr-6 py-2 w-1 whitespace-nowrap font-semibold text-brand-text dark:text-brand-text-dark">{{ row.name }}</td>
+              <td class="py-2">
+                <!-- Same bars as the leaderboard: relative to the most-used
+                     vehicle, with a minimum width so the count stays readable. -->
                 <div
-                  v-if="row.deltaMs != null"
-                  class="font-mono text-sm font-semibold"
-                  :class="row.deltaMs <= 0 ? 'text-green-600' : 'text-red-500'"
-                >
-                  {{ row.deltaMs <= 0 ? '-' : '+' }}{{ format(Math.abs(row.deltaMs)) }}
-                </div>
-                <div v-else class="font-mono text-sm text-brand-muted dark:text-brand-muted-dark">—</div>
-              </div>
-            </div>
-          </li>
-        </ul>
+                  class="min-w-[3rem] px-2 py-1 bg-brand-accent dark:bg-brand-accent-dark text-white text-xs font-semibold tabular"
+                  :style="{ width: `${(row.count / stats.vehicleCounts[0].count) * 100}%` }"
+                >{{ row.count.toLocaleString() }}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-
-      <BiggestImprovementsList
-        :items="stats.biggestImprovements"
-        :base-path="`/${userId}`"
-        empty-message="No improvement data yet — log more laps on the same variation."
-      />
     </div>
   </DriverScope>
 </template>
 
 <script>
 import { getStats } from '../services/statsService.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
 import { pushToast } from '../stores/toastStore.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import RaceActivityChart from '../components/RaceActivityChart.vue'
 import StatsSummaryTiles from '../components/StatsSummaryTiles.vue'
-import BiggestImprovementsList from '../components/BiggestImprovementsList.vue'
 import DriverScope from '../components/DriverScope.vue'
 
 export default {
   name: 'StatsPage',
-  components: { DriverScope, RaceActivityChart, StatsSummaryTiles, BiggestImprovementsList },
+  components: { DriverScope, RaceActivityChart, StatsSummaryTiles },
   data() {
     return {
       prefs: prefsStore,
@@ -113,9 +84,8 @@ export default {
       stats: {
         mostUsedVehicle: null,
         mostRacedVariation: null,
-        biggestImprovements: [],
+        vehicleCounts: [],
         totalRaces: 0,
-        goalProgress: [],
         raceCounts: { hourlyCounts: new Array(24).fill(0), dailyCounts: {} },
         recentRaces: [],
         top3Rate: { count: 0, total: 0, pct: '—' },
@@ -151,16 +121,13 @@ export default {
       // Switching driver or class mid-load starts another; only the newest lands.
       const token = (this.loadToken = (this.loadToken || 0) + 1)
       try {
-        const stats = await getStats(this.userId, { includeGoals: this.isOwnView, piClass: this.prefs.piClass })
+        const stats = await getStats(this.userId, { piClass: this.prefs.piClass })
         if (token === this.loadToken) this.stats = stats
       } catch (err) {
         if (token === this.loadToken) pushToast(err.message || 'Failed to load stats', 'error')
       } finally {
         if (token === this.loadToken) this.loading = false
       }
-    },
-    format(ms) {
-      return formatMsToTime(ms)
     }
   }
 }

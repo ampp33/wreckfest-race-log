@@ -20,6 +20,23 @@ function flattenRace({ races_private: priv, ...race }) {
   }
 }
 
+// PostgREST caps every response at 1000 rows (Supabase's max-rows) and
+// silently drops the rest, so a driver's full history is read a page at a
+// time until one comes back short. buildQuery() makes a fresh query per page,
+// since a query can only run once; it must have a total order so the pages
+// don't overlap or skip rows.
+const PAGE_SIZE = 1000
+
+async function fetchAllPages(buildQuery) {
+  const rows = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1)
+    if (error) throw error
+    rows.push(...data)
+    if (data.length < PAGE_SIZE) return rows
+  }
+}
+
 // Writes the owner-only half of a race. An upsert, so a race logged through
 // the API keeps its api_key_id when its notes are edited later — only the
 // columns sent here are touched on conflict.
@@ -32,16 +49,17 @@ async function saveRaceNotes(raceId, userId, notes) {
 
 // `piClass` ('A'..'D') keeps just that car class, as in getAllRaces().
 export async function getRacesByVariation(variationId, userId, { piClass } = {}) {
-  let query = supabase
-    .from('races')
-    .select(SELECT)
-    .eq('user_id', userId)
-    .eq('track_variation_id', variationId)
-    .order('datetime', { ascending: false }).order('created_at', { ascending: false })
-  if (piClass) query = query.eq('pi_class', piClass)
-  const { data, error } = await query
-  if (error) throw error
-  return (data || []).map(flattenRace)
+  const rows = await fetchAllPages(() => {
+    let query = supabase
+      .from('races')
+      .select(SELECT)
+      .eq('user_id', userId)
+      .eq('track_variation_id', variationId)
+      .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
+    if (piClass) query = query.eq('pi_class', piClass)
+    return query
+  })
+  return rows.map(flattenRace)
 }
 
 // `piClass` ('A'..'D') keeps just that car class — a race with no PI has
@@ -50,17 +68,18 @@ export async function getAllRaces({ userId, source, apiKeyId, piClass } = {}) {
   // Filtering on a key means filtering on the embedded table, which needs
   // an inner join — otherwise PostgREST keeps every race and just nulls the
   // embed on the ones that don't match.
-  let query = supabase
-    .from('races')
-    .select(apiKeyId ? SELECT.replace('races_private(', 'races_private!inner(') : SELECT)
-    .eq('user_id', userId)
-    .order('datetime', { ascending: false }).order('created_at', { ascending: false })
-  if (source) query = query.eq('source', source)
-  if (apiKeyId) query = query.eq('races_private.api_key_id', apiKeyId)
-  if (piClass) query = query.eq('pi_class', piClass)
-  const { data, error } = await query
-  if (error) throw error
-  return (data || []).map(flattenRace)
+  const rows = await fetchAllPages(() => {
+    let query = supabase
+      .from('races')
+      .select(apiKeyId ? SELECT.replace('races_private(', 'races_private!inner(') : SELECT)
+      .eq('user_id', userId)
+      .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
+    if (source) query = query.eq('source', source)
+    if (apiKeyId) query = query.eq('races_private.api_key_id', apiKeyId)
+    if (piClass) query = query.eq('pi_class', piClass)
+    return query
+  })
+  return rows.map(flattenRace)
 }
 
 // Community feeds come in pages this size — "load older races" fetches the next.
