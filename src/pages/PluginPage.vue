@@ -16,7 +16,7 @@
       </h2>
       <ol class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark space-y-4 list-decimal list-inside">
         <li>
-          Download the latest release zip from the
+          Download the latest <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark mx-1">wreckfest-telemetry-asi-*.zip</code> file from the
           <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases" target="_blank" rel="noopener noreferrer" class="text-brand-accent hover:underline">Releases</a>
           page.
         </li>

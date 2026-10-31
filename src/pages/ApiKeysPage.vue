@@ -147,6 +147,8 @@ import { pushToast } from '../stores/toastStore.js'
 import { formatDate } from '../utils/dateFormat.js'
 import { authStore } from '../stores/authStore.js'
 
+const DEFAULT_KEY_NAME = 'Default'
+
 export default {
   name: 'ApiKeysPage',
   data() {
@@ -176,6 +178,8 @@ export default {
       this.loadError = null
       try {
         this.keys = await getApiKeys()
+        // First key: pre-fill a name so the user can just hit Generate.
+        if (!this.keys.length && !this.newName) this.newName = DEFAULT_KEY_NAME
       } catch (err) {
         this.loadError = err.message || 'Failed to load API keys'
       } finally {
@@ -203,6 +207,7 @@ export default {
       try {
         await deleteApiKey(id)
         this.keys = this.keys.filter(k => k.id !== id)
+        if (!this.keys.length && !this.newName) this.newName = DEFAULT_KEY_NAME
         pushToast('API key revoked', 'success')
       } catch (err) {
         pushToast(err.message || 'Failed to revoke key', 'error')
