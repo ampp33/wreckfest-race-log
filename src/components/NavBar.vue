@@ -108,14 +108,14 @@
           to="/plugin"
           class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
           active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
-        >Install Telemetry</router-link>
+        >Install Plugin</router-link>
         <div v-else class="relative group">
           <button
             type="button"
             class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
             :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTelemetryRoute }"
           >
-            Telemetry
+            Plugin
             <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
@@ -285,7 +285,7 @@
 
             <!-- Same as the desktop row: one plain link while signed out. -->
             <template v-if="auth.isAuthenticated">
-              <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
+              <div class="ov text-white/70 pt-4 pb-2">Plugin</div>
               <router-link
                 v-for="item in telemetryItems"
                 :key="item.to"
@@ -302,7 +302,7 @@
                 class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
-              >Install Telemetry</router-link>
+              >Install Plugin</router-link>
             </template>
 
             <template v-if="auth.isAdmin">
@@ -493,7 +493,7 @@ export default {
     },
     // API keys need an account; the setup guide doesn't.
     telemetryItems() {
-      const items = [{ to: '/plugin', label: 'Instructions' }]
+      const items = [{ to: '/plugin', label: 'Install Instructions' }]
       if (this.auth.isAuthenticated) items.push({ to: '/settings/api-keys', label: 'API keys' })
       return items
     },

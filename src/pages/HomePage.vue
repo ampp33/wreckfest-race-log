@@ -144,7 +144,7 @@
               <router-link to="/plugin" class="hover:underline">Install the Telemetry plugin.</router-link>
             </h2>
             <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">Install it once. It runs quietly alongside Wreckfest and reads your results straight out of the game's own memory the instant a race ends — then posts them here automatically.</p>
-            <router-link to="/plugin" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Install Telemetry →</router-link>
+            <router-link to="/plugin" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Install Telemetry Plugin →</router-link>
           </div>
 
           <div class="relative mb-12">
@@ -191,7 +191,7 @@
           <div class="relative flex flex-wrap justify-center gap-3">
             <span class="sr-only">What are you waiting for?</span>
             <router-link to="/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px] bg-brand-accent dark:bg-brand-accent-dark">Create an Account</router-link>
-            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</router-link>
+            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry Plugin</router-link>
           </div>
         </div>
       </section>
