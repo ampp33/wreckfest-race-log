@@ -1,18 +1,6 @@
 <template>
   <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0' : 'inline-flex items-center gap-1 shrink-0'">
     <button
-      v-if="showExpand"
-      type="button"
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-      :title="expanded ? 'Collapse' : 'Expand'"
-      @click.stop="$emit('toggle-expand')"
-    >
-      <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
-    </button>
-    <!-- Extra controls that sit between expand and edit — the mobile cards'
-         favorite star. -->
-    <slot />
-    <button
       v-if="editable"
       type="button"
       class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
@@ -29,6 +17,18 @@
       @click.stop="$emit('delete')"
     >
       <span class="w-4 h-4 inline-block" v-html="trashIcon"></span>
+    </button>
+    <!-- Extra controls that sit between delete and expand — the mobile cards'
+         favorite star. -->
+    <slot />
+    <button
+      v-if="showExpand"
+      type="button"
+      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      :title="expanded ? 'Collapse' : 'Expand'"
+      @click.stop="$emit('toggle-expand')"
+    >
+      <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
     </button>
   </div>
 </template>

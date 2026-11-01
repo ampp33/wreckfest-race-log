@@ -47,8 +47,13 @@
         </p>
         <table v-else class="w-full text-sm">
           <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
-            <tr v-for="row in stats.vehicleCounts" :key="row.name">
-              <td class="pr-6 py-2 w-1 whitespace-nowrap font-semibold text-brand-text dark:text-brand-text-dark">{{ row.name }}</td>
+            <tr v-for="row in stats.vehicleCounts" :key="row.id">
+              <td class="pr-6 py-2 w-1 whitespace-nowrap">
+                <router-link
+                  :to="{ path: `/${userId}/races`, query: { vehicle_id: row.id } }"
+                  class="font-semibold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+                >{{ row.name }}</router-link>
+              </td>
               <td class="py-2">
                 <!-- Same bars as the leaderboard: relative to the most-used
                      vehicle, with a minimum width so the count stays readable. -->

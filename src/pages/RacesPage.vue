@@ -11,7 +11,7 @@
     <p v-else class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-2">
       <span class="tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ total }}</span><template v-if="prefs.piClass"> class {{ prefs.piClass }} {{ total === 1 ? 'race' : 'races' }}</template> logged, newest first.
       <template v-if="isFiltered">
-        — filtered to races logged {{ apiKeyIdFilter ? 'with this API key' : `via the ${sourceFilter === 'api' ? 'Telemetry API' : 'web app'}` }}.
+        — filtered to races {{ filterDescription }}.
         <router-link :to="$route.path" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Clear filter</router-link>
       </template>
     </p>
@@ -200,7 +200,7 @@
                   :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                   :expanded="!!expanded[race.id]"
                   @toggle-expand="toggleExpanded(race.id)"
-                  :editable="isOwnView"
+                  :editable="isOwnRace(race)"
                   @edit="editing[race.id] = true"
                   @delete="onDelete(race)"
                 >
@@ -211,7 +211,7 @@
               <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                 <RaceExpandedDetails
                   :notes="race.notes || ''"
-                  :notes-fallback="isOwnView ? 'No notes' : ''"
+                  :notes-fallback="isOwnRace(race) ? 'No notes' : ''"
                   card-labels
                   divider
                   :lap-times="race.lap_times_ms"
@@ -406,7 +406,7 @@
                       :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                       :expanded="!!expanded[race.id]"
                       @toggle-expand="toggleExpanded(race.id)"
-                      :editable="isOwnView"
+                      :editable="isOwnRace(race)"
                       @edit="editing[race.id] = true"
                       @delete="onDelete(race)"
                     />
@@ -428,7 +428,7 @@
                   <td :colspan="tableColspan" class="px-3.5 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceExpandedDetails
                       :notes="race.notes || ''"
-                      :notes-fallback="isOwnView ? 'No notes' : ''"
+                      :notes-fallback="isOwnRace(race) ? 'No notes' : ''"
                       accent
                       divider
                       :lap-times="race.lap_times_ms"
@@ -681,12 +681,29 @@ export default {
       const apiKeyId = this.$route.query.api_key_id
       return typeof apiKeyId === 'string' && apiKeyId ? apiKeyId : null
     },
+    // A single vehicle filter (will be expanded on later for all filters)
+    vehicleIdFilter() {
+      if (this.isCommunity) return null
+      const vehicleId = this.$route.query.vehicle_id
+      return typeof vehicleId === 'string' && vehicleId ? vehicleId : null
+    },
+    // "in the Nexus RX logged via the Telemetry API", for the filtered intro.
+    filterDescription() {
+      const parts = []
+      if (this.vehicleIdFilter) {
+        const name = this.vehicles.find(v => v.id === this.vehicleIdFilter)?.name
+        parts.push(name ? `in the ${name}` : 'in this vehicle')
+      }
+      if (this.apiKeyIdFilter) parts.push('logged with this API key')
+      else if (this.sourceFilter) parts.push(`logged via the ${this.sourceFilter === 'api' ? 'Telemetry API' : 'web app'}`)
+      return parts.join(' ')
+    },
     // "class C " while the nav's car-class filter is on, for the community intro.
     classPhrase() {
       return this.prefs.piClass ? `class ${this.prefs.piClass} ` : ''
     },
     isFiltered() {
-      return !!(this.sourceFilter || this.apiKeyIdFilter)
+      return !!(this.sourceFilter || this.apiKeyIdFilter || this.vehicleIdFilter)
     },
     visibleColumnKeys() {
       return this.tableColumns.map(c => c.key).filter(this.columnVisibility.isVisible)
@@ -838,7 +855,7 @@ export default {
         const [races, tracks, vehicles] = await Promise.all([
           this.isCommunity
             ? getCommunityRaces({ piClass })
-            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, piClass }),
+            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, vehicleId: this.vehicleIdFilter, piClass }),
           getTracks(),
           getVehicles()
         ])
@@ -939,6 +956,9 @@ export default {
         ? `Logged via API — key: ${race.api_key.name}`
         : 'Logged via API'
     },
+    isOwnRace(race) {
+      return !!authStore.user && race.user_id === authStore.user.id
+    },
     toggleExpanded(id) {
       this.expanded[id] = !this.expanded[id]
     },
@@ -962,6 +982,7 @@ export default {
         if (idx !== -1) {
           this.rows.splice(idx, 1, {
             ...updated,
+            driverName: race.driverName,
             vehicleName: this.vehicles.find(v => v.id === updated.vehicle_id)?.name ?? '—',
             trackName: race.trackName,
             trackSlug: race.trackSlug,

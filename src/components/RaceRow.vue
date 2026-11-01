@@ -234,15 +234,14 @@ export default {
     // TrackDetailPage's column-visibility picker — used by both the table
     // and card layouts. 'actions' isn't included since it's always shown.
     visibleColumns: { type: Array, required: true },
-    // Someone else's race: no edit/delete, and no notes (they're private
-    // and never loaded for other drivers anyway).
+    // Someone else's race: no edit/delete, and no notes (they're private).
     readOnly: { type: Boolean, default: false },
     // Community track page: where a driver's name links, under their prefix —
     // e.g. '/track/<t>/<v>' to open that driver's page for this variation.
     // Only used when the 'driver' column is visible.
     driverPathSuffix: { type: String, default: '/races' },
     // Signed in: shows the favorite star, in its own always-on first column
-    // (and just under the expand button on cards).
+    // (and just above the expand button on cards).
     favoritable: { type: Boolean, default: false }
   },
   emits: ['update', 'delete'],

@@ -29,12 +29,12 @@ export async function getStats(userId, { piClass = null } = {}) {
   }
 }
 
-// Every vehicle the driver has raced, most races first: [{ name, count }].
+// Every vehicle the driver has raced, most races first: [{ id, name, count }].
 // Ties go alphabetically so the order doesn't shuffle between loads.
 function computeVehicleCounts(races, vehicles) {
   const counts = countBy(races, r => r.vehicle_id)
   return Object.keys(counts)
-    .map(id => ({ name: vehicles.find(v => v.id === id)?.name, count: counts[id] }))
+    .map(id => ({ id, name: vehicles.find(v => v.id === id)?.name, count: counts[id] }))
     .filter(row => row.name)
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }

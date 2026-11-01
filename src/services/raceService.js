@@ -64,7 +64,7 @@ export async function getRacesByVariation(variationId, userId, { piClass } = {})
 
 // `piClass` ('A'..'D') keeps just that car class — a race with no PI has
 // none, so it drops out.
-export async function getAllRaces({ userId, source, apiKeyId, piClass } = {}) {
+export async function getAllRaces({ userId, source, apiKeyId, vehicleId, piClass } = {}) {
   // Filtering on a key means filtering on the embedded table, which needs
   // an inner join — otherwise PostgREST keeps every race and just nulls the
   // embed on the ones that don't match.
@@ -76,6 +76,7 @@ export async function getAllRaces({ userId, source, apiKeyId, piClass } = {}) {
       .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
     if (source) query = query.eq('source', source)
     if (apiKeyId) query = query.eq('races_private.api_key_id', apiKeyId)
+    if (vehicleId) query = query.eq('vehicle_id', vehicleId)
     if (piClass) query = query.eq('pi_class', piClass)
     return query
   })
@@ -88,14 +89,14 @@ export const COMMUNITY_PAGE_SIZE = 500
 // Every public driver's races, newest first, one page at a time — optionally
 // for a single variation or car class. Only races the Telemetry plugin logged
 // (source = 'api'), like the leaderboards: hand-entered races only ever show on
-// their driver's own pages. No races_private embed: owner-only fields never
-// appear on community pages, not even on your own races. RLS already leaves out
-// drivers who've opted out (other than you). The driver's display name comes
-// along via the races → profiles foreign key.
+// their driver's own pages. The races_private embed is there so your own races
+// can be edited here without losing their notes — RLS keeps it null on everyone
+// else's. RLS also leaves out drivers who've opted out (other than you). The
+// driver's display name comes along via the races → profiles foreign key.
 export async function getCommunityRaces({ variationId, piClass, offset = 0, limit = COMMUNITY_PAGE_SIZE } = {}) {
   let query = supabase
     .from('races')
-    .select(`${RACE_COLUMNS}, driver:profiles(display_name)`)
+    .select(`${SELECT}, driver:profiles(display_name)`)
     .eq('source', 'api')
     .order('datetime', { ascending: false }).order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
@@ -103,7 +104,7 @@ export async function getCommunityRaces({ variationId, piClass, offset = 0, limi
   if (piClass) query = query.eq('pi_class', piClass)
   const { data, error } = await query
   if (error) throw error
-  return (data || []).map(({ driver, ...race }) => ({ ...race, driverName: driver?.display_name ?? '—' }))
+  return (data || []).map(({ driver, ...race }) => ({ ...flattenRace(race), driverName: driver?.display_name ?? '—' }))
 }
 
 // The quickest lap per PI class + vehicle on a variation, quickest first,

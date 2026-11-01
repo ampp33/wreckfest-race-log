@@ -227,7 +227,7 @@
             :goal-lap-time-ms="goalLapTimeMs"
             :personal-best-ms="personalBestMs"
             :visible-columns="visibleColumnKeys"
-            :read-only="!isOwnView"
+            :read-only="!isOwnRace(race)"
             :driver-path-suffix="`/track/${track.slug}/${currentVariation.slug}`"
             :favoritable="isSignedIn"
             @update="onUpdateRace"
@@ -356,7 +356,7 @@
                 :goal-lap-time-ms="goalLapTimeMs"
                 :personal-best-ms="personalBestMs"
                 :visible-columns="visibleColumnKeys"
-                :read-only="!isOwnView"
+                :read-only="!isOwnRace(race)"
                 :driver-path-suffix="`/track/${track.slug}/${currentVariation.slug}`"
                 :favoritable="isSignedIn"
                 @update="onUpdateRace"
@@ -465,6 +465,11 @@ const userId = computed(() => route.params.userId)
 const isOwnView = computed(() => !!userId.value && authStore.user?.id === userId.value)
 // Track notes and annotations are always the viewer's own, on any log.
 const isSignedIn = computed(() => !!authStore.user)
+// Your own races can be edited wherever they show up, the community page
+// included — RLS refuses an edit or delete of anyone else's regardless.
+function isOwnRace(race) {
+  return !!authStore.user && race.user_id === authStore.user.id
+}
 // /community/track/...: every public driver's races at this variation.
 const isCommunity = computed(() => route.meta.scope === 'community')
 // Where variation/back links point: this driver's pages, or the community ones.
@@ -825,7 +830,8 @@ async function onUpdateRace({ id, patch }) {
   try {
     const updated = await updateRace(id, patch)
     const idx = races.value.findIndex(r => r.id === id)
-    if (idx !== -1) races.value.splice(idx, 1, updated)
+    // updateRace() doesn't bring the driver's name back; the community view shows it.
+    if (idx !== -1) races.value.splice(idx, 1, { ...updated, driverName: races.value[idx].driverName })
     pushToast('Race updated', 'success', 1500)
   } catch (err) {
     pushToast(err.message || 'Failed to update race', 'error')
