@@ -32,11 +32,12 @@
         <path :id="`${pathId}-${i}`" :ref="el => setSegRef(el, i)" :d="seg.d" fill="none" stroke="none" />
         <text
           :ref="el => setTextRef(el, i)"
-          font-family="Switzer, Helvetica, Arial, sans-serif"
-          font-size="18"
-          font-weight="800"
+          :font-family="RING_FAMILY"
+          :font-size="BASE_FONT"
+          :font-weight="RING_WEIGHT"
           :letter-spacing="tracking[i] ?? BASE_TRACKING"
-          dominant-baseline="middle"
+          :dy="capShift ?? undefined"
+          :dominant-baseline="capShift == null ? 'middle' : undefined"
           class="fill-brand-text dark:fill-brand-text-dark"
         >
           <textPath :href="`#${pathId}-${i}`" startOffset="0">{{ ringText(i) }}</textPath>
@@ -145,6 +146,8 @@ let uid = 0
 
 // The ring is set in an 18px face; tracking is quoted in the same user units.
 const BASE_FONT = 18
+const RING_FAMILY = 'Switzer, Helvetica, Arial, sans-serif'
+const RING_WEIGHT = 800
 const BASE_TRACKING = 0.18
 // Venue and layout nouns: meaningless as a label on their own. Mirrored in
 // tools/line-editor-shell.html so the editor's Name preview matches.
@@ -155,6 +158,29 @@ const GENERIC_WORDS = new Set(['CIRCUIT', 'RACEWAY', 'SPEEDWAY', 'RING', 'STADIU
 // tail is allowed to run off the end instead.
 // Direction marker, drawn pointing along +x and rotated into place.
 const ARROW_SHAPE = '20,0 -10,13 -10,-13'
+
+// The name is all caps, so it sits centred on the line when dropped half a
+// capital's height below it. dominant-baseline can't do that portably —
+// WebKit (so every iOS browser) ignores it on a textPath and sets the caps
+// wholly to one side — so the cap height is read off the loaded face itself.
+// Shared by every map; null where canvas text metrics aren't available, and
+// the template falls back to dominant-baseline.
+let capShiftPromise = null
+function measureCapShift() {
+  capShiftPromise ??= (async () => {
+    const font = `${RING_WEIGHT} ${BASE_FONT}px ${RING_FAMILY}`
+    try {
+      await document.fonts?.load(font)
+      const ctx = document.createElement('canvas').getContext('2d')
+      ctx.font = font
+      const capHeight = ctx.measureText('H').actualBoundingBoxAscent
+      return capHeight > 0 ? capHeight / 2 : null
+    } catch {
+      return null
+    }
+  })()
+  return capShiftPromise
+}
 
 export default {
   name: 'AnnotationMap',
@@ -192,7 +218,12 @@ export default {
       textEls: [],
       pathId: `ring-${++uid}`,
       BASE_TRACKING,
+      BASE_FONT,
+      RING_FAMILY,
+      RING_WEIGHT,
       ARROW_SHAPE,
+      // How far to drop the name to centre it on the line; see measureCapShift.
+      capShift: null,
       // id of the annotation currently being dragged, or null. Only ever
       // one at a time — pointer capture (see the marker's pointerdown
       // handler) makes concurrent drags a non-issue in practice.
@@ -257,6 +288,7 @@ export default {
     this.textEls = []
   },
   async mounted() {
+    measureCapShift().then(shift => { this.capShift = shift })
     await loadTrackPaths()
     this.resolvePath()
   },
