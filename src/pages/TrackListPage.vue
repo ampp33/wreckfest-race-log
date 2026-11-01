@@ -1,5 +1,5 @@
 <template>
-  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-6 py-10">
+  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 mb-12">
       <div>
         <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">

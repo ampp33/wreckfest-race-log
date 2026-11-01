@@ -1,6 +1,6 @@
 <template>
   <!-- Card layout (mobile) -->
-  <div v-if="layout === 'card'" class="p-3 border-b border-brand-border dark:border-brand-border-dark last:border-b-0">
+  <div v-if="layout === 'card'" class="py-3 border-b border-brand-border dark:border-brand-border-dark last:border-b-0">
     <template v-if="!editing">
       <div class="flex items-start gap-2">
         <div class="min-w-0 flex-1">
@@ -24,7 +24,7 @@
           <!-- Same fields, in the same order, as the desktop table columns —
                each gated by the same column-visibility picker so a card shows
                only what the table would, instead of always showing everything. -->
-          <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
+          <div class="grid grid-cols-3 gap-x-3 gap-y-3 mt-3 text-sm">
             <div v-if="isColVisible('pi')">
               <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
               <div><PerformanceIndexBadge :value="race.performance_index" /></div>
@@ -84,7 +84,7 @@
         </RaceRowActions>
       </div>
 
-      <div v-if="expanded" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+      <div v-if="expanded" class="mt-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
         <RaceExpandedDetails
           :notes="race.notes || ''"
           :notes-fallback="readOnly ? '' : 'No notes'"

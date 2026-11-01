@@ -43,15 +43,17 @@
       <p v-if="loadingLaps" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading fastest laps…</p>
 
       <div v-else class="overflow-x-auto">
-        <table class="w-full min-w-[36rem] table-fixed text-sm">
+        <!-- On a phone, Tune, Parts and Weight fold into a line under the
+             vehicle name so the table fits without sideways scrolling. -->
+        <table class="w-full sm:min-w-[36rem] table-fixed text-sm">
           <thead>
             <tr class="text-[11px] uppercase tracking-widest text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-              <th class="w-12 text-left font-medium py-1 pr-2">Class</th>
+              <th class="w-10 sm:w-12 text-left font-medium py-1 pr-2">Class</th>
               <th class="text-left font-medium py-1 pr-2">Vehicle</th>
-              <th class="w-14 text-center font-medium py-1 pr-2">Tune</th>
-              <th class="w-32 text-left font-medium py-1 pr-2">Parts</th>
+              <th class="hidden sm:table-cell w-14 text-center font-medium py-1 pr-2">Tune</th>
+              <th class="hidden sm:table-cell w-32 text-left font-medium py-1 pr-2">Parts</th>
               <th class="w-16 text-left font-medium py-1 pr-2">PI</th>
-              <th class="w-20 text-right font-medium py-1 pr-2">Weight</th>
+              <th class="hidden sm:table-cell w-20 text-right font-medium py-1 pr-2">Weight</th>
               <th class="w-20 text-right font-medium py-1">Lap</th>
             </tr>
           </thead>
@@ -60,11 +62,21 @@
               <td class="py-2 pr-2 font-display font-black" :style="{ color: classLetterColor(c.letter) }" :title="classRangeLabel(c.letter)">{{ c.letter }}</td>
               <td v-if="!c.lap" colspan="6" class="py-2 text-brand-muted dark:text-brand-muted-dark">No laps logged.</td>
               <template v-else>
-                <td class="py-2 pr-2 truncate text-brand-text dark:text-brand-text-dark">{{ vehicleName(c.lap) }}</td>
-                <td class="py-2 pr-2 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.tuning ?? '—' }}</td>
-                <td class="py-2 pr-2"><PartsBadge :parts="c.lap.parts" /></td>
+                <td class="py-2 pr-2">
+                  <div class="truncate text-brand-text dark:text-brand-text-dark">{{ vehicleName(c.lap) }}</div>
+                  <div
+                    v-if="hasParts(c.lap.parts) || c.lap.tuning != null || c.lap.vehicle_weight_kg != null"
+                    class="sm:hidden mt-1 flex items-center gap-2 text-xs tabular text-brand-secondary dark:text-brand-secondary-dark"
+                  >
+                    <PartsBadge v-if="hasParts(c.lap.parts)" :parts="c.lap.parts" />
+                    <span v-if="c.lap.tuning != null">Tune {{ c.lap.tuning }}</span>
+                    <span v-if="c.lap.vehicle_weight_kg != null">{{ c.lap.vehicle_weight_kg }} kg</span>
+                  </div>
+                </td>
+                <td class="hidden sm:table-cell py-2 pr-2 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.tuning ?? '—' }}</td>
+                <td class="hidden sm:table-cell py-2 pr-2"><PartsBadge :parts="c.lap.parts" /></td>
                 <td class="py-2 pr-2 whitespace-nowrap"><PerformanceIndexBadge :value="c.lap.performance_index" /></td>
-                <td class="py-2 pr-2 text-right tabular whitespace-nowrap text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.vehicle_weight_kg != null ? c.lap.vehicle_weight_kg + ' kg' : '—' }}</td>
+                <td class="hidden sm:table-cell py-2 pr-2 text-right tabular whitespace-nowrap text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.vehicle_weight_kg != null ? c.lap.vehicle_weight_kg + ' kg' : '—' }}</td>
                 <td class="py-2 text-right tabular font-semibold">{{ formatMsToTime(c.lap.lap_time_ms) }}</td>
               </template>
             </tr>
@@ -102,6 +114,7 @@ import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import AnnotationMap from './AnnotationMap.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
+import { hasParts } from '../utils/partsInfo.js'
 import { CLASS_LETTERS, META_VEHICLES, classLetterColor, classRangeLabel } from '../utils/piInfo.js'
 import { prepRaceStore, closePrepRace } from '../stores/prepRaceStore.js'
 import { getTracks } from '../services/trackService.js'
@@ -157,6 +170,7 @@ export default {
   methods: {
     variationImageUrl,
     formatMsToTime,
+    hasParts,
     classLetterColor,
     classRangeLabel,
     async onOpened() {

@@ -1,5 +1,5 @@
 <template>
-  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-6 py-10">
+  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <div v-else-if="!track">

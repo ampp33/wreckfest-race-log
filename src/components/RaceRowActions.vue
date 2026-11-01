@@ -1,5 +1,5 @@
 <template>
-  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0' : 'inline-flex items-center gap-1 shrink-0'">
+  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0 -mr-3.5' : 'inline-flex items-center gap-1 shrink-0'">
     <button
       v-if="editable"
       type="button"

@@ -12,7 +12,7 @@
          bled off the left edge), so the wheels point at empty space rather
          than the text. Only kicks in at the same sm breakpoint the car
          itself appears at; below that the car is hidden and this container
-         falls back to the plain centered px-6 gutter. This 22vw is the
+         falls back to the plain centered px-4 gutter. This 22vw is the
          page's one shared body-copy left edge at sm+ — the "Everything, on
          record."/"How to get started." sections and the numbered timeline
          below all key off this same value (see their own comments) so
@@ -26,7 +26,7 @@
          the block reads as a centered column instead of one huge gutter on
          the left and a bare 40px on the right. -->
     <section>
-      <div class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
+      <div class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
           Track every race.<br><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
         </h1>
@@ -48,7 +48,7 @@
            bleed runs the full height of this section too (747px hero + up
            to 1436px of car vs. this section's own ~560px), so its heading
            and copy need the same clearance, not just the hero's. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
           Everything, on <em class="font-heading font-normal tracking-normal signal">record</em>.
         </h1>
@@ -91,7 +91,7 @@
            separate <section>s, the heading with its own outer padding and
            the timeline with a different one) — that split is exactly how
            the two drifted out of alignment with each other across this
-           conversation. One shared px-6/sm:pl-[22vw]/sm:pr-[22vw] here
+           conversation. One shared px-4/sm:pl-[22vw]/sm:pr-[22vw] here
            (matching the "Everything, on record." section above) means
            there's only one place left to change if this needs to move
            again.
@@ -113,7 +113,7 @@
            dedicated wrapper, fixed and unresponsive, is what lets the
            circles and line hold their fixed offsets (left-5 / -left-9) at
            every width, full stop. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
           <em class="font-heading font-normal tracking-normal signal">How</em> to get started.
         </h1>
@@ -182,7 +182,7 @@
 
       <!-- CTA — max-w-7xl matches the rest of the page; the original
            production homepage's own CTA band used this same width. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
         <div class="relative bg-brand-accent dark:bg-brand-accent-dark text-center overflow-hidden py-[clamp(28px,8cqw,80px)] [container-type:inline-size]">
           <h2
             aria-hidden="true"

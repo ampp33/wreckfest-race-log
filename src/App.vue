@@ -6,7 +6,7 @@
     <main class="flex-1">
       <p
         v-if="!auth.ready"
-        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark px-6 py-6"
+        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark px-4 sm:px-6 py-6"
       >
         Loading session…
       </p>
