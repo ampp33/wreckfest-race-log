@@ -116,7 +116,7 @@
         @save="onSaveAnnotations"
       />
 
-      <LapTimeChart :races="filteredRaces" :vehicles="vehicles" />
+      <VehicleBestLapChart :races="filteredRaces" :vehicles="vehicles" />
 
       <div class="grid grid-cols-2 gap-6 mb-8" :class="{ 'lg:grid-cols-4': isOwnView }">
         <div class="rule-top pt-3">
@@ -422,7 +422,7 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import RaceRow from '../components/RaceRow.vue'
 import DriverScope from '../components/DriverScope.vue'
-import LapTimeChart from '../components/LapTimeChart.vue'
+import VehicleBestLapChart from '../components/VehicleBestLapChart.vue'
 import VariationAnnotations from '../components/VariationAnnotations.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
@@ -554,7 +554,7 @@ const trackImage = computed(() => track.value ? trackImageUrl(track.value.slug) 
 const goalLapTimeMs = computed(() => goal.value ? goal.value.goal_lap_time_ms : null)
 const personalBestMs = computed(() => {
   // A 0 lap_time_ms means no completed lap was recorded (same convention
-  // LapTimeChart.vue uses), not an actual zero-millisecond lap — treat it
+  // VehicleBestLapChart.vue uses), not an actual zero-millisecond lap — treat it
   // like a missing time rather than letting it win every "personal best".
   const valid = filteredRaces.value.map(r => r.lap_time_ms).filter(v => !!v)
   if (!valid.length) return null

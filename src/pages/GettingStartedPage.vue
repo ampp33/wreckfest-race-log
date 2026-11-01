@@ -210,12 +210,11 @@
           <AppShot name="goal-tiles" alt="Personal best, goal lap time, gap to goal and races here tiles, with top 3, 5 and 10 finish rates below" />
         </section>
 
-        <section id="lap-chart" class="scroll-mt-8">
-          <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Lap times over time</h3>
+        <section id="vehicle-chart" class="scroll-mt-8">
+          <h3 class="font-body font-bold text-[17px] tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Best lap by vehicle</h3>
           <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Each point is your <i>fastest lap on that day</i>, with a separate line per car — so one bad night in a slow car never buries a good trend. Sloping down means there's still time in it. Flat means you've plateaued: change the car, the tune, or the line.
+            One row per car you've raced here, fastest first. The solid dot is that car's <i>best lap</i>; the hollow dot is the lap from your <i>first race</i> in it. The longer the line between them, the more time you've found in that car — a short line on a slow car means there's probably still time in it. Hover a row for the exact times and race count.
           </p>
-          <AppShot name="lap-chart" alt="Line chart of fastest lap per day, one line per vehicle" />
         </section>
 
         <section id="track-races" class="scroll-mt-8">
@@ -319,7 +318,7 @@ export default {
         { id: 'track-notes', label: 'Notes', sub: true },
         { id: 'annotations', label: 'Annotations', sub: true },
         { id: 'goal',        label: 'Goal & top finishes', sub: true },
-        { id: 'lap-chart',   label: 'Lap times chart', sub: true },
+        { id: 'vehicle-chart', label: 'Best lap by vehicle', sub: true },
         { id: 'track-races', label: 'Logged races', sub: true },
         { id: 'stats',       label: 'Stats' },
         { id: 'profile',     label: 'Profile' },
