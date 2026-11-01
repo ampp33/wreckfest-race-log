@@ -4,7 +4,7 @@
          scope picker and its views beside the logo, the site links and
          controls on the right. Below that there isn't room, so it switches
          to the phone layout — scope icon and hamburger, views in the menu. -->
-    <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-6">
       <!-- A size smaller on phones, where it shares the row with up to three
            buttons — too many for "RACE LOG" to fit beside the wordmark, so
            it tucks underneath instead. -->
@@ -249,7 +249,7 @@
     >
       <div v-if="mobileMenu === 'scope'" key="scope" class="min-[1200px]:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
         <div class="overflow-hidden">
-          <div class="max-w-7xl mx-auto px-6 pt-1 pb-4">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
             <ScopeMenu
               variant="red"
               :current="scope"
@@ -264,7 +264,7 @@
 
       <div v-else-if="mobileMenu === 'class'" key="class" class="min-[1200px]:hidden grid bg-brand-slab dark:bg-brand-surface-dark dark:border-b dark:border-brand-border-dark font-body">
         <div class="overflow-hidden">
-          <div class="max-w-7xl mx-auto px-6 pt-1 pb-4">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
             <ClassMenu :current="prefs.piClass" @pick="pickClass" />
           </div>
         </div>
@@ -272,7 +272,7 @@
 
       <div v-else-if="mobileMenu === 'menu'" key="menu" class="min-[1200px]:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
         <div class="overflow-hidden">
-          <div class="max-w-7xl mx-auto px-6 py-2">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2">
             <div class="ov text-white/70 pt-3 pb-2">{{ scopeLabel }}</div>
             <router-link
               v-for="view in views"

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-accent dark:text-brand-accent-dark">
       News
     </h1>

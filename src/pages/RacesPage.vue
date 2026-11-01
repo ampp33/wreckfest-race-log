@@ -1,5 +1,5 @@
 <template>
-  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-6 py-10">
+  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       Races
     </h1>
@@ -116,7 +116,7 @@
       <div v-else>
         <!-- Card layout (mobile) -->
         <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
-          <div v-for="race in pageRows" :key="race.id" class="p-3">
+          <div v-for="race in pageRows" :key="race.id" class="py-3">
             <template v-if="!editing[race.id]">
               <div class="flex items-start gap-2">
                 <div class="min-w-0 flex-1">
@@ -151,7 +151,7 @@
                        each gated by the same column-visibility picker so a card
                        shows only what the table would, instead of always
                        showing everything. -->
-                  <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-sm">
+                  <div class="grid grid-cols-3 gap-x-3 gap-y-3 mt-3 text-sm">
                     <div v-if="columnVisibility.isVisible('vehicle')">
                       <div class="ov text-brand-accent dark:text-brand-accent-dark">Vehicle</div>
                       <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
@@ -208,7 +208,7 @@
                 </RaceRowActions>
               </div>
 
-              <div v-if="expanded[race.id]" class="mt-3 -mx-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+              <div v-if="expanded[race.id]" class="mt-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
                 <RaceExpandedDetails
                   :notes="race.notes || ''"
                   :notes-fallback="isOwnRace(race) ? 'No notes' : ''"

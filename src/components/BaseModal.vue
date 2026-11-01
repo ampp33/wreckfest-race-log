@@ -1,11 +1,11 @@
 <template>
   <div
     v-if="open"
-    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-2 sm:p-4 overflow-hidden"
+    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/70 backdrop-blur-sm p-1 sm:p-4 overflow-hidden"
     @mousedown.self="$emit('close')"
   >
     <div
-      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
+      class="bg-brand-bg dark:bg-brand-surface-dark rounded-lg shadow-xl w-full p-3 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain border border-brand-border dark:border-brand-border-dark"
       :class="wide ? 'max-w-2xl' : 'max-w-lg'"
       role="dialog"
       aria-modal="true"

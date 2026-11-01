@@ -119,7 +119,8 @@ alter table wf1.races add constraint races_source_check check (source in ('web',
 -- PI class letter derived from performance_index, so leaderboards can
 -- filter/group "best lap per track per class" with a plain .eq() and an
 -- index instead of re-deriving it in every query. null when the PI is
--- unknown. Keep these thresholds in sync with src/utils/piInfo.js.
+-- unknown. Keep these thresholds in sync with src/utils/piInfo.js and
+-- the roster class in get_fastest_laps_per_vehicle_on_variation().
 alter table wf1.races add column if not exists pi_class text
     generated always as (
         case
@@ -1501,7 +1502,7 @@ as $$
             end,
             e.entry->'parts',
             case when e.rating ~ '^\d{1,6}$' then e.rating::int end,
-            e.letter, null::integer,
+            c.pi_class, null::integer,
             (e.entry->>'best_lap_ms')::int, 1
         from wf1.races r
         cross join lateral (
@@ -1511,12 +1512,26 @@ as $$
             from jsonb_array_elements(r.results_roster) x
             where jsonb_typeof(x) = 'object'
         ) e
+        -- Class from the PI number, with the same thresholds as
+        -- races.pi_class, so a roster lap lands in the same class as its
+        -- PI badge. The game's own letter can disagree with those
+        -- thresholds, so it's only the fallback when there's no number.
+        cross join lateral (
+            select case
+                when e.rating !~ '^\d{1,6}$' then
+                    case when e.letter in ('A', 'B', 'C', 'D') then e.letter end
+                when e.rating::int >= 235 then 'A'
+                when e.rating::int >= 165 then 'B'
+                when e.rating::int >= 100 then 'C'
+                else 'D'
+            end as pi_class
+        ) c
         left join wf1.vehicles v on lower(v.name) = lower(e.entry->>'car')
         where r.source = 'api'
           and r.track_variation_id = p_variation_id
           and r.results_roster is not null
           and jsonb_typeof(r.results_roster) = 'array'
-          and e.letter in ('A', 'B', 'C', 'D')
+          and c.pi_class is not null
           and case when e.entry->>'best_lap_ms' ~ '^\d{1,9}$'
                    then (e.entry->>'best_lap_ms')::int > 0 end
     )
