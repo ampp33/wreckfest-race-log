@@ -1,5 +1,5 @@
 <template>
-  <DriverScope :user-id="userId" class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+  <DriverScope :user-id="userId" class="wide-table-page max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <p v-if="loading" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
 
     <div v-else-if="!track">
@@ -244,8 +244,9 @@
           </p>
         </div>
 
-        <!-- Table layout (desktop) -->
-        <div class="hidden sm:block overflow-x-auto">
+        <!-- Table layout (desktop) — no scroll box of its own; a table too
+             wide for the page widens the page instead (see .wide-table-page). -->
+        <div class="hidden sm:block">
           <table class="min-w-full text-sm">
             <thead class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark">
               <tr>

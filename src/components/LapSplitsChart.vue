@@ -1,5 +1,7 @@
 <template>
-  <div v-if="hasData" class="relative h-48">
+  <!-- contain-inline-size: keeps the canvas's px width out of the races
+       table's min-content width (.wide-table-page), so it can still shrink. -->
+  <div v-if="hasData" class="relative h-48 [contain:inline-size]">
     <canvas ref="canvas"></canvas>
   </div>
 </template>

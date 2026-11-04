@@ -18,7 +18,9 @@
         </span>
       </div>
     </div>
-    <div class="relative" :style="{ height: `${chartHeight}px` }">
+    <!-- contain-inline-size: the canvas's px width mustn't count toward the
+         page's min-content width (.wide-table-page), or it could never shrink. -->
+    <div class="relative [contain:inline-size]" :style="{ height: `${chartHeight}px` }">
       <canvas ref="canvas"></canvas>
     </div>
   </div>

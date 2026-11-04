@@ -67,6 +67,20 @@ body {
   text-rendering: geometricPrecision;
 }
 
+/* Race-table pages (RacesPage, TrackDetailPage), desktop only: rather than
+ * giving a wide table its own horizontal scrollbar, let the whole page grow
+ * past max-w-7xl to the table's min-content width, and let the browser
+ * window scroll sideways to reach it (body's overflow-x: hidden would clip
+ * it otherwise). Below that width the page lays out exactly as before. */
+@media (min-width: 640px) {
+  .wide-table-page {
+    min-width: min-content;
+  }
+  body:has(.wide-table-page) {
+    overflow-x: visible;
+  }
+}
+
 /* The homepage hero's Swiss-punk car watermark (Rocket RX, driving up the
  * left edge of the page, wheels mirrored to point right into the copy
  * block, which is itself shifted right in HomePage.vue's hero section to
