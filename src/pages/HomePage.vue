@@ -30,6 +30,10 @@
         <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
           Track every race.<br><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
         </h1>
+        <h2 v-if="totalRaceCount" class="leading-[0.9] text-display-sm text-brand-text dark:text-brand-text-dark mt-8">
+          <span class="font-display font-black tracking-tightest text-brand-accent dark:text-brand-accent-dark">{{ totalRaceCount.toLocaleString() }}</span>
+          <span class="font-display font-bold tracking-tightest"> races logged, and counting.</span>
+        </h2>
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
           <b>Wreckfest Race Log</b> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <router-link to="/plugin" class="font-bold hover:underline">Telemetry plugin</router-link>,
           or manually log them yourself here — then use the site to watch your stats improve, take notes
@@ -204,6 +208,7 @@ import HomeGapTiles from '../components/HomeGapTiles.vue'
 import HomeRacesTable from '../components/HomeRacesTable.vue'
 import HomeStatsPreview from '../components/HomeStatsPreview.vue'
 import { races, flagshipRaceIndex, flagshipGoal, statsPreview } from '../data/homePageDemoData.js'
+import { getTotalRaceCount } from '../services/publicStatsService.js'
 
 export default {
   name: 'HomePage',
@@ -218,6 +223,9 @@ export default {
   // abandoned) rather than being clipped to it.
   mounted() {
     document.getElementById('app').classList.add('has-hero-car-bg')
+    getTotalRaceCount()
+      .then(count => { this.totalRaceCount = count })
+      .catch(() => {})
   },
   beforeUnmount() {
     document.getElementById('app').classList.remove('has-hero-car-bg')
@@ -227,7 +235,8 @@ export default {
       races,
       flagshipRaceIndex,
       flagshipGoal,
-      statsPreview
+      statsPreview,
+      totalRaceCount: null
     }
   }
 }
