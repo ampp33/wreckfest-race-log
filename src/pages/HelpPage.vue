@@ -1,4 +1,4 @@
-<!-- Getting Started — the "Docs Split" layout.
+<!-- Help — the "Docs Split" layout.
 
      The shape people already know from documentation sites: a sticky index
      down the left that highlights wherever you've scrolled to, content on
@@ -9,7 +9,7 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <header class="mb-12 max-w-3xl">
-      <div class="ov text-brand-accent dark:text-brand-accent-dark mb-5">Getting started</div>
+      <div class="ov text-brand-accent dark:text-brand-accent-dark mb-5">Help</div>
       <h1 class="font-display font-black tracking-tightest leading-[0.88] text-display-lg text-brand-text dark:text-brand-text-dark">
         The short version of <em class="font-heading font-normal tracking-normal signal">everything</em>.
       </h1>
@@ -297,7 +297,7 @@ import filterIcon from '../assets/icons/filter.svg?raw'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 
 export default {
-  name: 'GettingStartedPage',
+  name: 'HelpPage',
   components: { AppShot },
   data() {
     return {

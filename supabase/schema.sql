@@ -102,6 +102,13 @@ alter table wf1.races add column if not exists vehicle_weight_kg integer;
 -- before this existed, or where the companion tool couldn't resolve it.
 alter table wf1.races add column if not exists server_name text;
 
+-- Game mode the race was run in, as the companion plugin reports it:
+-- 'race', 'team_race' or 'elimination' (the only modes it logs). In an
+-- elimination race, eliminated racers' total_time_ms in results_roster is
+-- when they were knocked out, not a finish time. null for races logged
+-- before this existed, or entered by hand.
+alter table wf1.races add column if not exists game_mode text;
+
 -- Engine and armor upgrades on the logging player's car, as the companion
 -- plugin reports them, e.g. {"engine": "sport", "engine_parts":
 -- {"air_filter": "racing", ...}, "armor": {"front_bumper": {"name":
@@ -1080,6 +1087,11 @@ drop function if exists wf1.insert_race_with_api_key_wf1(
     text, text, text, text, integer, integer, integer, integer,
     integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer, text, text
 );
+-- Drop the pre-game_mode version (21 params).
+drop function if exists wf1.insert_race_with_api_key_wf1(
+    text, text, text, text, integer, integer, integer, integer,
+    integer, integer, integer, integer, text, integer, jsonb, jsonb, jsonb, integer, text, text, jsonb
+);
 
 create or replace function wf1.insert_race_with_api_key_wf1(
     api_key            text,
@@ -1102,7 +1114,8 @@ create or replace function wf1.insert_race_with_api_key_wf1(
     vehicle_weight_kg  integer default null,
     server_name        text default null,
     plugin_version     text default null,
-    parts              jsonb default null
+    parts              jsonb default null,
+    game_mode          text default null
 )
 returns json
 language plpgsql
@@ -1175,6 +1188,10 @@ begin
         return json_build_object('success', false, 'error', 'plugin_version must be at most 64 characters');
     end if;
 
+    if game_mode is not null and length(game_mode) > 32 then
+        return json_build_object('success', false, 'error', 'game_mode must be at most 32 characters');
+    end if;
+
     -- Fall back to the length of the lap array when lap_count isn't sent.
     v_lap_count := coalesce(lap_count, jsonb_array_length(lap_times_ms));
 
@@ -1222,12 +1239,12 @@ begin
         user_id, track_variation_id, vehicle_id,
         place, lap_time_ms, total_time_ms, datetime,
         performance_index, tuning, lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, server_name, parts, source
+        assists, vehicle_weight_kg, server_name, parts, game_mode, source
     ) values (
         v_user_id, v_track_variation_id, v_vehicle_id,
         place::text, lap_time_ms, total_time_ms, now(),
         performance_index, v_tuning, v_lap_count, lap_times_ms, results_roster,
-        assists, vehicle_weight_kg, nullif(server_name, ''), parts, 'api'
+        assists, vehicle_weight_kg, nullif(server_name, ''), parts, nullif(game_mode, ''), 'api'
     )
     returning id into v_race_id;
 

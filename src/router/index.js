@@ -15,7 +15,7 @@ import ApiKeysPage from '../pages/ApiKeysPage.vue'
 import ProfileSettingsPage from '../pages/ProfileSettingsPage.vue'
 import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
 import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
-import GettingStartedPage from '../pages/GettingStartedPage.vue'
+import HelpPage from '../pages/HelpPage.vue'
 import NewsPage from '../pages/NewsPage.vue'
 import LeaderboardPage from '../pages/LeaderboardPage.vue'
 import CommunityStatsPage from '../pages/CommunityStatsPage.vue'
@@ -47,7 +47,7 @@ const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { public: true } },
   { path: '/login', name: 'login', component: LoginPage, meta: { public: true } },
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
-  { path: '/getting-started', name: 'getting-started', component: GettingStartedPage },
+  { path: '/help', name: 'help', component: HelpPage },
   { path: '/news', name: 'news', component: NewsPage },
 
   // Community: every public driver's races. Same components as a driver's

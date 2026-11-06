@@ -7,7 +7,7 @@
 // { kind: 'driver', userId }.
 
 // The scope the route belongs to, or null for pages outside any scope
-// (News, Getting Started, admin, ...).
+// (News, Help, admin, ...).
 export function scopeOfRoute(route, myId) {
   if (route.meta.scope === 'community') return { kind: 'everyone' }
   if (route.name === 'profile') return { kind: 'you' }
