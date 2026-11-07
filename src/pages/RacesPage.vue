@@ -117,112 +117,113 @@
         <!-- Card layout (mobile) -->
         <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
           <div v-for="race in pageRows" :key="race.id" class="py-3">
-            <template v-if="!editing[race.id]">
-              <div class="flex items-start gap-2">
-                <div class="min-w-0 flex-1">
+            <!-- The row stays put while editing; the form opens below it. -->
+            <div class="flex items-start gap-2">
+              <div class="min-w-0 flex-1">
+                <router-link
+                  v-if="isCommunity && columnVisibility.isVisible('driver')"
+                  :to="`/${race.user_id}/races`"
+                  class="ov text-brand-accent dark:text-brand-accent-dark hover:underline"
+                >{{ race.driverName }}</router-link>
+                <template v-if="columnVisibility.isVisible('trackVariation')">
                   <router-link
-                    v-if="isCommunity && columnVisibility.isVisible('driver')"
-                    :to="`/${race.user_id}/races`"
-                    class="ov text-brand-accent dark:text-brand-accent-dark hover:underline"
-                  >{{ race.driverName }}</router-link>
-                  <template v-if="columnVisibility.isVisible('trackVariation')">
-                    <router-link
-                      v-if="race.trackSlug && race.variationSlug"
-                      :to="`${basePath}/track/${race.trackSlug}/${race.variationSlug}`"
-                      class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
-                    >
-                      {{ race.trackName }}
-                      <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
-                    </router-link>
-                    <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
-                  </template>
-                  <div v-if="columnVisibility.isVisible('date')" class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
-                    {{ formatDateTime(race.datetime) }}
-                    <span
-                      v-if="race.source === 'api'"
-                      class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-                      :title="apiSourceTitle(race)"
-                      v-html="apiIcon"
-                    />
-                    <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
-                  </div>
-
-                  <!-- Same fields, in the same order, as the desktop table columns —
-                       each gated by the same column-visibility picker so a card
-                       shows only what the table would, instead of always
-                       showing everything. -->
-                  <div class="grid grid-cols-3 gap-x-3 gap-y-3 mt-3 text-sm">
-                    <div v-if="columnVisibility.isVisible('vehicle')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Vehicle</div>
-                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('pi')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
-                      <div><PerformanceIndexBadge :value="race.performance_index" /></div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('weight')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Weight</div>
-                      <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('tune')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
-                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('assists')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
-                      <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('parts')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Parts</div>
-                      <div><PartsBadge :parts="race.parts" /></div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('place')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
-                      <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('laps')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Laps</div>
-                      <div class="tabular-nums">{{ lapCount(race) }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('lapTime')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Lap time</div>
-                      <div class="tabular">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
-                    </div>
-                    <div v-if="columnVisibility.isVisible('totalTime')">
-                      <div class="ov text-brand-accent dark:text-brand-accent-dark">Total time</div>
-                      <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
-                    </div>
-                  </div>
+                    v-if="race.trackSlug && race.variationSlug"
+                    :to="`${basePath}/track/${race.trackSlug}/${race.variationSlug}`"
+                    class="font-bold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark truncate block"
+                  >
+                    {{ race.trackName }}
+                    <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ race.variationName }}</span>
+                  </router-link>
+                  <span v-else class="font-bold text-brand-text dark:text-brand-text-dark">—</span>
+                </template>
+                <div v-if="columnVisibility.isVisible('date')" class="text-xs text-brand-muted dark:text-brand-muted-dark inline-flex items-center gap-1">
+                  {{ formatDateTime(race.datetime) }}
+                  <span
+                    v-if="race.source === 'api'"
+                    class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
+                    :title="apiSourceTitle(race)"
+                    v-html="apiIcon"
+                  />
+                  <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
                 </div>
 
-                <RaceRowActions
-                  vertical
-                  :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
-                  :expanded="!!expanded[race.id]"
-                  @toggle-expand="toggleExpanded(race.id)"
-                  :editable="isOwnRace(race)"
-                  @edit="editing[race.id] = true"
-                  @delete="onDelete(race)"
-                >
-                  <FavoriteStar v-if="isSignedIn" :race-id="race.id" />
-                </RaceRowActions>
+                <!-- Same fields, in the same order, as the desktop table columns —
+                     each gated by the same column-visibility picker so a card
+                     shows only what the table would, instead of always
+                     showing everything. -->
+                <div class="grid grid-cols-3 gap-x-3 gap-y-3 mt-3 text-sm">
+                  <div v-if="columnVisibility.isVisible('vehicle')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Vehicle</div>
+                    <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicleName }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('pi')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
+                    <div><PerformanceIndexBadge :value="race.performance_index" /></div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('weight')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Weight</div>
+                    <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('tune')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
+                    <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('assists')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
+                    <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('parts')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Parts</div>
+                    <div><PartsBadge :parts="race.parts" /></div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('place')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
+                    <div class="tabular-nums">{{ race.place != null ? race.place : '—' }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('laps')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Laps</div>
+                    <div class="tabular-nums">{{ lapCount(race) }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('lapTime')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Lap time</div>
+                    <div class="tabular">{{ race.lap_time_ms != null ? formatMs(race.lap_time_ms) : '—' }}</div>
+                  </div>
+                  <div v-if="columnVisibility.isVisible('totalTime')">
+                    <div class="ov text-brand-accent dark:text-brand-accent-dark">Total time</div>
+                    <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ race.total_time_ms != null ? formatMs(race.total_time_ms) : '—' }}</div>
+                  </div>
+                </div>
               </div>
 
-              <div v-if="expanded[race.id]" class="mt-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
-                <RaceExpandedDetails
-                  :notes="race.notes || ''"
-                  :notes-fallback="isOwnRace(race) ? 'No notes' : ''"
-                  card-labels
-                  divider
-                  :lap-times="race.lap_times_ms"
-                  :roster="race.results_roster"
-                  :server-name="race.server_name || ''"
-                />
-              </div>
-            </template>
+              <RaceRowActions
+                vertical
+                :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
+                :expanded="!!expanded[race.id]"
+                @toggle-expand="toggleExpanded(race.id)"
+                :editable="isOwnRace(race)"
+                @edit="editing[race.id] = true"
+                @delete="onDelete(race)"
+              >
+                <FavoriteStar v-if="isSignedIn" :race-id="race.id" />
+              </RaceRowActions>
+            </div>
+
+            <div v-if="expanded[race.id] && !editing[race.id]" class="mt-3 px-3 py-3 bg-brand-surface dark:bg-brand-surface-dark">
+              <RaceExpandedDetails
+                :notes="race.notes || ''"
+                :notes-fallback="isOwnRace(race) ? 'No notes' : ''"
+                card-labels
+                divider
+                :lap-times="race.lap_times_ms"
+                :roster="race.results_roster"
+                :server-name="race.server_name || ''"
+              />
+            </div>
 
             <RaceForm
-              v-else
+              v-if="editing[race.id]"
+              :notes-only="race.source === 'api'"
+              class="mt-3"
               :vehicles="vehicles"
               :defaults="editDefaultsFor(race)"
               :saving="!!saving[race.id]"
@@ -339,7 +340,7 @@
             </thead>
             <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark border-b border-brand-border dark:border-brand-border-dark">
               <template v-for="race in pageRows" :key="race.id">
-                <tr v-if="!editing[race.id]" class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
+                <tr class="hover:bg-brand-surface dark:hover:bg-brand-surface-dark">
                   <td v-if="isSignedIn" class="w-px p-0">
                     <FavoriteStar compact :race-id="race.id" />
                   </td>
@@ -413,9 +414,10 @@
                     />
                   </td>
                 </tr>
-                <tr v-else>
+                <tr v-if="editing[race.id]">
                   <td :colspan="tableColspan" class="p-5 bg-brand-surface dark:bg-brand-surface-dark">
                     <RaceForm
+                      :notes-only="race.source === 'api'"
                       :vehicles="vehicles"
                       :defaults="editDefaultsFor(race)"
                       :saving="!!saving[race.id]"

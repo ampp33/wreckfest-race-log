@@ -1,6 +1,8 @@
 <template>
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
+      <!-- Plugin-logged races came straight from the game, so only their notes are editable. -->
+      <template v-if="!notesOnly">
       <div class="col-span-2 min-w-0 overflow-hidden">
         <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Date / time
@@ -122,6 +124,8 @@
         <LapTimeInput v-model="form.totalTimeMs" />
       </div>
 
+      </template>
+
       <div class="col-span-2">
         <label class="ov block text-brand-muted dark:text-brand-muted-dark mb-2">
           Notes (Ctrl+Enter to save)
@@ -213,7 +217,8 @@ const props = defineProps({
   defaults: { type: Object, default: () => ({}) },
   goalLapTimeMs: { type: Number, default: null },
   saving: { type: Boolean, default: false },
-  autofocus: { type: Boolean, default: true }
+  autofocus: { type: Boolean, default: true },
+  notesOnly: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['submit', 'cancel'])
@@ -266,6 +271,10 @@ function autoExpand() {
 
 function onSubmit() {
   errorMessage.value = ''
+  if (props.notesOnly) {
+    emit('submit', { notes: form.notes || null })
+    return
+  }
   const pi = parseInt(form.performanceIndex, 10)
   const payload = {
     datetime: new Date(form.datetime).toISOString(),
