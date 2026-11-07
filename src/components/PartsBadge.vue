@@ -59,114 +59,123 @@
   </span>
 </template>
 
-<script setup>
-import { ref, computed, nextTick } from 'vue'
-import { useEventListener } from '../composables/useEventListener.js'
+<script>
 import { hasParts, performanceParts, armorParts } from '../utils/partsInfo.js'
-
-const props = defineProps({
-  // A race's or roster entry's `parts` object (see docs/external-api.md);
-  // null/absent for races logged before parts existed.
-  parts: { type: Object, default: null }
-})
-
-const performance = computed(() => performanceParts(props.parts))
-const armor = computed(() => armorParts(props.parts))
-const summary = computed(() => {
-  const engine = performance.value[0]
-  const fitted = armor.value.filter(a => a.weightKg > 0)
-  const kg = fitted.reduce((sum, a) => sum + a.weightKg, 0)
-  return `${engine.tierLabel} engine, ${fitted.length} of ${armor.value.length} armor parts fitted (${kg} kg)`
-})
-
-function tierClass(tier) {
-  return tier ? `t-${tier}` : 'sq-empty'
-}
-function armorClass(a) {
-  return a.fill == null ? 'sq-empty' : ''
-}
-// Light red at 0 kg through dark red at MAX_ARMOR_WEIGHT_KG, mixed in CSS
-// so the two ends follow the light/dark palette below.
-function armorStyle(a) {
-  if (a.fill == null) return null
-  return { background: `color-mix(in oklab, var(--a-light), var(--a-heavy) ${Math.round(a.fill * 100)}%)` }
-}
-
-const open = ref(false)
-// Opened by a click/tap rather than a hover: stays open until clicked
-// again, clicked outside, or Escape.
-const pinned = ref(false)
-const triggerEl = ref(null)
-const panelEl = ref(null)
-const panelStyle = ref({})
-let hoverCloseTimer = null
 
 const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
 
-function position() {
-  if (!triggerEl.value || !panelEl.value) return
-  const rect = triggerEl.value.getBoundingClientRect()
-  const w = panelEl.value.offsetWidth
-  const h = panelEl.value.offsetHeight
-  const left = Math.max(16, Math.min(rect.left, window.innerWidth - w - 16))
-  // Below the squares, or above them when there isn't room below — and when
-  // neither fits, pulled up just far enough to stay on screen.
-  const below = rect.bottom + 6
-  const above = rect.top - h - 6
-  let top = below
-  if (below + h > window.innerHeight - 8) {
-    top = above > 8 ? above : Math.max(8, window.innerHeight - h - 8)
+export default {
+  name: 'PartsBadge',
+  props: {
+    // A race's or roster entry's `parts` object (see docs/external-api.md);
+    // null/absent for races logged before parts existed.
+    parts: { type: Object, default: null }
+  },
+  data() {
+    return {
+      open: false,
+      // Opened by a click/tap rather than a hover: stays open until clicked
+      // again, clicked outside, or Escape.
+      pinned: false,
+      panelStyle: {}
+    }
+  },
+  computed: {
+    performance() {
+      return performanceParts(this.parts)
+    },
+    armor() {
+      return armorParts(this.parts)
+    },
+    summary() {
+      const fitted = this.armor.filter(a => a.weightKg > 0)
+      const kg = fitted.reduce((sum, a) => sum + a.weightKg, 0)
+      return `${this.performance[0].tierLabel} engine, ${fitted.length} of ${this.armor.length} armor parts fitted (${kg} kg)`
+    }
+  },
+  mounted() {
+    document.addEventListener('pointerdown', this.onDocPointerDown)
+    document.addEventListener('keydown', this.onKeydown)
+    window.addEventListener('scroll', this.onReposition, true)
+    window.addEventListener('resize', this.onReposition)
+  },
+  beforeUnmount() {
+    document.removeEventListener('pointerdown', this.onDocPointerDown)
+    document.removeEventListener('keydown', this.onKeydown)
+    window.removeEventListener('scroll', this.onReposition, true)
+    window.removeEventListener('resize', this.onReposition)
+  },
+  methods: {
+    hasParts,
+    tierClass(tier) {
+      return tier ? `t-${tier}` : 'sq-empty'
+    },
+    armorClass(a) {
+      return a.fill == null ? 'sq-empty' : ''
+    },
+    // Light red at 0 kg through dark red at MAX_ARMOR_WEIGHT_KG, mixed in CSS
+    // so the two ends follow the light/dark palette below.
+    armorStyle(a) {
+      if (a.fill == null) return null
+      return { background: `color-mix(in oklab, var(--a-light), var(--a-heavy) ${Math.round(a.fill * 100)}%)` }
+    },
+    position() {
+      const { triggerEl, panelEl } = this.$refs
+      if (!triggerEl || !panelEl) return
+      const rect = triggerEl.getBoundingClientRect()
+      const w = panelEl.offsetWidth
+      const h = panelEl.offsetHeight
+      const left = Math.max(16, Math.min(rect.left, window.innerWidth - w - 16))
+      // Below the squares, or above them when there isn't room below — and
+      // when neither fits, pulled up just far enough to stay on screen.
+      const below = rect.bottom + 6
+      const above = rect.top - h - 6
+      let top = below
+      if (below + h > window.innerHeight - 8) {
+        top = above > 8 ? above : Math.max(8, window.innerHeight - h - 8)
+      }
+      this.panelStyle = { top: `${top}px`, left: `${left}px` }
+    },
+    show() {
+      this.open = true
+      this.$nextTick(this.position)
+    },
+    close() {
+      this.open = false
+      this.pinned = false
+    },
+    togglePinned() {
+      clearTimeout(this.hoverCloseTimer)
+      if (this.pinned) {
+        this.close()
+      } else {
+        this.pinned = true
+        this.show()
+      }
+    },
+    // A short grace period on leave, so the pointer can cross the gap from
+    // the squares into the popup without it closing.
+    onHoverStart() {
+      if (!canHover) return
+      clearTimeout(this.hoverCloseTimer)
+      if (!this.open) this.show()
+    },
+    onHoverEnd() {
+      if (!canHover || this.pinned) return
+      this.hoverCloseTimer = setTimeout(() => { this.open = false }, 120)
+    },
+    onDocPointerDown(event) {
+      if (!this.open || this.$refs.triggerEl?.contains(event.target) || this.$refs.panelEl?.contains(event.target)) return
+      this.close()
+    },
+    onKeydown(event) {
+      if (this.open && event.key === 'Escape') this.close()
+    },
+    onReposition() {
+      if (this.open) this.position()
+    }
   }
-  panelStyle.value = { top: `${top}px`, left: `${left}px` }
 }
-
-function show() {
-  open.value = true
-  nextTick(position)
-}
-function close() {
-  open.value = false
-  pinned.value = false
-}
-
-function togglePinned() {
-  clearTimeout(hoverCloseTimer)
-  if (pinned.value) {
-    close()
-  } else {
-    pinned.value = true
-    show()
-  }
-}
-
-// A short grace period on leave, so the pointer can cross the gap from the
-// squares into the popup without it closing.
-function onHoverStart() {
-  if (!canHover) return
-  clearTimeout(hoverCloseTimer)
-  if (!open.value) show()
-}
-function onHoverEnd() {
-  if (!canHover || pinned.value) return
-  hoverCloseTimer = setTimeout(() => { open.value = false }, 120)
-}
-
-function onDocPointerDown(e) {
-  if (!open.value) return
-  if (triggerEl.value?.contains(e.target) || panelEl.value?.contains(e.target)) return
-  close()
-}
-function onKeydown(e) {
-  if (open.value && e.key === 'Escape') close()
-}
-function onReposition() {
-  if (open.value) position()
-}
-
-useEventListener(document, 'pointerdown', onDocPointerDown)
-useEventListener(document, 'keydown', onKeydown)
-useEventListener(window, 'scroll', onReposition, true)
-useEventListener(window, 'resize', onReposition)
 </script>
 
 <style>

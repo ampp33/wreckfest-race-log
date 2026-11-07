@@ -5,6 +5,39 @@
 //
 // A scope is a plain object: { kind: 'everyone' } | { kind: 'you' } |
 // { kind: 'driver', userId }.
+import { authStore } from '../stores.js'
+
+// For the pages shared by a driver's log and its /community twin.
+export const scopedPage = {
+  computed: {
+    // Whose log this is, from /<userId>/...; undefined on community pages.
+    userId() {
+      return this.$route.params.userId
+    },
+    // /community/...: every public driver's races rather than one driver's.
+    isCommunity() {
+      return this.$route.meta.scope === 'community'
+    },
+    // Editing, notes, goals and export only exist on your own log.
+    isOwnView() {
+      return !!this.userId && authStore.user?.id === this.userId
+    },
+    isSignedIn() {
+      return !!authStore.user
+    },
+    // Where track links point: this driver's pages, or the community ones.
+    basePath() {
+      return this.isCommunity ? '/community' : `/${this.userId}`
+    }
+  },
+  methods: {
+    // Your own races can be edited wherever they show up — RLS refuses an
+    // edit or delete of anyone else's regardless.
+    isOwnRace(race) {
+      return !!authStore.user && race.user_id === authStore.user.id
+    }
+  }
+}
 
 // The scope the route belongs to, or null for pages outside any scope
 // (News, Help, admin, ...).

@@ -43,12 +43,11 @@ src/
 ├── main.js          Bootstrap — awaits the auth session BEFORE mounting
 ├── App.vue          Shell: nav, footer, global modals, global keyboard shortcuts
 ├── router/index.js  Routes + the auth/admin/ban navigation guard
+├── api.js           Every Supabase call in the app
+├── stores.js        Shared reactive state
 ├── pages/           One component per route
 ├── components/      Reusable UI
-├── composables/     The three places Composition API earns its keep
-├── services/        Every Supabase call in the app
-├── stores/          Shared reactive state
-├── utils/           Pure helpers (formatting, slugs, images, track paths)
+├── utils/           Helpers and the Options API mixins (see below)
 ├── data/            Static demo data for the logged-out landing page
 └── assets/icons/    Inline SVGs, imported with Vite's `?raw`
 ```
@@ -56,60 +55,44 @@ src/
 ### Layering rule
 
 **Components never call Supabase directly.** They import a function from
-`src/services/`. That keeps the entire network surface in one directory and
-makes the RLS story easy to audit. The single exception is `authStore.js`,
-which reads `user_roles`, `user_details` and `profiles` off the client directly while
-resolving the session.
+`src/api.js`, which keeps the entire network surface in one file and makes
+the RLS story easy to audit. It holds the shared client (with
+`flowType: 'pkce'` deliberately — PKCE returns the OAuth code as `?code=`
+rather than a `#access_token=` fragment, which would otherwise collide with the
+hash router), then the calls grouped by area: auth, the track/vehicle
+catalogue (fetched once per session), races, goals and annotations,
+favorites, profiles, leaderboards, API keys, feedback and admin RPCs.
 
-| Service | Responsibility |
-| --- | --- |
-| `supabase.js` | The shared client. Everything else imports this. Uses `flowType: 'pkce'` deliberately — PKCE returns the OAuth code as `?code=` rather than a `#access_token=` fragment, which would otherwise collide with the hash router. |
-| `authService.js` | Sign in/up (password, Google, Discord), sign out, session, auth-change subscription. |
-| `trackService.js` | Track + variation catalogue lookups by slug. |
-| `vehicleService.js` | Vehicle catalogue. |
-| `raceService.js` | Race CRUD, per-variation and all-races queries, bulk import, vehicle→PI map. Every read filters on `user_id` explicitly (see [Data model](#data-model)); writes split notes into `races_private`. |
-| `goalService.js` | Per-variation goal lap times. |
-| `annotationService.js` | Track-map pins for a variation. |
-| `favoriteService.js` | The races you've starred — anyone's, not just your own. |
-| `statsService.js` | The user's aggregate stats. |
-| `profileService.js` | Update your own display name and public/private switch. |
-| `leaderboardService.js` | Community leaderboards: `get_most_races_leaderboard()`, `get_fastest_laps()`. |
-| `publicStatsService.js` | `get_total_race_count()`, the one anon-callable stats RPC. Currently unused — the landing page renders from `src/data/homePageDemoData.js` instead. |
-| `apiKeyService.js` | The user's own API keys. |
-| `feedbackService.js` | In-app feedback submission. |
-| `adminService.js` | Admin-only RPCs: users, roles, bans, all API keys, all feedback, growth. |
+Race reads filter on `user_id` explicitly (see [Data model](#data-model)), and
+race writes split notes into `races_private`.
 
 ### State
 
-No Pinia, no Vuex. Shared state is a handful of plain `reactive({})` modules
-with named mutator functions — the total amount of global state is small enough
+No Pinia, no Vuex. `src/stores.js` holds a handful of plain `reactive({})`
+objects with a few mutators — the total amount of global state is small enough
 that a store library would be more ceremony than help.
 
 | Store | Holds |
 | --- | --- |
 | `authStore` | Session, user, `isAuthenticated` / `isAdmin` / `isBanned`, `ready`, `profile` (`display_name`, `is_public`). |
-| `prefsStore` | Dark mode + last-used vehicle/tuning, persisted to `localStorage`. |
-| `quickAddStore` | Quick Add modal open state + a "race saved" callback hook. |
-| `trackSearchStore` | Track search modal open state. |
-| `prepRaceStore` | Prep for race modal open state. |
-| `feedbackStore` | Feedback modal open state. |
+| `prefsStore` | Dark mode, the nav's car class, last-used vehicle/tuning — persisted to `localStorage`. |
+| `recentDriversStore` | Drivers whose logs you opened lately, for the scope menu (`localStorage`). |
+| `modals` | Which global dialog is open (quick add, track search, prep for race, feedback); plus `setOnRaceSaved()`, the hook TrackDetailPage uses to reload after a quick add. |
 | `favoritesStore` | The signed-in user's favorited race ids, loaded once per sign-in and shared by every race table. |
 | `toastStore` | Toast queue. |
 
-### Composition API usage
+### Options API throughout
 
-The codebase is **Options API by default** — 52 of 63 single-file components.
-`<script setup>` is used in eleven: ten had real lifecycle duplication worth
-extracting into a composable, and the eleventh, `ColumnFilterPanel.vue`, is
-the shared body of `ColumnFilterMenu.vue`. The composables:
+Every component uses the Options API. Shared behaviour is a mixin:
 
-- `src/composables/useChart.js` — owns a Chart.js instance's lifecycle
-- `src/composables/useEventListener.js` — add-on-mount / remove-on-unmount
-- `src/composables/useMeasuredFade.js` — measures a real DOM row to clip a
-  scrolling container past its actual bottom edge
-
-If you're adding a component, use the Options API unless you're reaching for
-one of those composables.
+- `scopedPage` (`utils/scope.js`) — `userId`, `isCommunity`, `isOwnView`,
+  `basePath` for the pages shared by a driver's log and its community twin
+- `raceTable` (`utils/raceTable.js`) — column visibility, sorting and
+  Excel-style cross-filters for RacesPage and TrackDetailPage, configured by a
+  `raceTable` component option
+- `chartMixin` (`utils/chart.js`) — owns Chart.js instances' lifecycle
+- `measuredFade` (`utils/measuredFade.js`) — measures a real DOM row to clip
+  a scrolling container past its actual bottom edge
 
 ## Routing
 
@@ -236,9 +219,9 @@ you can always read your own; only the owner can write):
 - `roles` / `user_roles` — the admin role assignment
 
 **Times are stored as integer milliseconds** everywhere. No floats, so
-comparison and "biggest improvement" arithmetic are exact. `src/utils/timeFormat.js`
-parses a deliberately forgiving input format (`1:23.456`, `83.4`, `1.23.456`)
-so you never have to think about separators while typing fast.
+comparison and "biggest improvement" arithmetic are exact. Times are entered
+in `LapTimeInput.vue`'s separate minute/second/millisecond boxes, and only
+formatted for display in `src/utils/format.js`.
 
 ### Authorization
 
@@ -301,8 +284,8 @@ is in an input:
 
 ## Conventions worth knowing
 
-- Options API unless a composable justifies `<script setup>`.
-- All Supabase access goes through `src/services/`.
+- Options API everywhere; shared behaviour is a mixin, not a composable.
+- All Supabase access goes through `src/api.js`.
 - Times in integer milliseconds; format only at the edge.
 - Icons are inline SVG imported with `?raw`, not an icon font or component lib.
 - Markdown notes are always piped through `DOMPurify` before `v-html`.

@@ -1,6 +1,7 @@
 <template>
   <div class="app-shell min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
-    <NavBar v-if="showNavBar" />
+    <!-- Every page but sign-in gets the real nav, signed in or not. -->
+    <NavBar v-if="!isLoginRoute" />
     <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
 
     <main class="flex-1">
@@ -13,7 +14,7 @@
       <router-view v-else />
     </main>
 
-    <AppFooter v-if="!isLoginRoute && !isHomeRoute" />
+    <AppFooter v-if="!isLoginRoute && $route.name !== 'home'" />
 
     <QuickAddModal v-if="auth.isAuthenticated" />
     <TrackSearchModal />
@@ -21,7 +22,7 @@
     <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
-    <NavIntroOverlay v-if="auth.ready && auth.isAuthenticated && showNavBar" />
+    <NavIntroOverlay v-if="auth.ready && auth.isAuthenticated && !isLoginRoute" />
   </div>
 </template>
 
@@ -36,31 +37,21 @@ import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
 import NavIntroOverlay from './components/NavIntroOverlay.vue'
-import { authStore } from './stores/authStore.js'
-import { prefsStore, applyDarkModeClass } from './stores/prefsStore.js'
-import { openQuickAdd, quickAddStore } from './stores/quickAddStore.js'
-import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
-import { openPrepRace, prepRaceStore } from './stores/prepRaceStore.js'
+import { authStore, modals, openQuickAdd, applyDarkModeClass } from './stores.js'
+import { isPlainKeypress } from './utils/keys.js'
+
+// Global single-letter shortcuts → the dialog each opens.
+const SHORTCUTS = { q: 'quickAdd', t: 'trackSearch', p: 'prepRace' }
 
 export default {
   name: 'App',
   components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, PrepRaceModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
-    return {
-      auth: authStore,
-      prefs: prefsStore
-    }
+    return { auth: authStore }
   },
   computed: {
     isLoginRoute() {
-      return this.$route && this.$route.name === 'login'
-    },
-    isHomeRoute() {
-      return this.$route && this.$route.name === 'home'
-    },
-    // Every page but sign-in gets the real nav, signed in or not.
-    showNavBar() {
-      return !this.isLoginRoute
+      return this.$route.name === 'login'
     }
   },
   mounted() {
@@ -72,32 +63,15 @@ export default {
   },
   methods: {
     onGlobalKeydown(event) {
-      if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (this.isTypingTarget(event.target)) return
-
-      if (event.key === 'q' || event.key === 'Q') {
-        // Quick add writes to your own log, so it stays signed-in only.
-        if (!authStore.isAuthenticated) return
-        if (quickAddStore.open || trackSearchStore.open || prepRaceStore.open) return
-        event.preventDefault()
-        openQuickAdd()
-      } else if (event.key === 't' || event.key === 'T') {
-        if (trackSearchStore.open || quickAddStore.open || prepRaceStore.open) return
-        event.preventDefault()
-        openTrackSearch()
-      } else if (event.key === 'p' || event.key === 'P') {
-        // Community lap times are public, so like T this works signed out too.
-        if (prepRaceStore.open || quickAddStore.open || trackSearchStore.open) return
-        event.preventDefault()
-        openPrepRace()
-      }
-    },
-    isTypingTarget(el) {
-      if (!el) return false
-      const tag = (el.tagName || '').toLowerCase()
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
-      if (el.isContentEditable) return true
-      return false
+      const modal = SHORTCUTS[event.key?.toLowerCase()]
+      if (!modal || !isPlainKeypress(event)) return
+      // Quick add writes to your own log, so it's signed-in only; track search
+      // and prep for race read public data, so they work signed out too.
+      if (modal === 'quickAdd' && !authStore.isAuthenticated) return
+      if (modals.quickAdd || modals.trackSearch || modals.prepRace) return
+      event.preventDefault()
+      if (modal === 'quickAdd') openQuickAdd()
+      else modals[modal] = true
     }
   }
 }

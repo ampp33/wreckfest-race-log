@@ -112,8 +112,7 @@
 </template>
 
 <script>
-import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
+import { authStore, prefsStore } from '../stores.js'
 import ScopeIcon from './ScopeIcon.vue'
 import ClassIcon from './ClassIcon.vue'
 import AppShot from './AppShot.vue'

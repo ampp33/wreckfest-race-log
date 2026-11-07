@@ -164,12 +164,10 @@
   </form>
 </template>
 
-<script setup>
-import { reactive, ref, computed, watch, nextTick, onMounted } from 'vue'
+<script>
 import LapTimeInput from './LapTimeInput.vue'
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime } from '../utils/format.js'
 import { piInfo } from '../utils/piInfo.js'
-import { useEventListener } from '../composables/useEventListener.js'
 
 const tuningSliderConfig = [
   { label: 'Suspension',    left: 'SOFT',  center: 'STANDARD', right: 'STIFF'  },
@@ -178,6 +176,7 @@ const tuningSliderConfig = [
   { label: 'Brake Balance', left: 'REAR',  center: 'MIDDLE',   right: 'FRONT'  },
 ]
 
+// Tuning is the four dials (1–5 each) as a 4-digit number, e.g. 3142.
 function parseSliders(tuning) {
   if (tuning == null) return [1, 1, 1, 1]
   const s = String(Math.round(tuning))
@@ -191,119 +190,119 @@ function slidersToTuning(sliders) {
   return sliders[0] * 1000 + sliders[1] * 100 + sliders[2] * 10 + sliders[3]
 }
 
+// datetime-local wants local time, minute precision.
 function nowLocalIsoMinute() {
   const d = new Date()
   d.setSeconds(0, 0)
-  const tzOffset = d.getTimezoneOffset() * 60_000
-  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16)
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)
 }
 
-function emptyForm() {
-  return {
-    datetime: nowLocalIsoMinute(),
-    vehicleId: null,
-    tuning: null,
-    place: '',
-    lapTimeMs: null,
-    totalTimeMs: null,
-    performanceIndex: '0',
-    notes: ''
+export default {
+  name: 'RaceForm',
+  components: { LapTimeInput },
+  props: {
+    vehicles: { type: Array, required: true },
+    vehiclePiMap: { type: Object, default: () => ({}) },
+    defaults: { type: Object, default: () => ({}) },
+    goalLapTimeMs: { type: Number, default: null },
+    saving: { type: Boolean, default: false },
+    autofocus: { type: Boolean, default: true },
+    notesOnly: { type: Boolean, default: false }
+  },
+  emits: ['submit', 'cancel'],
+  data() {
+    return {
+      tuningSliderConfig,
+      form: {
+        datetime: nowLocalIsoMinute(),
+        vehicleId: null,
+        tuning: null,
+        place: '',
+        lapTimeMs: null,
+        totalTimeMs: null,
+        performanceIndex: '0',
+        notes: '',
+        ...this.defaults
+      },
+      errorMessage: '',
+      sliders: parseSliders(this.defaults.tuning)
+    }
+  },
+  computed: {
+    piClass() {
+      return piInfo(this.form.performanceIndex).cls
+    },
+    piColor() {
+      return piInfo(this.form.performanceIndex).color
+    }
+  },
+  watch: {
+    'form.tuning'(val) {
+      if (val !== slidersToTuning(this.sliders)) this.sliders = parseSliders(val)
+    },
+    'form.vehicleId': {
+      immediate: true,
+      handler(vehicleId) {
+        const pi = vehicleId ? this.vehiclePiMap[vehicleId] : null
+        if (pi != null) this.form.performanceIndex = String(pi)
+      }
+    }
+  },
+  mounted() {
+    // Escape is bound on the document, not the form: when editing a race
+    // (autofocus off) nothing has focus once the Edit button that had it is
+    // gone, so the form itself would never see the first press.
+    document.addEventListener('keydown', this.onDocumentKeydown)
+    if (this.autofocus) this.$nextTick(() => this.$refs.vehicleInput?.focus())
+    this.autoExpand()
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onDocumentKeydown)
+  },
+  methods: {
+    formatMsToTime,
+    setSlider(i, pos) {
+      this.sliders.splice(i, 1, pos)
+      this.form.tuning = slidersToTuning(this.sliders)
+    },
+    onDocumentKeydown(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        this.$emit('cancel')
+      }
+    },
+    // Enter submits, except in the notes, where it takes Ctrl/Cmd+Enter.
+    onFormKeydown(event) {
+      if (event.key !== 'Enter') return
+      if (event.target?.tagName === 'TEXTAREA' && !event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      this.onSubmit()
+    },
+    autoExpand() {
+      const el = this.$refs.notesInput
+      if (!el) return
+      el.style.height = 'auto'
+      el.style.height = `${Math.min(el.scrollHeight, 200)}px`
+    },
+    onSubmit() {
+      this.errorMessage = ''
+      if (this.notesOnly) {
+        this.$emit('submit', { notes: this.form.notes || null })
+        return
+      }
+      const { form } = this
+      const pi = parseInt(form.performanceIndex, 10)
+      this.$emit('submit', {
+        datetime: new Date(form.datetime).toISOString(),
+        vehicle_id: form.vehicleId || null,
+        tuning: form.tuning ?? null,
+        place: form.place || null,
+        lap_time_ms: form.lapTimeMs,
+        total_time_ms: form.totalTimeMs,
+        performance_index: isNaN(pi) ? null : pi,
+        notes: form.notes || null
+      })
+    }
   }
 }
-
-const props = defineProps({
-  vehicles: { type: Array, required: true },
-  vehiclePiMap: { type: Object, default: () => ({}) },
-  defaults: { type: Object, default: () => ({}) },
-  goalLapTimeMs: { type: Number, default: null },
-  saving: { type: Boolean, default: false },
-  autofocus: { type: Boolean, default: true },
-  notesOnly: { type: Boolean, default: false }
-})
-
-const emit = defineEmits(['submit', 'cancel'])
-
-const form = reactive({ ...emptyForm(), ...props.defaults })
-const errorMessage = ref('')
-const sliders = ref(parseSliders(props.defaults.tuning))
-
-const vehicleInput = ref(null)
-const notesInput = ref(null)
-
-const piClass = computed(() => piInfo(form.performanceIndex).cls)
-const piColor = computed(() => piInfo(form.performanceIndex).color)
-
-watch(() => form.tuning, (val) => {
-  if (val !== slidersToTuning(sliders.value)) {
-    const parsed = parseSliders(val)
-    parsed.forEach((v, i) => sliders.value.splice(i, 1, v))
-  }
-})
-
-watch(() => form.vehicleId, (vehicleId) => {
-  if (!vehicleId) return
-  const pi = props.vehiclePiMap[vehicleId]
-  if (pi != null) form.performanceIndex = String(pi)
-}, { immediate: true })
-
-function setSlider(i, pos) {
-  sliders.value.splice(i, 1, pos)
-  form.tuning = slidersToTuning(sliders.value)
-}
-
-function onFormKeydown(event) {
-  // Enter submits form unless we're inside the textarea (use Ctrl+Enter
-  // there). This matches the spec's "fast input" rule.
-  if (event.key === 'Enter') {
-    const inTextarea = event.target && event.target.tagName === 'TEXTAREA'
-    if (inTextarea && !event.ctrlKey && !event.metaKey) return
-    event.preventDefault()
-    onSubmit()
-  }
-}
-
-function autoExpand() {
-  const el = notesInput.value
-  if (!el) return
-  el.style.height = 'auto'
-  el.style.height = `${Math.min(el.scrollHeight, 200)}px`
-}
-
-function onSubmit() {
-  errorMessage.value = ''
-  if (props.notesOnly) {
-    emit('submit', { notes: form.notes || null })
-    return
-  }
-  const pi = parseInt(form.performanceIndex, 10)
-  const payload = {
-    datetime: new Date(form.datetime).toISOString(),
-    vehicle_id: form.vehicleId || null,
-    tuning: form.tuning ?? null,
-    place: form.place || null,
-    lap_time_ms: form.lapTimeMs,
-    total_time_ms: form.totalTimeMs,
-    performance_index: isNaN(pi) ? null : pi,
-    notes: form.notes || null
-  }
-  emit('submit', payload)
-}
-
-// Escape is bound at the document level rather than on the form, because
-// when editing an existing race (autofocus: false) nothing has focus when
-// the form mounts — the "Edit" button that had it is gone — so a keydown
-// on the form itself would never see the first Escape press.
-useEventListener(document, 'keydown', (event) => {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    emit('cancel')
-  }
-})
-
-onMounted(() => {
-  if (props.autofocus) {
-    nextTick(() => vehicleInput.value && vehicleInput.value.focus())
-  }
-  autoExpand()
-})
 </script>

@@ -13,7 +13,7 @@
         type="button"
         :disabled="submitting"
         class="w-full min-h-[44px] flex items-center justify-center gap-2.5 font-body font-medium border border-brand-border dark:border-brand-border-dark px-6 hover:border-brand-accent dark:hover:border-brand-accent-dark disabled:opacity-60"
-        @click="onGoogleSignIn"
+        @click="onOAuthSignIn('google', 'Google')"
       >
         <span class="w-4 h-4 inline-block" v-html="googleIcon"></span>
         Continue with Google
@@ -23,7 +23,7 @@
         type="button"
         :disabled="submitting"
         class="w-full min-h-[44px] flex items-center justify-center gap-2.5 font-body font-medium border border-brand-border dark:border-brand-border-dark px-6 mt-3 hover:border-brand-accent dark:hover:border-brand-accent-dark disabled:opacity-60"
-        @click="onDiscordSignIn"
+        @click="onOAuthSignIn('discord', 'Discord')"
       >
         <span class="w-4 h-4 inline-block" v-html="discordIcon"></span>
         Continue with Discord
@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { signInWithPassword, signUpWithPassword, signInWithGoogle, signInWithDiscord } from '../services/authService.js'
+import { signInWithPassword, signUpWithPassword, signInWithOAuth } from '../api.js'
 import googleIcon from '../assets/icons/google.svg?raw'
 import discordIcon from '../assets/icons/discord.svg?raw'
 
@@ -129,27 +129,16 @@ export default {
       this.message = ''
       this.errorMessage = ''
     },
-    async onGoogleSignIn() {
+    async onOAuthSignIn(provider, label) {
       this.message = ''
       this.errorMessage = ''
       this.submitting = true
       try {
         // Current URL (including the ?redirect= route we're already on) is
-        // where Google/Supabase should land the browser back after consent.
-        await signInWithGoogle(window.location.href)
+        // where the provider/Supabase should land the browser back after consent.
+        await signInWithOAuth(provider, window.location.href)
       } catch (err) {
-        this.errorMessage = err.message || 'Google sign-in failed.'
-        this.submitting = false
-      }
-    },
-    async onDiscordSignIn() {
-      this.message = ''
-      this.errorMessage = ''
-      this.submitting = true
-      try {
-        await signInWithDiscord(window.location.href)
-      } catch (err) {
-        this.errorMessage = err.message || 'Discord sign-in failed.'
+        this.errorMessage = err.message || `${label} sign-in failed.`
         this.submitting = false
       }
     },

@@ -208,7 +208,7 @@ import HomeGapTiles from '../components/HomeGapTiles.vue'
 import HomeRacesTable from '../components/HomeRacesTable.vue'
 import HomeStatsPreview from '../components/HomeStatsPreview.vue'
 import { races, flagshipRaceIndex, flagshipGoal, statsPreview } from '../data/homePageDemoData.js'
-import { getTotalRaceCount } from '../services/publicStatsService.js'
+import { getTotalRaceCount } from '../api.js'
 
 export default {
   name: 'HomePage',

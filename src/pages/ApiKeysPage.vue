@@ -142,10 +142,9 @@
 </template>
 
 <script>
-import { getApiKeys, createApiKey, deleteApiKey } from '../services/apiKeyService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { formatDate } from '../utils/dateFormat.js'
-import { authStore } from '../stores/authStore.js'
+import { getApiKeys, createApiKey, deleteApiKey } from '../api.js'
+import { pushToast, authStore } from '../stores.js'
+import { formatDate } from '../utils/format.js'
 
 const DEFAULT_KEY_NAME = 'Default'
 

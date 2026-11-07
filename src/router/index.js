@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { authStore, initAuthStore, clearAuthSession } from '../stores/authStore.js'
-import { signOut } from '../services/authService.js'
-import { pushToast } from '../stores/toastStore.js'
+import { authStore, initAuthStore, clearAuthSession, pushToast } from '../stores.js'
+import { signOut } from '../api.js'
 
 import HomePage from '../pages/HomePage.vue'
 import PluginPage from '../pages/PluginPage.vue'

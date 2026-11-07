@@ -28,20 +28,11 @@
         class="ov px-2 py-1.5 border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark whitespace-nowrap"
       >{{ v.name }}</span>
     </div>
-
-    <div
-      v-if="bestLap"
-      class="flex items-baseline justify-between mt-3.5 border-t border-brand-border dark:border-brand-border-dark pt-2.5"
-    >
-      <span class="ov text-brand-muted dark:text-brand-muted-dark">Best lap</span>
-      <span class="tabular font-bold text-[17px]">{{ bestLap }}</span>
-    </div>
   </router-link>
 </template>
 
 <script>
 import { trackImageUrl } from '../utils/imageUrl.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
 
 export default {
   name: 'TrackCard',
@@ -54,10 +45,6 @@ export default {
   computed: {
     variationCount() {
       return (this.track.track_variations || []).length
-    },
-    bestLap() {
-      const ms = this.track.bestLapMs
-      return ms != null ? formatMsToTime(ms) : ''
     },
     firstVariationLink() {
       const first = (this.track.track_variations || [])[0]

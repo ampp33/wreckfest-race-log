@@ -1,7 +1,20 @@
-import { getAllRaces } from './raceService.js'
-import { getVehicles } from './vehicleService.js'
-import { getTracks } from './trackService.js'
-import { placementRate } from '../utils/raceStats.js'
+import { getAllRaces, getVehicles, getTracks } from '../api.js'
+
+// A "lone race" is one logged with a results roster of exactly one racer —
+// nobody else was actually racing, so it has nothing to rank against and is
+// excluded from finish-rate stats.
+function isLoneRace(race) {
+  return Array.isArray(race.results_roster) && race.results_roster.length === 1
+}
+
+// Share of `races` (excluding lone races and races with no place logged)
+// that finished in `place` <= maxPlace.
+export function placementRate(races, maxPlace) {
+  const eligible = races.filter(r => !isLoneRace(r) && r.place != null)
+  const total = eligible.length
+  const count = eligible.filter(r => Number(r.place) <= maxPlace).length
+  return { count, total, pct: total ? `${Math.round((count / total) * 100)}%` : '—' }
+}
 
 // Aggregate stats for the Stats page, computed client-side from the driver's
 // full race history in one fetch rather than a round trip per metric.

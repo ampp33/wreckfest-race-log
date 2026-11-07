@@ -73,7 +73,7 @@
     </table>
 
     <!-- Fades the tail of the visible area into the page background, right
-         where fade-after-index says to stop — see useMeasuredFade. Purely
+         where fade-after-index says to stop — see measuredFade.js. Purely
          decorative (aria-hidden, pointer-events-none): the rows underneath
          are still real rows, just clipped by the wrapper's max-height. -->
     <div
@@ -84,35 +84,43 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch, nextTick } from 'vue'
+<script>
 import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
-import { formatMsToTime } from '../utils/timeFormat.js'
-import { formatCompactDate } from '../utils/dateFormat.js'
-import { useMeasuredFade } from '../composables/useMeasuredFade.js'
+import { formatMsToTime, formatCompactDate } from '../utils/format.js'
+import { measuredFade } from '../utils/measuredFade.js'
 import expandIcon from '../assets/icons/expand.svg?raw'
 import collapseIcon from '../assets/icons/collapse.svg?raw'
 
-const props = defineProps({
-  rows: { type: Array, required: true },
-  // Row index expanded by default (null = all collapsed).
-  initialExpanded: { type: Number, default: null },
-  // Clip the table just past this row index and fade into the page
-  // background — implies more rows below without a fixed guessed pixel
-  // height (see useMeasuredFade). null = show everything, no fade.
-  fadeAfterIndex: { type: Number, default: null }
-})
-
-const expanded = ref(props.initialExpanded)
-const wrapper = ref(null)
-
-const { fadeHeight, measure } = useMeasuredFade(
-  () => wrapper.value,
-  () => props.fadeAfterIndex == null ? null : wrapper.value?.querySelector(`[data-row-index="${props.fadeAfterIndex}"]`)
-)
-
-// Expanding/collapsing a row above the fade line shifts everything below
-// it — remeasure so the cutoff still lands after the right row.
-watch(expanded, () => nextTick(measure))
+export default {
+  name: 'HomeRacesTable',
+  components: { RaceExpandedDetails, PerformanceIndexBadge },
+  mixins: [measuredFade],
+  props: {
+    rows: { type: Array, required: true },
+    // Row index expanded by default (null = all collapsed).
+    initialExpanded: { type: Number, default: null },
+    // Clip the table just past this row index and fade into the page
+    // background (see measuredFade). null = show everything, no fade.
+    fadeAfterIndex: { type: Number, default: null }
+  },
+  data() {
+    return { expanded: this.initialExpanded, expandIcon, collapseIcon }
+  },
+  watch: {
+    // A row opening or closing above the fade line shifts everything below
+    // it — remeasure so the cutoff still lands after the right row.
+    expanded() {
+      this.$nextTick(this.measureFade)
+    }
+  },
+  methods: {
+    formatMsToTime,
+    formatCompactDate,
+    fadeElements() {
+      const { wrapper } = this.$refs
+      return [wrapper, this.fadeAfterIndex == null ? null : wrapper?.querySelector(`[data-row-index="${this.fadeAfterIndex}"]`)]
+    }
+  }
+}
 </script>

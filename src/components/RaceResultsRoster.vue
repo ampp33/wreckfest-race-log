@@ -47,7 +47,7 @@
 </template>
 
 <script>
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime } from '../utils/format.js'
 import { classLetterColor } from '../utils/piInfo.js'
 import PartsBadge from './PartsBadge.vue'
 

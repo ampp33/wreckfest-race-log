@@ -14,7 +14,7 @@
           <span
             v-if="race.source === 'api'"
             class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-            :title="apiSourceTitle"
+            :title="apiSourceTitle(race)"
             v-html="apiIcon"
           ></span>
           <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
@@ -24,60 +24,27 @@
              each gated by the same column-visibility picker so a card shows
              only what the table would, instead of always showing everything. -->
         <div class="grid grid-cols-3 gap-x-3 gap-y-3 mt-3 text-sm">
-          <div v-if="isColVisible('pi')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
-            <div><PerformanceIndexBadge :value="race.performance_index" /></div>
-          </div>
-          <div v-if="isColVisible('weight')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Weight</div>
-            <div class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</div>
-          </div>
-          <div v-if="isColVisible('tune')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
-            <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</div>
-          </div>
-          <div v-if="isColVisible('assists')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
-            <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</div>
-          </div>
-          <div v-if="isColVisible('parts')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Parts</div>
-            <div><PartsBadge :parts="race.parts" /></div>
-          </div>
-          <div v-if="isColVisible('place')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Place</div>
-            <div>{{ race.place || '—' }}</div>
-          </div>
-          <div v-if="isColVisible('laps')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Laps</div>
-            <div>{{ lapCount }}</div>
-          </div>
-          <div v-if="isColVisible('lap')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Lap time</div>
-            <div
-              class="tabular"
-              :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
-            >{{ formatLap }}</div>
-          </div>
-          <div v-if="isColVisible('gap')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Δ goal</div>
-            <div class="tabular" :class="deltaColor">{{ deltaLabel || '—' }}</div>
-          </div>
-          <div v-if="isColVisible('total')">
-            <div class="ov text-brand-accent dark:text-brand-accent-dark">Total time</div>
-            <div class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</div>
-          </div>
+          <CardField v-if="isColVisible('pi')" label="Class (PI)"><PerformanceIndexBadge :value="race.performance_index" /></CardField>
+          <CardField v-if="isColVisible('weight')" label="Weight" value-class="tabular text-brand-secondary dark:text-brand-secondary-dark">{{ formatWeight(race.vehicle_weight_kg) }}</CardField>
+          <CardField v-if="isColVisible('tune')" label="Tune" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</CardField>
+          <CardField v-if="isColVisible('assists')" label="Assists" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</CardField>
+          <CardField v-if="isColVisible('parts')" label="Parts"><PartsBadge :parts="race.parts" /></CardField>
+          <CardField v-if="isColVisible('place')" label="Place">{{ race.place || '—' }}</CardField>
+          <CardField v-if="isColVisible('laps')" label="Laps">{{ lapCount }}</CardField>
+          <CardField v-if="isColVisible('lap')" label="Lap time" :value-class="['tabular', lapClass]">{{ formatLap }}</CardField>
+          <CardField v-if="isColVisible('gap')" label="Δ goal" :value-class="['tabular', deltaColor]">{{ deltaLabel || '—' }}</CardField>
+          <CardField v-if="isColVisible('total')" label="Total time" value-class="tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</CardField>
         </div>
       </div>
 
       <RaceRowActions
         vertical
-        :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
+        :show-expand="hasDetails(race)"
         :expanded="expanded"
-        @toggle-expand="toggleExpanded"
+        @toggle-expand="expanded = !expanded"
         :editable="!readOnly"
         @edit="editing = true"
-        @delete="onDelete"
+        @delete="confirmingDelete = true"
       >
         <FavoriteStar v-if="favoritable" :race-id="race.id" />
       </RaceRowActions>
@@ -101,7 +68,6 @@
       class="mt-3"
       :vehicles="vehicles"
       :defaults="editDefaults"
-      :saving="saving"
       :autofocus="false"
       @submit="onSave"
       @cancel="editing = false"
@@ -122,7 +88,7 @@
         <span
           v-if="race.source === 'api'"
           class="w-3 h-3 shrink-0 text-brand-accent dark:text-brand-accent-dark"
-          :title="apiSourceTitle"
+          :title="apiSourceTitle(race)"
           v-html="apiIcon"
         ></span>
         <OnlineRaceIcon v-if="race.server_name" :server-name="race.server_name" />
@@ -138,7 +104,7 @@
     <td v-if="isColVisible('pi')" class="py-2 pr-3 whitespace-nowrap">
       <PerformanceIndexBadge :value="race.performance_index" />
     </td>
-    <td v-if="isColVisible('weight')" class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ race.vehicle_weight_kg != null ? race.vehicle_weight_kg + ' kg' : '—' }}</td>
+    <td v-if="isColVisible('weight')" class="py-2 pr-3 text-right tabular text-brand-secondary dark:text-brand-secondary-dark">{{ formatWeight(race.vehicle_weight_kg) }}</td>
     <td v-if="isColVisible('tune')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ race.tuning ?? '—' }}</td>
     <td v-if="isColVisible('assists')" class="py-2 pr-3 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(race.assists) }}</td>
     <td v-if="isColVisible('parts')" class="w-px py-2 pr-3 text-center whitespace-nowrap">
@@ -146,21 +112,17 @@
     </td>
     <td v-if="isColVisible('place')" class="py-2 pr-3 text-center tabular">{{ race.place || '—' }}</td>
     <td v-if="isColVisible('laps')" class="py-2 pr-3 text-center tabular text-brand-secondary dark:text-brand-secondary-dark">{{ lapCount }}</td>
-    <td
-      v-if="isColVisible('lap')"
-      class="py-2 pr-3 tabular"
-      :class="isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
-    >{{ formatLap }}</td>
+    <td v-if="isColVisible('lap')" class="py-2 pr-3 tabular" :class="lapClass">{{ formatLap }}</td>
     <td v-if="isColVisible('gap')" class="py-2 pr-3 tabular" :class="deltaColor">{{ deltaLabel }}</td>
     <td v-if="isColVisible('total')" class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
     <td class="py-2 pr-3 text-right whitespace-nowrap">
       <RaceRowActions
-        :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
+        :show-expand="hasDetails(race)"
         :expanded="expanded"
-        @toggle-expand="toggleExpanded"
+        @toggle-expand="expanded = !expanded"
         :editable="!readOnly"
         @edit="editing = true"
-        @delete="onDelete"
+        @delete="confirmingDelete = true"
       />
     </td>
   </tr>
@@ -171,7 +133,6 @@
         :notes-only="notesOnly"
         :vehicles="vehicles"
         :defaults="editDefaults"
-        :saving="saving"
         :autofocus="false"
         @submit="onSave"
         @cancel="editing = false"
@@ -212,19 +173,16 @@ import RaceExpandedDetails from './RaceExpandedDetails.vue'
 import OnlineRaceIcon from './OnlineRaceIcon.vue'
 import PartsBadge from './PartsBadge.vue'
 import FavoriteStar from './FavoriteStar.vue'
-import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
-import { formatAssists } from '../utils/assistsFormat.js'
+import CardField from './CardField.vue'
+import { formatMsToTime, formatDelta, formatAssists, formatWeight } from '../utils/format.js'
+import { lapCount, hasDetails, apiSourceTitle, editDefaults } from '../utils/raceTable.js'
 import apiIcon from '../assets/icons/api.svg?raw'
 
-function toLocalIsoMinute(isoString) {
-  const d = new Date(isoString)
-  const tzOffset = d.getTimezoneOffset() * 60_000
-  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16)
-}
-
+// One race on TrackDetailPage, as a table row (plus its edit/expanded rows)
+// or a mobile card.
 export default {
   name: 'RaceRow',
-  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, FavoriteStar },
+  components: { RaceForm, ConfirmDialog, PerformanceIndexBadge, RaceRowActions, RaceExpandedDetails, OnlineRaceIcon, PartsBadge, FavoriteStar, CardField },
   props: {
     race: { type: Object, required: true },
     vehicles: { type: Array, required: true },
@@ -249,7 +207,6 @@ export default {
   data() {
     return {
       editing: false,
-      saving: false,
       expanded: false,
       confirmingDelete: false,
       apiIcon
@@ -262,11 +219,6 @@ export default {
     rowColspan() {
       // +1 for the always-shown Actions column, +1 more for the favorite star's
       return this.visibleColumns.length + 1 + (this.favoritable ? 1 : 0)
-    },
-    apiSourceTitle() {
-      return this.race.api_key?.name
-        ? `Logged via API — key: ${this.race.api_key.name}`
-        : 'Logged via API'
     },
     vehicleName() {
       const v = this.vehicles.find(x => x.id === this.race.vehicle_id)
@@ -281,23 +233,16 @@ export default {
         minute: '2-digit'
       })
     },
-    hasLapTimes() {
-      return Array.isArray(this.race.lap_times_ms)
-        && this.race.lap_times_ms.some(ms => ms != null)
-    },
-    hasRoster() {
-      return Array.isArray(this.race.results_roster) && this.race.results_roster.length > 0
-    },
     lapCount() {
-      if (this.race.lap_count != null) return this.race.lap_count
-      // Older races may only carry the splits array.
-      if (Array.isArray(this.race.lap_times_ms)) return this.race.lap_times_ms.length
-      return '—'
+      return lapCount(this.race) ?? '—'
     },
     isPersonalBest() {
       return this.race.lap_time_ms != null
         && this.personalBestMs != null
         && this.race.lap_time_ms === this.personalBestMs
+    },
+    lapClass() {
+      return this.isPersonalBest ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'
     },
     formatLap() {
       if (this.race.lap_time_ms == null) return '—'
@@ -323,42 +268,26 @@ export default {
       return this.race.source === 'api'
     },
     editDefaults() {
-      return {
-        datetime: toLocalIsoMinute(this.race.datetime),
-        vehicleId: this.race.vehicle_id,
-        tuning: this.race.tuning,
-        place: this.race.place || '',
-        lapTimeMs: this.race.lap_time_ms,
-        totalTimeMs: this.race.total_time_ms,
-        performanceIndex: this.race.performance_index != null ? String(this.race.performance_index) : '0',
-        notes: this.race.notes || ''
-      }
+      return editDefaults(this.race)
     }
   },
   methods: {
+    formatAssists,
+    formatWeight,
+    hasDetails,
+    apiSourceTitle,
     isColVisible(key) {
       return this.visibleColumns.includes(key)
     },
-    async onSave(payload) {
-      this.saving = true
-      try {
-        await this.$emit('update', { id: this.race.id, patch: payload })
-        this.editing = false
-      } finally {
-        this.saving = false
-      }
-    },
-    onDelete() {
-      this.confirmingDelete = true
+    // The page saves and reports by toast; the form closes either way.
+    onSave(payload) {
+      this.$emit('update', { id: this.race.id, patch: payload })
+      this.editing = false
     },
     onConfirmDelete() {
       this.confirmingDelete = false
       this.$emit('delete', this.race.id)
-    },
-    toggleExpanded() {
-      this.expanded = !this.expanded
-    },
-    formatAssists
+    }
   }
 }
 </script>

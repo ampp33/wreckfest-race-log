@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime } from '../utils/format.js'
 
 export default {
   name: 'BiggestImprovementsList',
@@ -45,7 +45,7 @@ export default {
     // empty list with no message (not currently used by any caller).
     emptyMessage: { type: String, default: '' },
     // Optional clip-and-fade, measured by the parent against this list's own
-    // `data-fade-item="N"` rows (see the useMeasuredFade composable) — null
+    // `data-fade-item="N"` rows (see src/utils/measuredFade.js) — null
     // renders the plain, unclipped list.
     fadeHeight: { type: Number, default: null },
     gradientHeight: { type: Number, default: null }

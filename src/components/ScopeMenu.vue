@@ -70,7 +70,7 @@
 
 <script>
 import ScopeIcon from './ScopeIcon.vue'
-import { searchProfiles } from '../services/profileService.js'
+import { searchProfiles } from '../api.js'
 import { sameScope } from '../utils/scope.js'
 import { debounce } from '../utils/debounce.js'
 import searchIcon from '../assets/icons/search.svg?raw'

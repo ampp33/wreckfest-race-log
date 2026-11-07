@@ -21,173 +21,132 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import {
-  Chart,
-  BarController,
-  BarElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip
-} from 'chart.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { useChart } from '../composables/useChart.js'
-import { getChartTheme } from '../utils/chartTheme.js'
+<script>
+import { chartMixin, getChartTheme } from '../utils/chart.js'
 
-Chart.register(BarController, BarElement, LinearScale, CategoryScale, Tooltip)
+const BAR_COLOR = '#C41E1E'
 
 function localDateStr(date) {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function addDays(date, n) {
-  const d = new Date(date)
-  d.setDate(d.getDate() + n)
-  return d
-}
-
-const props = defineProps({
-  hourlyCounts: { type: Array, default: () => new Array(24).fill(0) },
-  dailyCounts: { type: Object, default: () => ({}) },
-  // Which tab is selected on mount — e.g. the homepage demo opens on
-  // 'year' so it reads as races-per-month without requiring a click.
-  initialTab: { type: String, default: 'week' }
-})
-
-const tabs = [
-  { key: 'day', label: 'Day' },
-  { key: 'week', label: 'Week' },
-  { key: 'month', label: 'Month' },
-  { key: 'year', label: 'Year' }
-]
-
-const canvas = ref(null)
-const { chart, render } = useChart(canvas)
-const activeTab = ref(props.initialTab)
-
-const isDark = computed(() => prefsStore.darkMode)
-
-const chartData = computed(() => {
+// The `count` days ending today, oldest first.
+function lastDays(count) {
   const now = new Date()
-  if (activeTab.value === 'day') {
-    const labels = Array.from({ length: 24 }, (_, h) => {
-      const ampm = h < 12 ? 'am' : 'pm'
-      const hour = h % 12 || 12
-      return `${hour}${ampm}`
-    })
-    return { labels, data: [...props.hourlyCounts] }
-  }
-
-  if (activeTab.value === 'week') {
-    const days = Array.from({ length: 7 }, (_, i) => addDays(now, i - 6))
-    const labels = days.map(d => d.toLocaleDateString(undefined, { weekday: 'short', month: 'numeric', day: 'numeric' }))
-    const data = days.map(d => props.dailyCounts[localDateStr(d)] || 0)
-    return { labels, data }
-  }
-
-  if (activeTab.value === 'month') {
-    const days = Array.from({ length: 30 }, (_, i) => addDays(now, i - 29))
-    const labels = days.map(d => d.toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' }))
-    const data = days.map(d => props.dailyCounts[localDateStr(d)] || 0)
-    return { labels, data }
-  }
-
-  // year: past 12 months
-  const months = []
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    months.push(d)
-  }
-  const labels = months.map(d => d.toLocaleDateString(undefined, { month: 'short' }))
-  const data = months.map(d => {
-    const y = d.getFullYear()
-    const m = d.getMonth()
-    let total = 0
-    for (const [dateStr, count] of Object.entries(props.dailyCounts)) {
-      const pd = new Date(dateStr + 'T00:00:00')
-      if (pd.getFullYear() === y && pd.getMonth() === m) total += count
-    }
-    return total
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() + i - (count - 1))
+    return d
   })
-  return { labels, data }
-})
+}
 
-function renderChart() {
-  if (!canvas.value) return
+export default {
+  name: 'RaceActivityChart',
+  mixins: [chartMixin],
+  props: {
+    hourlyCounts: { type: Array, default: () => new Array(24).fill(0) },
+    dailyCounts: { type: Object, default: () => ({}) },
+    // The tab selected on mount — the homepage demo opens on 'year'.
+    initialTab: { type: String, default: 'week' }
+  },
+  data() {
+    return {
+      activeTab: this.initialTab,
+      tabs: [
+        { key: 'day', label: 'Day' },
+        { key: 'week', label: 'Week' },
+        { key: 'month', label: 'Month' },
+        { key: 'year', label: 'Year' }
+      ]
+    }
+  },
+  computed: {
+    chartData() {
+      if (this.activeTab === 'day') {
+        const labels = Array.from({ length: 24 }, (_, h) => `${h % 12 || 12}${h < 12 ? 'am' : 'pm'}`)
+        return { labels, data: [...this.hourlyCounts] }
+      }
 
-  const theme = getChartTheme(isDark.value)
-  const barColor = '#C41E1E'
-  const { labels, data } = chartData.value
-
-  render({
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: barColor + 'cc',
-        borderColor: barColor,
-        borderWidth: 1,
-        borderRadius: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: { duration: 400, easing: 'easeInOutQuart' },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          ...theme.tooltip,
-          callbacks: {
-            label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { display: false },
-          border: { display: false },
-          ticks: {
-            color: theme.tickColor,
-            font: { size: 10 },
-            maxRotation: 45,
-            autoSkip: true,
-            maxTicksLimit: activeTab.value === 'month' ? 10 : 24
-          }
-        },
-        y: {
-          grid: { color: theme.gridColor, drawBorder: false },
-          border: { display: false },
-          beginAtZero: true,
-          ticks: {
-            color: theme.tickColor,
-            font: { size: 11 },
-            stepSize: 1,
-            precision: 0
-          }
+      if (this.activeTab === 'week' || this.activeTab === 'month') {
+        const days = lastDays(this.activeTab === 'week' ? 7 : 30)
+        const format = this.activeTab === 'week' ? { weekday: 'short', month: 'numeric', day: 'numeric' } : { month: 'numeric', day: 'numeric' }
+        return {
+          labels: days.map(d => d.toLocaleDateString(undefined, format)),
+          data: days.map(d => this.dailyCounts[localDateStr(d)] || 0)
         }
       }
-    }
-  })
-}
 
-watch(chartData, () => {
-  nextTick(() => {
-    if (chart.value) {
-      const { labels, data } = chartData.value
-      chart.value.data.labels = labels
-      chart.value.data.datasets[0].data = data
-      chart.value.update()
-    } else {
-      renderChart()
+      // year: the past 12 months
+      const now = new Date()
+      const months = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), now.getMonth() - 11 + i, 1))
+      return {
+        labels: months.map(d => d.toLocaleDateString(undefined, { month: 'short' })),
+        data: months.map(d => {
+          let total = 0
+          for (const [dateStr, count] of Object.entries(this.dailyCounts)) {
+            const pd = new Date(dateStr + 'T00:00:00')
+            if (pd.getFullYear() === d.getFullYear() && pd.getMonth() === d.getMonth()) total += count
+          }
+          return total
+        })
+      }
     }
-  })
-})
-watch(isDark, () => nextTick(renderChart))
-onMounted(renderChart)
+  },
+  watch: {
+    // A cheaper in-place update while the chart exists.
+    chartData() {
+      this.$nextTick(() => {
+        const chart = this.charts.canvas
+        if (!chart) return this.renderChart()
+        chart.data.labels = this.chartData.labels
+        chart.data.datasets[0].data = this.chartData.data
+        chart.update()
+      })
+    },
+    isDark() { this.$nextTick(this.renderChart) }
+  },
+  mounted() {
+    this.renderChart()
+  },
+  methods: {
+    renderChart() {
+      const theme = getChartTheme(this.isDark)
+      const { labels, data } = this.chartData
+      this.drawChart('canvas', {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: BAR_COLOR + 'cc', borderColor: BAR_COLOR, borderWidth: 1, borderRadius: 3 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 400, easing: 'easeInOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...theme.tooltip,
+              callbacks: {
+                label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              border: { display: false },
+              ticks: { color: theme.tickColor, font: { size: 10 }, maxRotation: 45, autoSkip: true, maxTicksLimit: this.activeTab === 'month' ? 10 : 24 }
+            },
+            y: {
+              grid: { color: theme.gridColor, drawBorder: false },
+              border: { display: false },
+              beginAtZero: true,
+              ticks: { color: theme.tickColor, font: { size: 11 }, stepSize: 1, precision: 0 }
+            }
+          }
+        }
+      })
+    }
+  }
+}
 </script>

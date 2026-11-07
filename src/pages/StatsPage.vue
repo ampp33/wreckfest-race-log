@@ -12,23 +12,7 @@
     <div v-else class="space-y-6">
       <StatsSummaryTiles :stats="stats" :base-path="`/${userId}`" />
 
-      <div class="grid grid-cols-3 gap-6">
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 3 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top3Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top3Rate.count }} / {{ stats.top3Rate.total }}</div>
-        </div>
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 5 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top5Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top5Rate.count }} / {{ stats.top5Rate.total }}</div>
-        </div>
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 10 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ stats.top10Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ stats.top10Rate.count }} / {{ stats.top10Rate.total }}</div>
-        </div>
-      </div>
+      <PlacementRateTiles :rates="{ 3: stats.top3Rate, 5: stats.top5Rate, 10: stats.top10Rate }" />
       <p class="text-xs text-brand-muted dark:text-brand-muted-dark italic mt-2">
         Excludes lone races (a race with a roster, but only one racer) and races with no place logged.
       </p>
@@ -71,17 +55,18 @@
 </template>
 
 <script>
-import { getStats } from '../services/statsService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
+import { getStats } from '../utils/stats.js'
+import { pushToast, prefsStore } from '../stores.js'
+import { scopedPage } from '../utils/scope.js'
 import RaceActivityChart from '../components/RaceActivityChart.vue'
 import StatsSummaryTiles from '../components/StatsSummaryTiles.vue'
+import PlacementRateTiles from '../components/PlacementRateTiles.vue'
 import DriverScope from '../components/DriverScope.vue'
 
 export default {
   name: 'StatsPage',
-  components: { DriverScope, RaceActivityChart, StatsSummaryTiles },
+  components: { DriverScope, RaceActivityChart, StatsSummaryTiles, PlacementRateTiles },
+  mixins: [scopedPage],
   data() {
     return {
       prefs: prefsStore,
@@ -97,15 +82,6 @@ export default {
         top5Rate: { count: 0, total: 0, pct: '—' },
         top10Rate: { count: 0, total: 0, pct: '—' }
       }
-    }
-  },
-  computed: {
-    // Whose stats these are — from the /<userId>/stats URL.
-    userId() {
-      return this.$route.params.userId
-    },
-    isOwnView() {
-      return !!this.userId && authStore.user?.id === this.userId
     }
   },
   watch: {

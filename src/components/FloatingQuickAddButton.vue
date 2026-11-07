@@ -18,27 +18,18 @@
 </template>
 
 <script>
-import { authStore } from '../stores/authStore.js'
-import { quickAddStore } from '../stores/quickAddStore.js'
-import { openPrepRace, prepRaceStore } from '../stores/prepRaceStore.js'
+import { authStore, modals } from '../stores.js'
 
 export default {
   name: 'FloatingQuickAddButton',
-  data() {
-    return {
-      auth: authStore,
-      qa: quickAddStore,
-      pr: prepRaceStore
-    }
-  },
   computed: {
     visible() {
-      return this.auth.isAuthenticated && !this.qa.open && !this.pr.open
+      return authStore.isAuthenticated && !modals.quickAdd && !modals.prepRace
     }
   },
   methods: {
     onClick() {
-      openPrepRace()
+      modals.prepRace = true
     }
   }
 }

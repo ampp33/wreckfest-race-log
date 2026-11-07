@@ -114,9 +114,8 @@
 </template>
 
 <script>
-import { authStore, setAuthProfile } from '../stores/authStore.js'
-import { updateMyProfile } from '../services/profileService.js'
-import { pushToast } from '../stores/toastStore.js'
+import { authStore, pushToast } from '../stores.js'
+import { updateMyProfile } from '../api.js'
 
 export default {
   name: 'ProfileSettingsPage',
@@ -148,7 +147,7 @@ export default {
       this.savingName = true
       try {
         const profile = await updateMyProfile(authStore.user.id, { displayName: this.nameInput })
-        setAuthProfile(profile)
+        authStore.profile = profile
         this.nameInput = profile.display_name
         pushToast('Display name saved', 'success', 2000)
       } catch (err) {
@@ -161,8 +160,7 @@ export default {
       if (this.auth.profile.is_public === isPublic) return
       this.savingVisibility = true
       try {
-        const profile = await updateMyProfile(authStore.user.id, { isPublic })
-        setAuthProfile(profile)
+        authStore.profile = await updateMyProfile(authStore.user.id, { isPublic })
         pushToast(isPublic ? 'Your races are now public' : 'Your races are now private', 'success', 2000)
       } catch (err) {
         pushToast(err.message, 'error')

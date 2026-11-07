@@ -15,7 +15,7 @@
 </template>
 
 <script>
-import { isFavorite, toggleFavorite } from '../stores/favoritesStore.js'
+import { isFavorite, toggleFavorite } from '../stores.js'
 import starIcon from '../assets/icons/star.svg?raw'
 import starFillIcon from '../assets/icons/star-fill.svg?raw'
 

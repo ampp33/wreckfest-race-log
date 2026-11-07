@@ -51,7 +51,7 @@
 
 <script>
 import LapTimeInput from './LapTimeInput.vue'
-import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
+import { formatMsToTime, formatDelta } from '../utils/format.js'
 
 export default {
   name: 'HomeGapTiles',
@@ -68,7 +68,7 @@ export default {
   methods: {
     formatMsToTime,
     formatDelta,
-    // Formatted like placementRate() in utils/raceStats.js.
+    // Formatted like placementRate() in utils/stats.js.
     percent(p) {
       return p.total ? `${Math.round((p.count / p.total) * 100)}%` : '—'
     }

@@ -108,26 +108,11 @@
                   <div class="ov text-brand-accent dark:text-brand-accent-dark">Driver</div>
                   <router-link :to="driverTrackPath(lap)" class="text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent dark:hover:text-brand-accent-dark">{{ lap.display_name || '—' }}</router-link>
                 </div>
-                <div>
-                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Vehicle</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ lap.vehicle_name || '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Class (PI)</div>
-                  <div><PerformanceIndexBadge :value="lap.performance_index" /></div>
-                </div>
-                <div>
-                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Tune</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ lap.tuning ?? '—' }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Assists</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(lap.assists) }}</div>
-                </div>
-                <div>
-                  <div class="ov text-brand-accent dark:text-brand-accent-dark">Date</div>
-                  <div class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatDate(lap.datetime) }}</div>
-                </div>
+                <CardField label="Vehicle" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ lap.vehicle_name || '—' }}</CardField>
+                <CardField label="Class (PI)"><PerformanceIndexBadge :value="lap.performance_index" /></CardField>
+                <CardField label="Tune" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ lap.tuning ?? '—' }}</CardField>
+                <CardField label="Assists" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatAssists(lap.assists) }}</CardField>
+                <CardField label="Date" value-class="text-brand-secondary dark:text-brand-secondary-dark">{{ formatDate(lap.datetime) }}</CardField>
               </div>
             </div>
           </div>
@@ -180,19 +165,16 @@
 <script>
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import ScopeKicker from '../components/ScopeKicker.vue'
-import { getMostRacesLeaderboard, getFastestLaps } from '../services/leaderboardService.js'
-import { getVehicles } from '../services/vehicleService.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
-import { formatDate } from '../utils/dateFormat.js'
-import { formatAssists } from '../utils/assistsFormat.js'
-import { pushToast } from '../stores/toastStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
+import CardField from '../components/CardField.vue'
+import { getMostRacesLeaderboard, getFastestLaps, getVehicles } from '../api.js'
+import { formatMsToTime, formatDate, formatAssists } from '../utils/format.js'
+import { pushToast, prefsStore } from '../stores.js'
 import { META_VEHICLES } from '../utils/piInfo.js'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
-  components: { PerformanceIndexBadge, ScopeKicker },
+  components: { PerformanceIndexBadge, ScopeKicker, CardField },
   data() {
     return {
       loading: true,
@@ -294,9 +276,7 @@ export default {
   methods: {
     formatDate,
     formatAssists,
-    formatMs(ms) {
-      return formatMsToTime(ms)
-    },
+    formatMs: formatMsToTime,
     barWidth(count) {
       return `${(count / this.topRaceCount) * 100}%`
     },

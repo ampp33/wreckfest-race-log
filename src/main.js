@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { router } from './router/index.js'
-import { initAuthStore } from './stores/authStore.js'
+import { initAuthStore } from './stores.js'
 import './style.css'
 
 async function bootstrap() {

@@ -8,23 +8,10 @@
         <div v-for="col in columns" :key="col.title">
           <div class="ov text-brand-accent-dark mb-1">{{ col.title }}</div>
           <div class="flex flex-col">
-            <!-- Three shapes here, picked per link: a real link (router-link
-                 or <a>) for navigation, a <button> for an in-place action
-                 (Export — no navigation, just triggers a download), and a
-                 <label> wrapping a hidden file input for Import (a file
-                 picker can only be opened from a real user gesture on a
-                 form control, so this has to be a label+input, not a click
-                 handler that calls .click() itself). The plain <span> case
-                 stays for the keyboard-shortcut hints below, which
-                 aren't clickable at all — cursor-pointer is added to the
-                 other three, but deliberately left off those, since they
-                 don't do anything when clicked and shouldn't look like
-                 they do. The v-for has to sit on the <template> wrapper
-                 rather than each branch individually — v-if/else-if/else
-                 only chain across sibling *elements*, so each branch would
-                 otherwise need its own identical v-for (and `link` wouldn't
-                 exist yet for Vue to even evaluate their v-if conditions
-                 against). -->
+            <!-- A link navigates, Export is a button, Import a label around a
+                 hidden file input (a file picker only opens from a real
+                 gesture on a form control), and the shortcut hints are
+                 plain, unclickable spans. -->
             <template v-for="link in col.links" :key="link.label">
               <component
                 v-if="!link.action"
@@ -40,13 +27,13 @@
                 v-else-if="link.action === 'export'"
                 type="button"
                 class="flex min-h-[24px] items-center text-[13px] text-white/70 hover:text-white cursor-pointer"
-                @click="exportJson"
+                @click="onExport"
               >{{ link.label }}</button>
               <label
                 v-else-if="link.action === 'import'"
                 class="flex min-h-[24px] items-center text-[13px] text-white/70 hover:text-white cursor-pointer"
               >{{ link.label }}
-                <input type="file" accept="application/json" class="hidden" @change="importJson" />
+                <input type="file" accept="application/json" class="hidden" @change="importRaces($event, auth.user && auth.user.id)" />
               </label>
             </template>
           </div>
@@ -82,27 +69,16 @@
             </a>
           </div>
         </div>
-        <div v-if="totals" class="ov tabular text-brand-accent-dark whitespace-nowrap sm:text-right">
-          {{ totals }}
-        </div>
       </div>
     </div>
   </footer>
 </template>
 
 <script>
-// Export/Import here duplicate TrackListPage.vue's own onExport/onImport
-// almost verbatim (same downloadJson/readJsonFile utils, same race-field
-// whitelist, same toasts) — the footer versions exist so the actions are
-// reachable from anywhere on the site, not just the Tracks page, matching
-// the footer's own promise a few lines down ("Your log is yours: export it
-// whole, any time"), which nothing here actually backed until now: these
-// two links previously had no `to`/`href` at all, so they always rendered
-// as inert, unclickable <span>s.
-import { getAllRaces, bulkInsertRaces } from '../services/raceService.js'
-import { authStore } from '../stores/authStore.js'
-import { downloadJson, readJsonFile } from '../utils/exportImport.js'
-import { pushToast } from '../stores/toastStore.js'
+// Export/Import here are the Tracks page's, reachable from anywhere — the
+// footer's promise: "Your log is yours: export it whole, any time".
+import { authStore, pushToast } from '../stores.js'
+import { exportRaces, importRaces } from '../utils/exportImport.js'
 import supabaseIcon from '../assets/icons/supabase.svg?raw'
 import githubIcon from '../assets/icons/github.svg?raw'
 import emailIcon from '../assets/icons/email.svg?raw'
@@ -110,12 +86,9 @@ import discordIcon from '../assets/icons/discord.svg?raw'
 
 export default {
   name: 'AppFooter',
-  props: {
-    // e.g. "247 races · 38 tracks · 89 podiums" — omitted when not yet loaded
-    totals: { type: String, default: '' }
-  },
   data() {
     return {
+      auth: authStore,
       supabaseIcon,
       githubIcon,
       columns: [
@@ -146,47 +119,10 @@ export default {
     }
   },
   methods: {
-    async exportJson() {
-      if (!authStore.user) {
-        pushToast('Sign in to export your races', 'error')
-        return
-      }
-      try {
-        const races = await getAllRaces({ userId: authStore.user.id })
-        downloadJson(`wreckfest-races-${Date.now()}.json`, { races })
-        pushToast('Exported races', 'success')
-      } catch (err) {
-        pushToast(err.message || 'Export failed', 'error')
-      }
-    },
-    async importJson(event) {
-      const file = event.target.files && event.target.files[0]
-      if (!file) return
-      try {
-        const parsed = await readJsonFile(file)
-        const races = parsed && Array.isArray(parsed.races) ? parsed.races : null
-        if (!races || !races.length) {
-          pushToast('No races found in file', 'error')
-          return
-        }
-        const userId = authStore.user && authStore.user.id
-        const cleaned = races.map(r => ({
-          datetime: r.datetime,
-          track_variation_id: r.track_variation_id,
-          vehicle_id: r.vehicle_id || null,
-          tuning: r.tuning ?? null,
-          place: r.place || null,
-          lap_time_ms: r.lap_time_ms ?? null,
-          total_time_ms: r.total_time_ms ?? null,
-          notes: r.notes || null
-        }))
-        await bulkInsertRaces(cleaned, userId)
-        pushToast(`Imported ${cleaned.length} races`, 'success')
-      } catch (err) {
-        pushToast(err.message || 'Import failed', 'error')
-      } finally {
-        event.target.value = ''
-      }
+    importRaces,
+    onExport() {
+      if (!authStore.user) pushToast('Sign in to export your races', 'error')
+      else exportRaces(authStore.user.id)
     }
   }
 }

@@ -20,30 +20,32 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script>
 import RaceActivityChart from './RaceActivityChart.vue'
 import StatsSummaryTiles from './StatsSummaryTiles.vue'
 import BiggestImprovementsList from './BiggestImprovementsList.vue'
-import { useMeasuredFade } from '../composables/useMeasuredFade.js'
+import { measuredFade } from '../utils/measuredFade.js'
 
-const props = defineProps({
-  stats: { type: Object, required: true },
-  // Fade the Biggest Improvements list just past this item index (real
-  // rows still render past it — clipped, not removed). null = show all.
-  improvementsFadeAfterIndex: { type: Number, default: null }
-})
-
-const wrapper = ref(null)
-
-// Same technique as HomeRacesTable's fade-after-index: measure the real
-// bottom edge of the cutoff row and clip there, rather than a guessed pixel
-// height. bufferRatio extends a bit past the target row (revealing a sliver
-// of the next one) so the fade has room to resolve instead of landing right
-// on the hard clip edge.
-const { fadeHeight, gradientHeight } = useMeasuredFade(
-  () => wrapper.value?.querySelector('ul'),
-  () => props.improvementsFadeAfterIndex == null ? null : wrapper.value?.querySelector(`[data-fade-item="${props.improvementsFadeAfterIndex}"]`),
-  { bufferRatio: 0.85 }
-)
+export default {
+  name: 'HomeStatsPreview',
+  components: { RaceActivityChart, StatsSummaryTiles, BiggestImprovementsList },
+  mixins: [measuredFade],
+  // Reveal a sliver of the next item, so the fade has room to resolve.
+  fadeBuffer: 0.85,
+  props: {
+    stats: { type: Object, required: true },
+    // Fade the Biggest Improvements list just past this item index (real
+    // rows still render past it — clipped, not removed). null = show all.
+    improvementsFadeAfterIndex: { type: Number, default: null }
+  },
+  methods: {
+    fadeElements() {
+      const { wrapper } = this.$refs
+      return [
+        wrapper?.querySelector('ul'),
+        this.improvementsFadeAfterIndex == null ? null : wrapper?.querySelector(`[data-fade-item="${this.improvementsFadeAfterIndex}"]`)
+      ]
+    }
+  }
+}
 </script>

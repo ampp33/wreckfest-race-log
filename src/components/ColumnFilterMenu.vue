@@ -52,107 +52,96 @@
   </ColumnFilterPanel>
 </template>
 
-<script setup>
-import { ref, computed, nextTick } from 'vue'
-import { useEventListener } from '../composables/useEventListener.js'
+<script>
 import ColumnFilterPanel from './ColumnFilterPanel.vue'
 import filterIcon from '../assets/icons/filter.svg?raw'
 
-const props = defineProps({
-  label: { type: String, required: true },
-  // Excluded values (not selected ones) — [] means nothing is excluded, i.e.
-  // no filter, everything shown/checked. Storing exclusions rather than a
-  // "selected" set means unchecking every box is just "everything excluded",
-  // a perfectly ordinary state (the table correctly shows zero rows) with no
-  // special-casing, and a value that appears later is automatically shown
-  // since it starts out not excluded.
-  modelValue: { type: Array, default: () => [] },
-  options: { type: Array, required: true }, // [{ value, label, count? }]
-  // Lets non-value-filter reuses (e.g. a column-visibility picker) swap in a
-  // different glyph than the default funnel.
-  icon: { type: String, default: () => filterIcon },
-  // Overrides the panel's heading text; defaults to "Filter: <label>".
-  heading: { type: String, default: '' },
-  // Hides the search box for short lists (e.g. a column-visibility picker)
-  // where it's unnecessary.
-  searchable: { type: Boolean, default: true },
-  // Tailwind width/height classes for the trigger button and its icon.
-  iconSize: { type: String, default: 'w-3.5 h-3.5' },
-  // Overrides the trigger button's tooltip/aria-label text; defaults to "Filter by <label>".
-  title: { type: String, default: '' },
-  // A value-filter turning accent-colored when active is a "results are
-  // narrowed" signal; a column-visibility picker is just a layout
-  // preference, so it can opt out and stay the same neutral color as
-  // every other icon regardless of how many columns are hidden.
-  highlightWhenActive: { type: Boolean, default: true },
-  // Renders the filter directly in the page flow instead of behind a
-  // trigger button + popup — for a mobile filter drawer.
-  inline: { type: Boolean, default: false }
-})
+const PANEL_WIDTH = 224
 
-const panelHeading = computed(() => props.heading || `Filter: ${props.label}`)
-const buttonTitle = computed(() => props.title || `Filter by ${props.label}`)
-const emit = defineEmits(['update:modelValue'])
-
-const open = ref(false)
-const triggerEl = ref(null)
-const panelEl = ref(null)
-const panelContent = ref(null)
-const panelStyle = ref({})
-
-const isActive = computed(() => props.modelValue.length > 0)
-
-function position() {
-  const rect = triggerEl.value.getBoundingClientRect()
-  const panelWidth = 224
-  panelStyle.value = {
-    top: `${rect.bottom + 4}px`,
-    left: `${Math.max(8, Math.min(rect.left, window.innerWidth - panelWidth - 8))}px`
+export default {
+  name: 'ColumnFilterMenu',
+  components: { ColumnFilterPanel },
+  props: {
+    label: { type: String, required: true },
+    // Excluded values (not selected ones) — [] means no filter. With
+    // exclusions, unchecking every box is an ordinary state (zero rows), and
+    // a value that appears later is shown, since it starts out not excluded.
+    modelValue: { type: Array, default: () => [] },
+    options: { type: Array, required: true }, // [{ value, label, count? }]
+    // A different glyph than the funnel, e.g. for the column picker.
+    icon: { type: String, default: () => filterIcon },
+    // The panel's heading; "Filter: <label>" by default.
+    heading: { type: String, default: '' },
+    // Off for short lists, like the column picker.
+    searchable: { type: Boolean, default: true },
+    // Tailwind width/height classes for the trigger button and its icon.
+    iconSize: { type: String, default: 'w-3.5 h-3.5' },
+    // The trigger's tooltip/aria-label; "Filter by <label>" by default.
+    title: { type: String, default: '' },
+    // An active value filter turns accent-coloured ("results narrowed"); the
+    // column picker is just layout, so it opts out.
+    highlightWhenActive: { type: Boolean, default: true },
+    // Renders the panel in the page flow instead of behind a trigger + popup,
+    // for the mobile filter drawer.
+    inline: { type: Boolean, default: false }
+  },
+  emits: ['update:modelValue'],
+  data() {
+    return { open: false, panelStyle: {} }
+  },
+  computed: {
+    panelHeading() {
+      return this.heading || `Filter: ${this.label}`
+    },
+    buttonTitle() {
+      return this.title || `Filter by ${this.label}`
+    },
+    isActive() {
+      return this.modelValue.length > 0
+    }
+  },
+  mounted() {
+    document.addEventListener('mousedown', this.onDocPointerDown)
+    document.addEventListener('keydown', this.onKeydown)
+    // Scroll and resize re-anchor the panel rather than close it: a scroll
+    // event also fires for the panel's own list, or when a filter shortens
+    // the table and the browser clamps the page — the trigger hasn't moved.
+    window.addEventListener('scroll', this.onReposition, true)
+    window.addEventListener('resize', this.onReposition)
+  },
+  beforeUnmount() {
+    document.removeEventListener('mousedown', this.onDocPointerDown)
+    document.removeEventListener('keydown', this.onKeydown)
+    window.removeEventListener('scroll', this.onReposition, true)
+    window.removeEventListener('resize', this.onReposition)
+  },
+  methods: {
+    position() {
+      const rect = this.$refs.triggerEl.getBoundingClientRect()
+      this.panelStyle = {
+        top: `${rect.bottom + 4}px`,
+        left: `${Math.max(8, Math.min(rect.left, window.innerWidth - PANEL_WIDTH - 8))}px`
+      }
+    },
+    toggleOpen() {
+      this.open = !this.open
+      if (this.open) {
+        this.$nextTick(() => {
+          this.position()
+          this.$refs.panelContent?.focusSearch()
+        })
+      }
+    },
+    onDocPointerDown(event) {
+      if (!this.open || this.$refs.triggerEl?.contains(event.target) || this.$refs.panelEl?.contains(event.target)) return
+      this.open = false
+    },
+    onKeydown(event) {
+      if (event.key === 'Escape') this.open = false
+    },
+    onReposition() {
+      if (this.open) this.position()
+    }
   }
 }
-
-function toggleOpen() {
-  if (open.value) {
-    close()
-  } else {
-    open.value = true
-    nextTick(() => {
-      position()
-      panelContent.value?.focusSearch()
-    })
-  }
-}
-
-function close() {
-  open.value = false
-}
-
-function onDocPointerDown(e) {
-  if (!open.value) return
-  if (triggerEl.value?.contains(e.target)) return
-  if (panelEl.value?.contains(e.target)) return
-  close()
-}
-
-function onKeydown(e) {
-  if (open.value && e.key === 'Escape') close()
-}
-
-// Re-anchor to the trigger button rather than closing on scroll/resize.
-// Closing used to seem simpler, but any scroll event closed the panel —
-// including ones scrolling the panel's own option list, and even an
-// incidental page-scroll clamp caused by the table shrinking when a filter
-// is applied (removing rows can leave less to scroll, so the browser
-// snaps the scroll position back, firing a real `scroll` event). Since the
-// trigger hasn't actually moved in either of those cases, recomputing the
-// position is a harmless no-op there and a correct re-anchor when the page
-// genuinely scrolls or the window resizes.
-function onReposition() {
-  if (open.value) position()
-}
-
-useEventListener(document, 'mousedown', onDocPointerDown)
-useEventListener(document, 'keydown', onKeydown)
-useEventListener(window, 'scroll', onReposition, true)
-useEventListener(window, 'resize', onReposition)
 </script>

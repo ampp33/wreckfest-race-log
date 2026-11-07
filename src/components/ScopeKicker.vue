@@ -23,9 +23,8 @@
 
 <script>
 import ScopeIcon from './ScopeIcon.vue'
-import { authStore } from '../stores/authStore.js'
-import { getProfile } from '../services/profileService.js'
-import { prefsStore } from '../stores/prefsStore.js'
+import { authStore, prefsStore } from '../stores.js'
+import { getProfile } from '../api.js'
 import { scopeOfRoute } from '../utils/scope.js'
 import { classLetterColor } from '../utils/piInfo.js'
 

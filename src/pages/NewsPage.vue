@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { formatDate } from '../utils/dateFormat.js'
+import { formatDate } from '../utils/format.js'
 
 export default {
   name: 'NewsPage',

@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :open="qa.open" @close="onClose">
+  <BaseModal :open="modals.quickAdd" @close="onClose">
     <template #title>Quick add <em class="signal">race</em></template>
 
     <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
@@ -49,21 +49,15 @@ import BaseModal from './BaseModal.vue'
 import TrackVariationPicker from './TrackVariationPicker.vue'
 import RaceForm from './RaceForm.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
-import { quickAddStore, closeQuickAdd, notifyRaceSaved } from '../stores/quickAddStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { authStore } from '../stores/authStore.js'
-import { getTracks } from '../services/trackService.js'
-import { getVehicles } from '../services/vehicleService.js'
-import { createRace, getVehiclePiMap } from '../services/raceService.js'
-import { getGoalForVariation } from '../services/goalService.js'
-import { pushToast } from '../stores/toastStore.js'
+import { modals, closeQuickAdd, notifyRaceSaved, prefsStore, authStore, pushToast } from '../stores.js'
+import { getTracks, getVehicles, createRace, getVehiclePiMap, getGoalForVariation } from '../api.js'
 
 export default {
   name: 'QuickAddModal',
   components: { BaseModal, TrackVariationPicker, RaceForm },
   data() {
     return {
-      qa: quickAddStore,
+      modals,
       tracks: [],
       vehicles: [],
       loadingTracks: false,
@@ -82,7 +76,7 @@ export default {
     }
   },
   watch: {
-    'qa.open'(isOpen) {
+    'modals.quickAdd'(isOpen) {
       if (isOpen) this.onOpened()
       else this.resetState()
     }
@@ -96,8 +90,8 @@ export default {
         this.tracks = tracks
         this.vehicles = vehicles
         this.vehiclePiMap = piMap
-        if (this.qa.prefillVariationId) {
-          this.preselectVariation(this.qa.prefillVariationId)
+        if (modals.quickAddVariationId) {
+          this.preselectVariation(modals.quickAddVariationId)
         }
       } catch (err) {
         pushToast(err.message || 'Failed to load tracks', 'error')
@@ -108,10 +102,7 @@ export default {
     preselectVariation(variationId) {
       for (const track of this.tracks) {
         const variation = (track.track_variations || []).find(v => v.id === variationId)
-        if (variation) {
-          this.onTrackSelected({ track, variation })
-          return
-        }
+        if (variation) return this.onTrackSelected({ track, variation })
       }
     },
     async onTrackSelected({ track, variation }) {
@@ -129,8 +120,7 @@ export default {
       this.goalLapTimeMs = null
     },
     resetState() {
-      this.chosen = null
-      this.goalLapTimeMs = null
+      this.resetChoice()
       this.saving = false
     },
     async onSaveRace(racePayload) {

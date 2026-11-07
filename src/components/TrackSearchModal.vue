@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :open="ts.open" @close="onClose">
+  <BaseModal :open="modals.trackSearch" @close="onClose">
     <template #title>Go to <em class="signal">track</em></template>
 
     <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
@@ -10,23 +10,21 @@
 <script>
 import BaseModal from './BaseModal.vue'
 import TrackVariationPicker from './TrackVariationPicker.vue'
-import { trackSearchStore, closeTrackSearch } from '../stores/trackSearchStore.js'
-import { getTracks } from '../services/trackService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { authStore } from '../stores/authStore.js'
+import { modals, pushToast, authStore } from '../stores.js'
+import { getTracks } from '../api.js'
 
 export default {
   name: 'TrackSearchModal',
   components: { BaseModal, TrackVariationPicker },
   data() {
     return {
-      ts: trackSearchStore,
+      modals,
       tracks: [],
       loadingTracks: false
     }
   },
   watch: {
-    'ts.open'(isOpen) {
+    'modals.trackSearch'(isOpen) {
       if (isOpen) this.onOpened()
     }
   },
@@ -43,7 +41,7 @@ export default {
       }
     },
     onTrackSelected({ track, variation }) {
-      closeTrackSearch()
+      modals.trackSearch = false
       this.$router.push(`${this.basePath()}/track/${track.slug}/${variation.slug}`)
     },
     // Stay in context: community pages search community tracks, a driver's pages
@@ -55,7 +53,7 @@ export default {
       return authStore.user ? `/${authStore.user.id}` : '/community'
     },
     onClose() {
-      closeTrackSearch()
+      modals.trackSearch = false
     }
   }
 }

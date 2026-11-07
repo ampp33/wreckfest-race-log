@@ -49,59 +49,56 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed } from 'vue'
-
-// The actual filter UI — search box, checkbox list, clear button — shared by
-// ColumnFilterMenu's popup (desktop table headers) and inline (mobile filter
-// drawer) presentations, which differ only in what wraps this content.
-const props = defineProps({
-  heading: { type: String, required: true },
-  // Excluded values (not selected ones) — see ColumnFilterMenu.vue for why.
-  modelValue: { type: Array, default: () => [] },
-  options: { type: Array, required: true }, // [{ value, label, count? }]
-  searchable: { type: Boolean, default: true }
-})
-const emit = defineEmits(['update:modelValue'])
-
-const searchInput = ref(null)
-const searchText = ref('')
-
-const isActive = computed(() => props.modelValue.length > 0)
-
-const visibleOptions = computed(() => {
-  const q = searchText.value.trim().toLowerCase()
-  if (!q) return props.options
-  return props.options.filter(o => String(o.label).toLowerCase().includes(q))
-})
-
-function isChecked(value) {
-  return !props.modelValue.includes(value)
+<script>
+// The filter UI itself — search box, checkbox list, clear button — shared by
+// ColumnFilterMenu's popup (desktop table headers) and its inline form (the
+// mobile filter drawer).
+export default {
+  name: 'ColumnFilterPanel',
+  props: {
+    heading: { type: String, required: true },
+    // Excluded values (not selected ones) — see ColumnFilterMenu.vue for why.
+    modelValue: { type: Array, default: () => [] },
+    options: { type: Array, required: true }, // [{ value, label, count? }]
+    searchable: { type: Boolean, default: true }
+  },
+  emits: ['update:modelValue'],
+  data() {
+    return { searchText: '' }
+  },
+  computed: {
+    isActive() {
+      return this.modelValue.length > 0
+    },
+    visibleOptions() {
+      const q = this.searchText.trim().toLowerCase()
+      if (!q) return this.options
+      return this.options.filter(o => String(o.label).toLowerCase().includes(q))
+    }
+  },
+  methods: {
+    isChecked(value) {
+      return !this.modelValue.includes(value)
+    },
+    toggleOption(value) {
+      this.$emit('update:modelValue', this.modelValue.includes(value)
+        ? this.modelValue.filter(v => v !== value)
+        : [...this.modelValue, value])
+    },
+    clearFilter() {
+      this.$emit('update:modelValue', [])
+    },
+    // Clicking a value's name shows only that value; clicking it again while
+    // it's the only one shown reverts to no filter.
+    isolateOption(value) {
+      const others = this.options.map(o => o.value).filter(v => v !== value)
+      const alreadyIsolated = this.isChecked(value) && others.every(v => this.modelValue.includes(v))
+      this.$emit('update:modelValue', alreadyIsolated ? [] : others)
+    },
+    // Called by ColumnFilterMenu when its popup opens.
+    focusSearch() {
+      this.$refs.searchInput?.focus()
+    }
+  }
 }
-
-function toggleOption(value) {
-  const next = props.modelValue.includes(value)
-    ? props.modelValue.filter(v => v !== value)
-    : [...props.modelValue, value]
-  emit('update:modelValue', next)
-}
-
-function clearFilter() {
-  emit('update:modelValue', [])
-}
-
-// Clicking a value's name isolates the filter to just that value; clicking
-// the name again when it's already the only one shown reverts to no filter.
-function isolateOption(value) {
-  const others = props.options.map(o => o.value).filter(v => v !== value)
-  const alreadyIsolated = isChecked(value) && others.every(v => props.modelValue.includes(v))
-  emit('update:modelValue', alreadyIsolated ? [] : others)
-}
-
-// Called by ColumnFilterMenu when its popup opens (not used inline — there's
-// no single moment to "just opened" when the panel is always on screen).
-function focusSearch() {
-  searchInput.value?.focus()
-}
-defineExpose({ focusSearch })
 </script>

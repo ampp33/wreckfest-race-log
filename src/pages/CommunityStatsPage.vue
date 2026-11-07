@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { authStore } from '../stores/authStore.js'
+import { authStore } from '../stores.js'
 import ScopeKicker from '../components/ScopeKicker.vue'
 
 // Placeholder. Site-wide aggregates will come from a get_community_stats()

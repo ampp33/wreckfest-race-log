@@ -288,7 +288,7 @@
 
 <script>
 import AppShot from '../components/AppShot.vue'
-import { openFeedback } from '../stores/feedbackStore.js'
+import { modals } from '../stores.js'
 import feedbackIcon from '../assets/icons/feedback.svg?raw'
 import expandIcon from '../assets/icons/expand.svg?raw'
 import editIcon from '../assets/icons/edit.svg?raw'
@@ -350,7 +350,9 @@ export default {
     if (this.observer) this.observer.disconnect()
   },
   methods: {
-    openFeedback,
+    openFeedback() {
+      modals.feedback = true
+    },
     goTo(id) {
       const el = document.getElementById(id)
       if (!el) return

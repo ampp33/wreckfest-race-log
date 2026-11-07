@@ -109,41 +109,19 @@
           class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
           active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
         >Install Plugin</router-link>
-        <div v-else class="relative group">
+        <div v-for="menu in dropdowns" :key="menu.label" class="relative group">
           <button
             type="button"
             class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTelemetryRoute }"
+            :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': menu.active }"
           >
-            Install Plugin
+            {{ menu.label }}
             <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
             <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
               <router-link
-                v-for="item in telemetryItems"
-                :key="item.to"
-                :to="item.to"
-                class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
-                active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
-              >{{ item.label }}</router-link>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="auth.isAdmin" class="relative group">
-          <button
-            type="button"
-            class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isAdminRoute }"
-          >
-            Admin
-            <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
-          </button>
-          <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
-            <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
-              <router-link
-                v-for="item in adminItems"
+                v-for="item in menu.items"
                 :key="item.to"
                 :to="item.to"
                 class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
@@ -283,54 +261,16 @@
               @click="mobileMenu = null"
             >{{ view.label }}</router-link>
 
-            <!-- Same as the desktop row: one plain link while signed out. -->
-            <template v-if="auth.isAuthenticated">
-              <div class="ov text-white/70 pt-4 pb-2">Install Plugin</div>
+            <template v-for="section in mobileSections" :key="section.key">
+              <div class="ov text-white/70 pt-4 pb-2">{{ section.title }}</div>
               <router-link
-                v-for="item in telemetryItems"
+                v-for="item in section.items"
                 :key="item.to"
                 :to="item.to"
                 class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >{{ item.label }}</router-link>
-            </template>
-            <template v-else>
-              <div class="ov text-white/70 pt-4 pb-2">More</div>
-              <router-link
-                to="/plugin"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-                active-class="font-bold"
-                @click="mobileMenu = null"
-              >Install Plugin</router-link>
-            </template>
-
-            <template v-if="auth.isAdmin">
-              <div class="ov text-white/70 pt-4 pb-2">Admin</div>
-              <router-link
-                v-for="item in adminItems"
-                :key="item.to"
-                :to="item.to"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-                active-class="font-bold"
-                @click="mobileMenu = null"
-              >{{ item.label }}</router-link>
-            </template>
-
-            <template v-if="auth.isAuthenticated">
-              <div class="ov text-white/70 pt-4 pb-2">More</div>
-              <router-link
-                to="/help"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-                active-class="font-bold"
-                @click="mobileMenu = null"
-              >Help</router-link>
-              <router-link
-                to="/news"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-                active-class="font-bold"
-                @click="mobileMenu = null"
-              >News</router-link>
             </template>
 
             <div class="flex gap-2 pt-3 pb-2">
@@ -382,13 +322,8 @@ import ScopeIcon from './ScopeIcon.vue'
 import ScopeMenu from './ScopeMenu.vue'
 import ClassIcon from './ClassIcon.vue'
 import ClassMenu from './ClassMenu.vue'
-import { authStore, clearAuthSession } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { recentDriversStore, rememberDriver } from '../stores/recentDriversStore.js'
-import { signOut } from '../services/authService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { openFeedback } from '../stores/feedbackStore.js'
-import { getProfile } from '../services/profileService.js'
+import { authStore, clearAuthSession, prefsStore, recentDriversStore, rememberDriver, pushToast, modals } from '../stores.js'
+import { signOut, getProfile } from '../api.js'
 import { scopeOfRoute, scopeViews, viewOfRoute, pathForScope, sameScope } from '../utils/scope.js'
 import { classLetterColor } from '../utils/piInfo.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
@@ -407,6 +342,12 @@ import closeIcon from '../assets/icons/close-filled.svg?raw'
 // drawer's copy then renders as a bare filled square. Giving the drawer its
 // own id keeps the two instances independent.
 const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
+
+const ADMIN_ITEMS = [
+  { to: '/admin/users', label: 'Users' },
+  { to: '/admin/api-keys', label: 'API keys' },
+  { to: '/admin/feedback', label: 'Feedback' }
+]
 
 export default {
   name: 'NavBar',
@@ -432,12 +373,7 @@ export default {
       menuIcon,
       closeIcon,
       signOutIcon,
-      signOutIconMobile,
-      adminItems: [
-        { to: '/admin/users', label: 'Users' },
-        { to: '/admin/api-keys', label: 'API keys' },
-        { to: '/admin/feedback', label: 'Feedback' }
-      ]
+      signOutIconMobile
     }
   },
   computed: {
@@ -491,30 +427,35 @@ export default {
         active: onScope && view.key === current
       }))
     },
-    // API keys need an account; the setup guide doesn't.
-    telemetryItems() {
-      const items = [{ to: '/plugin', label: 'Instructions' }]
-      if (this.auth.isAuthenticated) items.push({ to: '/settings/api-keys', label: 'API keys' })
-      return items
+    // Signed out there's only the setup guide (API keys need an account), so
+    // a plain link rather than a one-item dropdown.
+    dropdowns() {
+      const menus = []
+      if (this.auth.isAuthenticated) {
+        const items = [{ to: '/plugin', label: 'Instructions' }, { to: '/settings/api-keys', label: 'API keys' }]
+        menus.push({ label: 'Install Plugin', items, active: items.some(item => item.to === this.$route.path) })
+      }
+      if (this.auth.isAdmin) menus.push({ label: 'Admin', items: ADMIN_ITEMS, active: this.$route.path.startsWith('/admin') })
+      return menus
+    },
+    // The mobile menu's link sections, after the scope's views.
+    mobileSections() {
+      if (!this.auth.isAuthenticated) return [{ key: 'more', title: 'More', items: [{ to: '/plugin', label: 'Install Plugin' }] }]
+      return [
+        ...this.dropdowns.map(menu => ({ key: menu.label, title: menu.label, items: menu.items })),
+        { key: 'more', title: 'More', items: [{ to: '/help', label: 'Help' }, { to: '/news', label: 'News' }] }
+      ]
     },
     // Back to the page you were on once you've signed in.
     signInRoute() {
       return { name: 'login', query: { redirect: this.$route.fullPath } }
-    },
-    isAdminRoute() {
-      return this.$route.path.startsWith('/admin')
-    },
-    isTelemetryRoute() {
-      return this.telemetryItems.some(item => item.to === this.$route.path)
     }
   },
   watch: {
     '$route': {
       immediate: true,
       handler() {
-        this.mobileMenu = null
-        this.desktopScopeOpen = false
-        this.desktopClassOpen = false
+        this.closeMenus()
         if (this.routeScope) this.lastScope = this.routeScope
       }
     },
@@ -574,17 +515,20 @@ export default {
       const color = classLetterColor(this.prefs.piClass)
       return { backgroundColor: color, borderColor: color }
     },
-    pickClass(piClass) {
+    closeMenus() {
       this.mobileMenu = null
+      this.desktopScopeOpen = false
       this.desktopClassOpen = false
+    },
+    pickClass(piClass) {
+      this.closeMenus()
       this.prefs.piClass = piClass
     },
     toggleMobileMenu(which) {
       this.mobileMenu = this.mobileMenu === which ? null : which
     },
     pickScope(scope) {
-      this.mobileMenu = null
-      this.desktopScopeOpen = false
+      this.closeMenus()
       this.$router.push(pathForScope(this.$route, scope, this.myId))
     },
     // Close a desktop picker on a click anywhere outside it.
@@ -597,18 +541,14 @@ export default {
       }
     },
     onDocumentKeydown(event) {
-      if (event.key === 'Escape') {
-        this.desktopScopeOpen = false
-        this.desktopClassOpen = false
-        this.mobileMenu = null
-      }
+      if (event.key === 'Escape') this.closeMenus()
     },
     onToggleDark() {
       this.prefs.darkMode = !this.prefs.darkMode
     },
     onOpenFeedback() {
       this.mobileMenu = null
-      openFeedback()
+      modals.feedback = true
     },
     async onSignOut() {
       this.mobileMenu = null

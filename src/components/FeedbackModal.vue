@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :open="fb.open" @close="onClose">
+  <BaseModal :open="modals.feedback" @close="onClose">
     <template #title>Send <em class="signal">feedback</em></template>
 
     <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4">
@@ -58,10 +58,8 @@
 
 <script>
 import BaseModal from './BaseModal.vue'
-import { feedbackStore, closeFeedback } from '../stores/feedbackStore.js'
-import { authStore } from '../stores/authStore.js'
-import { submitFeedback } from '../services/feedbackService.js'
-import { pushToast } from '../stores/toastStore.js'
+import { modals, authStore, pushToast } from '../stores.js'
+import { submitFeedback } from '../api.js'
 import emailIcon from '../assets/icons/email.svg?raw'
 import discordIcon from '../assets/icons/discord.svg?raw'
 
@@ -70,7 +68,7 @@ export default {
   components: { BaseModal },
   data() {
     return {
-      fb: feedbackStore,
+      modals,
       feedbackText: '',
       submitting: false,
       emailIcon,
@@ -78,7 +76,7 @@ export default {
     }
   },
   watch: {
-    'fb.open'(isOpen) {
+    'modals.feedback'(isOpen) {
       if (isOpen) this.feedbackText = ''
     }
   },
@@ -98,7 +96,7 @@ export default {
           feedbackText: this.feedbackText.trim()
         })
         pushToast('Feedback sent — thank you!', 'success', 3000)
-        closeFeedback()
+        modals.feedback = false
       } catch (err) {
         pushToast(err.message || 'Failed to send feedback', 'error')
       } finally {
@@ -106,7 +104,7 @@ export default {
       }
     },
     onClose() {
-      closeFeedback()
+      modals.feedback = false
     }
   }
 }

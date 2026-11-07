@@ -40,8 +40,8 @@
 </template>
 
 <script>
-import { getAllFeedback } from '../services/adminService.js'
-import { formatDateTime } from '../utils/dateFormat.js'
+import { getAllFeedback } from '../api.js'
+import { formatDateTime } from '../utils/format.js'
 
 export default {
   name: 'AdminFeedbackPage',

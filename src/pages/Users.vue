@@ -11,19 +11,14 @@
 
     <div v-else class="space-y-6">
       <div class="flex flex-wrap gap-4">
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Registered users</div>
-          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ users.length }}</div>
-        </div>
-
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block" title="Raced in the last 60 days">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Active users</div>
-          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ activeUserCount }}</div>
-        </div>
-
-        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
-          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races logged</div>
-          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ totalRaces }}</div>
+        <div
+          v-for="tile in summaryTiles"
+          :key="tile.label"
+          class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block"
+          :title="tile.title"
+        >
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">{{ tile.label }}</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ tile.value }}</div>
         </div>
       </div>
 
@@ -116,7 +111,7 @@
                   class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark disabled:opacity-50"
                   title="Unban user"
                   :disabled="banningId === user.id"
-                  @click="unban(user)"
+                  @click="setBanned(user, false)"
                 >
                   <span class="w-4 h-4 inline-block" v-html="checkIcon"></span>
                 </button>
@@ -126,7 +121,7 @@
                     type="button"
                     class="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-500 hover:opacity-75"
                     title="Confirm ban"
-                    @click="confirmBan(user)"
+                    @click="setBanned(user, true)"
                   >
                     <span class="w-4 h-4 inline-block" v-html="checkIcon"></span>
                   </button>
@@ -220,7 +215,7 @@
                         class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark disabled:opacity-50"
                         title="Unban user"
                         :disabled="banningId === user.id"
-                        @click="unban(user)"
+                        @click="setBanned(user, false)"
                       >
                         <span class="w-4 h-4 inline-block" v-html="checkIcon"></span>
                       </button>
@@ -230,7 +225,7 @@
                           type="button"
                           class="min-h-[44px] min-w-[44px] flex items-center justify-center text-red-500 hover:opacity-75"
                           title="Confirm ban"
-                          @click="confirmBan(user)"
+                          @click="setBanned(user, true)"
                         >
                           <span class="w-4 h-4 inline-block" v-html="checkIcon"></span>
                         </button>
@@ -317,69 +312,22 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
-import {
-  Chart,
-  LineController,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Filler
-} from 'chart.js'
-import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getRaceLogBins, getUserActivityBins, setUserRole, setUserBanned } from '../services/adminService.js'
+<script>
+import { authStore, pushToast } from '../stores.js'
+import { getAllUsers, getRaceLogBins, getUserActivityBins, setUserRole, setUserBanned, getTotalRaceCount } from '../api.js'
 import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket, activeUsersPerBucket } from '../utils/chartBuckets.js'
-import { getTotalRaceCount } from '../services/publicStatsService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { formatDate, formatDateTime } from '../utils/dateFormat.js'
-import { useChart } from '../composables/useChart.js'
-import { getChartTheme } from '../utils/chartTheme.js'
-import { useEventListener } from '../composables/useEventListener.js'
+import { formatDate, formatDateTime } from '../utils/format.js'
+import { chartMixin, getChartTheme } from '../utils/chart.js'
 import ChartRangePicker from '../components/ChartRangePicker.vue'
 import editIcon from '../assets/icons/edit.svg?raw'
 import banIcon from '../assets/icons/ban.svg?raw'
 import checkIcon from '../assets/icons/check.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
 
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Filler)
-
-const loading = ref(true)
-const error = ref(null)
-const users = ref([])
-const growthData = ref([])
-const racesData = ref([])
-const totalRaces = ref(0)
-const usersRange = ref('30d')
-const racesRange = ref('30d')
-const saving = ref(false)
-const dialog = ref({ open: false, user: null, selectedRole: null })
-const confirmBanId = ref(null)
-const banningId = ref(null)
-const availableRoles = [
-  { value: 'user', label: 'User', description: 'Standard access' },
-  { value: 'admin', label: 'Admin', description: 'Access to admin pages' }
-]
-
-const growthCanvas = ref(null)
-const { render: renderGrowth } = useChart(growthCanvas)
-const racesCanvas = ref(null)
-const { render: renderRaces } = useChart(racesCanvas)
-
+// "Active" means raced in the trailing 60 days.
 const ACTIVE_WINDOW_MS = 60 * 24 * 60 * 60 * 1000
-const activityBins = ref([])
-const activeUserCount = computed(() =>
-  users.value.filter(u => u.last_race_at && Date.now() - new Date(u.last_race_at).getTime() <= ACTIVE_WINDOW_MS).length
-)
-
-const isDark = computed(() => prefsStore.darkMode)
-const currentUserId = computed(() => authStore.user?.id ?? null)
-
-// Past a few months of daily points, 3px markers overlap into a solid
-// blob — drop them for dense ranges (1y/all) and let the line carry it.
+// Past a few months of daily points, 3px markers overlap into a solid blob —
+// they're dropped for dense ranges (1y/all) and the line carries it.
 const DENSE_POINT_COUNT = 60
 
 function bucketLabel(bucket, unit) {
@@ -388,64 +336,35 @@ function bucketLabel(bucket, unit) {
     : bucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-function renderGrowthChart() {
-  if (!growthCanvas.value || !growthData.value.length) return
+function lineDataset(label, data, color, fillAlpha, dense) {
+  return {
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: color + fillAlpha,
+    borderWidth: 2.5,
+    pointRadius: dense ? 0 : 3,
+    pointHoverRadius: dense ? 4 : 6,
+    pointBackgroundColor: color,
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    tension: 0.35,
+    fill: true
+  }
+}
 
-  const dark = isDark.value
-  const theme = getChartTheme(dark)
-  const color = dark ? '#E5332F' : '#C41E1E'
-  const activeColor = dark ? '#FF6B61' : '#F0443A'
-  const dense = growthData.value.length > DENSE_POINT_COUNT
-
-  const unit = bucketUnit(usersRange.value)
-  const labels = growthData.value.map(row => bucketLabel(row.bucket, unit))
-  const counts = growthData.value.map(row => row.user_count)
-  const activeCounts = growthData.value.map(row => row.active_count)
-
-  renderGrowth({
+function lineChart(rows, range, datasets, legend, tooltipLabel, theme) {
+  const unit = bucketUnit(range)
+  return {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Total users',
-        data: counts,
-        borderColor: color,
-        backgroundColor: color + '22',
-        borderWidth: 2.5,
-        pointRadius: dense ? 0 : 3,
-        pointHoverRadius: dense ? 4 : 6,
-        pointBackgroundColor: color,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        tension: 0.35,
-        fill: true
-      }, {
-        label: 'Active users',
-        data: activeCounts,
-        borderColor: activeColor,
-        backgroundColor: activeColor + '33',
-        borderWidth: 2.5,
-        pointRadius: dense ? 0 : 3,
-        pointHoverRadius: dense ? 4 : 6,
-        pointBackgroundColor: activeColor,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        tension: 0.35,
-        fill: true
-      }]
-    },
+    data: { labels: rows.map(row => bucketLabel(row.bucket, unit)), datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true, align: 'end', labels: { color: theme.tickColor, boxHeight: 2, font: { size: 11 } } },
-        tooltip: {
-          ...theme.tooltip,
-          callbacks: {
-            label: ctx => `  ${ctx.parsed.y} ${ctx.dataset.label.toLowerCase()}`
-          }
-        }
+        legend,
+        tooltip: { ...theme.tooltip, callbacks: { label: tooltipLabel } }
       },
       scales: {
         x: {
@@ -457,199 +376,189 @@ function renderGrowthChart() {
           grid: { color: theme.gridColor },
           border: { display: false },
           beginAtZero: true,
-          ticks: {
-            color: theme.tickColor,
-            font: { size: 11 },
-            precision: 0
-          }
+          ticks: { color: theme.tickColor, font: { size: 11 }, precision: 0 }
         }
       }
     }
-  })
+  }
 }
 
-function renderRacesChart() {
-  if (!racesCanvas.value || !racesData.value.length) return
-
-  const dark = isDark.value
-  const theme = getChartTheme(dark)
-  const color = dark ? '#E5332F' : '#C41E1E'
-  const dense = racesData.value.length > DENSE_POINT_COUNT
-
-  const unit = bucketUnit(racesRange.value)
-  const labels = racesData.value.map(row => bucketLabel(row.bucket, unit))
-  const counts = racesData.value.map(row => row.race_count)
-
-  renderRaces({
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Races logged',
-        data: counts,
-        borderColor: color,
-        backgroundColor: color + '22',
-        borderWidth: 2.5,
-        pointRadius: dense ? 0 : 3,
-        pointHoverRadius: dense ? 4 : 6,
-        pointBackgroundColor: color,
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        tension: 0.35,
-        fill: true
-      }]
+export default {
+  name: 'UsersPage',
+  components: { ChartRangePicker },
+  mixins: [chartMixin],
+  data() {
+    return {
+      loading: true,
+      error: null,
+      users: [],
+      // Per-user race activity, for the active-users line.
+      activityBins: [],
+      growthData: [],
+      racesData: [],
+      totalRaces: 0,
+      usersRange: '30d',
+      racesRange: '30d',
+      saving: false,
+      dialog: { open: false, user: null, selectedRole: null },
+      confirmBanId: null,
+      banningId: null,
+      availableRoles: [
+        { value: 'user', label: 'User', description: 'Standard access' },
+        { value: 'admin', label: 'Admin', description: 'Access to admin pages' }
+      ],
+      editIcon,
+      banIcon,
+      checkIcon,
+      closeIcon
+    }
+  },
+  computed: {
+    currentUserId() {
+      return authStore.user?.id ?? null
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          ...theme.tooltip,
-          callbacks: {
-            label: ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: theme.gridColor },
-          border: { display: false },
-          ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45, maxTicksLimit: 10 }
-        },
-        y: {
-          grid: { color: theme.gridColor },
-          border: { display: false },
-          beginAtZero: true,
-          ticks: {
-            color: theme.tickColor,
-            font: { size: 11 },
-            precision: 0
-          }
-        }
+    activeUserCount() {
+      return this.users.filter(u => u.last_race_at && Date.now() - new Date(u.last_race_at).getTime() <= ACTIVE_WINDOW_MS).length
+    },
+    summaryTiles() {
+      return [
+        { label: 'Registered users', value: this.users.length },
+        { label: 'Active users', value: this.activeUserCount, title: 'Raced in the last 60 days' },
+        { label: 'Total races logged', value: this.totalRaces }
+      ]
+    }
+  },
+  watch: {
+    isDark() { this.$nextTick(this.renderCharts) },
+    // The canvases only enter the DOM once loading is done.
+    loading(isLoading) {
+      if (!isLoading) this.$nextTick(this.renderCharts)
+    },
+    async usersRange() {
+      try {
+        this.activityBins = await getUserActivityBins(this.usersRange)
+        this.buildUserGrowth()
+        this.$nextTick(this.renderGrowthChart)
+      } catch (err) {
+        pushToast(err.message || 'Failed to load user growth', 'error')
+      }
+    },
+    async racesRange() {
+      try {
+        this.buildRaceGrowth(await getRaceLogBins(this.racesRange))
+        this.$nextTick(this.renderRacesChart)
+      } catch (err) {
+        pushToast(err.message || 'Failed to load race growth', 'error')
       }
     }
-  })
-}
-
-function renderCharts() {
-  renderGrowthChart()
-  renderRacesChart()
-}
-
-watch(isDark, () => nextTick(renderCharts))
-// The charts' canvases only enter the DOM once `loading` flips false (see
-// the template's v-else), so the first render is triggered from here rather
-// than onMounted, which would run before that.
-watch(loading, (isLoading) => {
-  if (!isLoading) nextTick(renderCharts)
-})
-
-// Both charts are bucketed here, by the viewer's local hour (1D) or day (see
-// src/utils/chartBuckets.js). User growth is a running total built from the
-// signup dates the users list already carries; active users (raced in the
-// trailing 60 days) from the per-user activity bins.
-function buildUserGrowth() {
-  const signups = users.value.map(u => u.created_at)
-  const unit = bucketUnit(usersRange.value)
-  const buckets = growthBuckets(usersRange.value, signups)
-  const active = activeUsersPerBucket(activityBins.value, buckets, unit, ACTIVE_WINDOW_MS)
-  growthData.value = runningTotalPerBucket(signups, buckets, unit)
-    .map(({ bucket, count }, i) => ({ bucket, user_count: count, active_count: active[i].count }))
-}
-// Races logged is a per-bucket count, not a running total.
-function buildRaceGrowth(bins) {
-  const unit = bucketUnit(racesRange.value)
-  const buckets = growthBuckets(racesRange.value, bins.map(b => b.at))
-  racesData.value = countPerBucket(bins, buckets, unit).map(({ bucket, count }) => ({ bucket, race_count: count }))
-}
-async function onUsersRangeChange() {
-  try {
-    activityBins.value = await getUserActivityBins(usersRange.value)
-    buildUserGrowth()
-    nextTick(renderGrowthChart)
-  } catch (err) {
-    pushToast(err.message || 'Failed to load user growth', 'error')
+  },
+  async mounted() {
+    window.addEventListener('keydown', this.onKeydown)
+    try {
+      const [users, raceLogBins, raceCount, activityBins] = await Promise.all([
+        getAllUsers(),
+        getRaceLogBins(this.racesRange),
+        getTotalRaceCount(),
+        getUserActivityBins(this.usersRange)
+      ])
+      this.users = users
+      this.activityBins = activityBins
+      this.buildUserGrowth()
+      this.buildRaceGrowth(raceLogBins)
+      this.totalRaces = raceCount
+    } catch (err) {
+      this.error = err.message || 'Failed to load users'
+    } finally {
+      this.loading = false
+    }
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.onKeydown)
+  },
+  methods: {
+    formatDate,
+    formatDateTime,
+    // Both charts are bucketed by the viewer's local hour (1D) or day — see
+    // src/utils/chartBuckets.js. User growth is a running total of signup
+    // dates; active users come from the per-user activity bins.
+    buildUserGrowth() {
+      const signups = this.users.map(u => u.created_at)
+      const unit = bucketUnit(this.usersRange)
+      const buckets = growthBuckets(this.usersRange, signups)
+      const active = activeUsersPerBucket(this.activityBins, buckets, unit, ACTIVE_WINDOW_MS)
+      this.growthData = runningTotalPerBucket(signups, buckets, unit)
+        .map(({ bucket, count }, i) => ({ bucket, user_count: count, active_count: active[i].count }))
+    },
+    // Races logged is a per-bucket count, not a running total.
+    buildRaceGrowth(bins) {
+      const unit = bucketUnit(this.racesRange)
+      const buckets = growthBuckets(this.racesRange, bins.map(b => b.at))
+      this.racesData = countPerBucket(bins, buckets, unit).map(({ bucket, count }) => ({ bucket, race_count: count }))
+    },
+    renderCharts() {
+      this.renderGrowthChart()
+      this.renderRacesChart()
+    },
+    renderGrowthChart() {
+      const rows = this.growthData
+      if (!this.$refs.growthCanvas || !rows.length) return
+      const theme = getChartTheme(this.isDark)
+      const dense = rows.length > DENSE_POINT_COUNT
+      this.drawChart('growthCanvas', lineChart(rows, this.usersRange, [
+        lineDataset('Total users', rows.map(row => row.user_count), this.isDark ? '#E5332F' : '#C41E1E', '22', dense),
+        lineDataset('Active users', rows.map(row => row.active_count), this.isDark ? '#FF6B61' : '#F0443A', '33', dense)
+      ],
+      { display: true, align: 'end', labels: { color: theme.tickColor, boxHeight: 2, font: { size: 11 } } },
+      ctx => `  ${ctx.parsed.y} ${ctx.dataset.label.toLowerCase()}`,
+      theme))
+    },
+    renderRacesChart() {
+      const rows = this.racesData
+      if (!this.$refs.racesCanvas || !rows.length) return
+      const theme = getChartTheme(this.isDark)
+      this.drawChart('racesCanvas', lineChart(rows, this.racesRange, [
+        lineDataset('Races logged', rows.map(row => row.race_count), this.isDark ? '#E5332F' : '#C41E1E', '22', rows.length > DENSE_POINT_COUNT)
+      ],
+      { display: false },
+      ctx => `  ${ctx.parsed.y} race${ctx.parsed.y !== 1 ? 's' : ''}`,
+      theme))
+    },
+    openDialog(user) {
+      this.dialog = { open: true, user, selectedRole: user.role }
+    },
+    closeDialog() {
+      this.dialog = { open: false, user: null, selectedRole: null }
+    },
+    onKeydown(event) {
+      if (event.key === 'Escape') this.closeDialog()
+    },
+    async confirmChange() {
+      const { user, selectedRole } = this.dialog
+      this.saving = true
+      try {
+        await setUserRole(user.id, selectedRole)
+        user.role = selectedRole
+        pushToast(`${user.email} is now ${selectedRole}`, 'success')
+        this.closeDialog()
+      } catch (err) {
+        pushToast(err.message || 'Failed to update role', 'error')
+      } finally {
+        this.saving = false
+      }
+    },
+    async setBanned(user, banned) {
+      if (banned) this.confirmBanId = null
+      this.banningId = user.id
+      try {
+        await setUserBanned(user.id, banned)
+        user.banned = banned
+        pushToast(`${user.email} has been ${banned ? 'banned' : 'unbanned'}`, 'success')
+      } catch (err) {
+        pushToast(err.message || `Failed to ${banned ? 'ban' : 'unban'} user`, 'error')
+      } finally {
+        this.banningId = null
+      }
+    }
   }
 }
-async function loadRaceGrowth() {
-  try {
-    buildRaceGrowth(await getRaceLogBins(racesRange.value))
-    nextTick(renderRacesChart)
-  } catch (err) {
-    pushToast(err.message || 'Failed to load race growth', 'error')
-  }
-}
-watch(usersRange, onUsersRangeChange)
-watch(racesRange, loadRaceGrowth)
-
-function openDialog(user) {
-  dialog.value = { open: true, user, selectedRole: user.role }
-}
-function closeDialog() {
-  dialog.value = { open: false, user: null, selectedRole: null }
-}
-async function confirmChange() {
-  const { user, selectedRole } = dialog.value
-  saving.value = true
-  try {
-    await setUserRole(user.id, selectedRole)
-    user.role = selectedRole
-    pushToast(`${user.email} is now ${selectedRole}`, 'success')
-    closeDialog()
-  } catch (err) {
-    pushToast(err.message || 'Failed to update role', 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function confirmBan(user) {
-  confirmBanId.value = null
-  banningId.value = user.id
-  try {
-    await setUserBanned(user.id, true)
-    user.banned = true
-    pushToast(`${user.email} has been banned`, 'success')
-  } catch (err) {
-    pushToast(err.message || 'Failed to ban user', 'error')
-  } finally {
-    banningId.value = null
-  }
-}
-async function unban(user) {
-  banningId.value = user.id
-  try {
-    await setUserBanned(user.id, false)
-    user.banned = false
-    pushToast(`${user.email} has been unbanned`, 'success')
-  } catch (err) {
-    pushToast(err.message || 'Failed to unban user', 'error')
-  } finally {
-    banningId.value = null
-  }
-}
-
-useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog() })
-
-onMounted(async () => {
-  try {
-    const [allUsers, raceLogBins, raceCount, userActivityBins] = await Promise.all([
-      getAllUsers(),
-      getRaceLogBins(racesRange.value),
-      getTotalRaceCount(),
-      getUserActivityBins(usersRange.value)
-    ])
-    users.value = allUsers
-    activityBins.value = userActivityBins
-    buildUserGrowth()
-    buildRaceGrowth(raceLogBins)
-    totalRaces.value = raceCount
-  } catch (err) {
-    error.value = err.message || 'Failed to load users'
-  } finally {
-    loading.value = false
-  }
-})
 </script>

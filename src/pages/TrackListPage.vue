@@ -30,11 +30,11 @@
           v-if="isOwnView"
           type="button"
           class="ov min-h-[44px] px-4 border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
-          @click="onExport"
+          @click="exportRaces(userId)"
         >Export</button>
         <label v-if="isOwnView" class="ov min-h-[44px] px-4 flex items-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark cursor-pointer">
           Import
-          <input type="file" accept="application/json" class="hidden" @change="onImport" />
+          <input type="file" accept="application/json" class="hidden" @change="importRaces($event, userId)" />
         </label>
       </div>
     </div>
@@ -55,15 +55,17 @@
 <script>
 import TrackCard from '../components/TrackCard.vue'
 import DriverScope from '../components/DriverScope.vue'
-import { getTracks } from '../services/trackService.js'
-import { getAllRaces, bulkInsertRaces } from '../services/raceService.js'
-import { authStore } from '../stores/authStore.js'
-import { downloadJson, readJsonFile } from '../utils/exportImport.js'
-import { pushToast } from '../stores/toastStore.js'
+import { getTracks } from '../api.js'
+import { pushToast } from '../stores.js'
+import { exportRaces, importRaces } from '../utils/exportImport.js'
+import { scopedPage } from '../utils/scope.js'
 
+// Every driver sees the same catalogue; the scope only decides where the
+// cards link.
 export default {
   name: 'TrackListPage',
   components: { DriverScope, TrackCard },
+  mixins: [scopedPage],
   data() {
     return {
       tracks: [],
@@ -72,21 +74,6 @@ export default {
     }
   },
   computed: {
-    // Whose tracks these are — from the /<userId>/tracks URL. Every driver
-    // sees the same catalogue; this only decides where the cards link.
-    userId() {
-      return this.$route.params.userId
-    },
-    isOwnView() {
-      return !!this.userId && authStore.user?.id === this.userId
-    },
-    // /community/tracks: cards open each track's all-drivers page instead.
-    isCommunity() {
-      return this.$route.meta.scope === 'community'
-    },
-    basePath() {
-      return this.isCommunity ? '/community' : `/${this.userId}`
-    },
     filteredTracks() {
       const q = this.search.trim().toLowerCase()
       if (!q) return this.tracks
@@ -94,57 +81,14 @@ export default {
     }
   },
   async mounted() {
-    await this.loadTracks()
-  },
-  methods: {
-    async loadTracks() {
-      this.loading = true
-      try {
-        this.tracks = await getTracks()
-      } catch (err) {
-        pushToast(err.message || 'Failed to load tracks', 'error')
-      } finally {
-        this.loading = false
-      }
-    },
-    async onExport() {
-      try {
-        const races = await getAllRaces({ userId: authStore.user.id })
-        downloadJson(`wreckfest-races-${Date.now()}.json`, { races })
-        pushToast('Exported races', 'success')
-      } catch (err) {
-        pushToast(err.message || 'Export failed', 'error')
-      }
-    },
-    async onImport(event) {
-      const file = event.target.files && event.target.files[0]
-      if (!file) return
-      try {
-        const parsed = await readJsonFile(file)
-        const races = parsed && Array.isArray(parsed.races) ? parsed.races : null
-        if (!races || !races.length) {
-          pushToast('No races found in file', 'error')
-          return
-        }
-        const userId = authStore.user && authStore.user.id
-        const cleaned = races.map(r => ({
-          datetime: r.datetime,
-          track_variation_id: r.track_variation_id,
-          vehicle_id: r.vehicle_id || null,
-          tuning: r.tuning ?? null,
-          place: r.place || null,
-          lap_time_ms: r.lap_time_ms ?? null,
-          total_time_ms: r.total_time_ms ?? null,
-          notes: r.notes || null
-        }))
-        await bulkInsertRaces(cleaned, userId)
-        pushToast(`Imported ${cleaned.length} races`, 'success')
-      } catch (err) {
-        pushToast(err.message || 'Import failed', 'error')
-      } finally {
-        event.target.value = ''
-      }
+    try {
+      this.tracks = await getTracks()
+    } catch (err) {
+      pushToast(err.message || 'Failed to load tracks', 'error')
+    } finally {
+      this.loading = false
     }
-  }
+  },
+  methods: { exportRaces, importRaces }
 }
 </script>

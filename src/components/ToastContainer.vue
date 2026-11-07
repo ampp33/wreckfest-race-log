@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { toastStore } from '../stores/toastStore.js'
+import { toastStore } from '../stores.js'
 
 export default {
   name: 'ToastContainer',

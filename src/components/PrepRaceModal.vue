@@ -1,5 +1,5 @@
 <template>
-  <BaseModal :open="pr.open" wide @close="onClose">
+  <BaseModal :open="modals.prepRace" wide @close="onClose">
     <template #title>Prep for <em class="signal">race</em></template>
 
     <p v-if="loadingTracks" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">Loading tracks…</p>
@@ -76,7 +76,7 @@
                 <td class="hidden sm:table-cell py-2 pr-2 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.tuning ?? '—' }}</td>
                 <td class="hidden sm:table-cell py-2 pr-2"><PartsBadge :parts="c.lap.parts" /></td>
                 <td class="py-2 pr-2 whitespace-nowrap"><PerformanceIndexBadge :value="c.lap.performance_index" /></td>
-                <td class="hidden sm:table-cell py-2 pr-2 text-right tabular whitespace-nowrap text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.vehicle_weight_kg != null ? c.lap.vehicle_weight_kg + ' kg' : '—' }}</td>
+                <td class="hidden sm:table-cell py-2 pr-2 text-right tabular whitespace-nowrap text-brand-secondary dark:text-brand-secondary-dark">{{ formatWeight(c.lap.vehicle_weight_kg) }}</td>
                 <td class="py-2 text-right tabular font-semibold">{{ formatMsToTime(c.lap.lap_time_ms) }}</td>
               </template>
             </tr>
@@ -113,23 +113,18 @@ import PartsBadge from './PartsBadge.vue'
 import PerformanceIndexBadge from './PerformanceIndexBadge.vue'
 import AnnotationMap from './AnnotationMap.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
-import { formatMsToTime } from '../utils/timeFormat.js'
+import { formatMsToTime, formatWeight } from '../utils/format.js'
 import { hasParts } from '../utils/partsInfo.js'
 import { CLASS_LETTERS, META_VEHICLES, classLetterColor, classRangeLabel } from '../utils/piInfo.js'
-import { prepRaceStore, closePrepRace } from '../stores/prepRaceStore.js'
-import { getTracks } from '../services/trackService.js'
-import { getVehicles } from '../services/vehicleService.js'
-import { getFastestLapsPerVehicleOnVariation } from '../services/raceService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { authStore } from '../stores/authStore.js'
-import { getAnnotationsForVariation } from '../services/annotationService.js'
+import { modals, pushToast, authStore } from '../stores.js'
+import { getTracks, getVehicles, getFastestLapsPerVehicleOnVariation, getAnnotationsForVariation } from '../api.js'
 
 export default {
   name: 'PrepRaceModal',
   components: { BaseModal, TrackVariationPicker, PartsBadge, PerformanceIndexBadge, AnnotationMap },
   data() {
     return {
-      pr: prepRaceStore,
+      modals,
       tracks: [],
       vehicles: [],
       loadingTracks: false,
@@ -162,7 +157,7 @@ export default {
     }
   },
   watch: {
-    'pr.open'(isOpen) {
+    'modals.prepRace'(isOpen) {
       if (isOpen) this.onOpened()
       else this.chosen = null
     }
@@ -170,6 +165,7 @@ export default {
   methods: {
     variationImageUrl,
     formatMsToTime,
+    formatWeight,
     hasParts,
     classLetterColor,
     classRangeLabel,
@@ -222,7 +218,7 @@ export default {
       return lap.vehicle_name ?? '—'
     },
     onClose() {
-      closePrepRace()
+      modals.prepRace = false
     }
   }
 }

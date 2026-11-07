@@ -68,19 +68,28 @@
   </Teleport>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useEventListener } from '../composables/useEventListener.js'
+<script>
 import filterIcon from '../assets/icons/filter.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
 
-const open = ref(false)
-
-function close() {
-  open.value = false
+export default {
+  name: 'FilterDrawer',
+  data() {
+    return { open: false, filterIcon, closeIcon }
+  },
+  mounted() {
+    document.addEventListener('keydown', this.onKeydown)
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onKeydown)
+  },
+  methods: {
+    close() {
+      this.open = false
+    },
+    onKeydown(event) {
+      if (event.key === 'Escape') this.close()
+    }
+  }
 }
-
-useEventListener(document, 'keydown', (e) => {
-  if (open.value && e.key === 'Escape') close()
-})
 </script>

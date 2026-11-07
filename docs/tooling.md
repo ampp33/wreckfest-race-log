@@ -111,22 +111,6 @@ design artboards whose sandbox blocks every font host except Google Fonts.
 Weight and style are parsed from the `<Family>-<weight><style>.woff2` filename
 convention described in [`public/fonts/README.md`](../public/fonts/README.md).
 
-## `vite.compare.config.js` — currently broken
-
-A harness that aliases six services plus `authStore` to hand-written stubs, so
-the whole app renders with fake data and no Supabase and no login — useful for
-comparing UI variants side by side.
-
-**It does not work as committed.** The stub directory constant `S` points at a
-scratchpad path that no longer exists. To revive it, recreate stub modules
-exporting the same functions as `trackService`, `vehicleService`, `raceService`,
-`goalService`, `annotationService`, `publicStatsService` and `authStore`, point
-`S` at them, and run:
-
-```bash
-npx vite --config vite.compare.config.js
-```
-
 ## Database scripts
 
 All three live in `supabase/` and are meant to be pasted into the Supabase SQL

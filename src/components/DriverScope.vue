@@ -25,9 +25,8 @@
 </template>
 
 <script>
-import { authStore } from '../stores/authStore.js'
-import { getProfile } from '../services/profileService.js'
-import { pushToast } from '../stores/toastStore.js'
+import { authStore, pushToast } from '../stores.js'
+import { getProfile } from '../api.js'
 import ScopeKicker from './ScopeKicker.vue'
 
 export default {
@@ -46,11 +45,6 @@ export default {
   computed: {
     isOwn() {
       return !!this.userId && authStore.user?.id === this.userId
-    },
-    // The same page, but yours: swap the driver prefix for your own id.
-    ownPath() {
-      if (!authStore.user) return null
-      return this.$route.path.replace(/^\/[^/]+/, `/${authStore.user.id}`)
     }
   },
   watch: {

@@ -14,7 +14,7 @@
         :src="trackImage"
         :alt="track.name"
         class="w-full h-28 sm:h-40 object-cover border border-brand-border dark:border-brand-border-dark mb-4 cursor-pointer grayscale hover:opacity-90 transition-opacity"
-        @click="openImageModal"
+        @click="showImageModal = true"
       />
 
       <!-- Track header row -->
@@ -93,7 +93,7 @@
             <button
               type="button"
               class="px-3 py-1 text-sm rounded border border-brand-border dark:border-brand-border-dark hover:border-brand-secondary dark:hover:border-brand-secondary-dark"
-              @click="cancelEditNotes"
+              @click="notesEditMode = false"
             >Cancel</button>
             <button
               type="button"
@@ -107,7 +107,7 @@
       <!-- Turn Annotations (private) -->
       <VariationAnnotations
         v-if="currentVariation && isSignedIn"
-        :image-url="variationMapImage"
+        :image-url="variationImageUrl(track.slug, currentVariation.slug)"
         :alt="currentVariation.name"
         :track-slug="track.slug"
         :variation-slug="currentVariation.slug"
@@ -121,7 +121,7 @@
       <div class="grid grid-cols-2 gap-6 mb-8" :class="{ 'lg:grid-cols-4': isOwnView }">
         <div class="rule-top pt-3">
           <div class="ov text-brand-muted dark:text-brand-muted-dark">{{ isCommunity ? 'Best lap' : 'Personal best' }}</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ pbDisplay }}</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ personalBestMs != null ? formatMsToTime(personalBestMs) : '—' }}</div>
           <router-link
             v-if="isCommunity && bestRace"
             :to="`/${bestRace.user_id}/track/${track.slug}/${currentVariation.slug}`"
@@ -138,7 +138,7 @@
           <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
           <div class="font-display font-black tracking-tightest text-display-sm tabular mt-2"
                :class="gapMs != null && gapMs <= 0 ? 'text-brand-good dark:text-brand-good-dark' : 'text-brand-accent dark:text-brand-accent-dark'">
-            {{ gapDisplay }}
+            {{ gapMs == null ? '—' : formatDelta(gapMs) }}
           </div>
         </div>
         <div class="rule-top pt-3">
@@ -149,23 +149,7 @@
 
       <!-- Placement rates describe one driver's results; across everyone
            they'd just average strangers together, so community mode skips them. -->
-      <div v-if="!isCommunity" class="grid grid-cols-3 gap-6">
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 3 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top3Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top3Rate.count }} / {{ top3Rate.total }}</div>
-        </div>
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 5 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top5Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top5Rate.count }} / {{ top5Rate.total }}</div>
-        </div>
-        <div class="rule-top pt-3">
-          <div class="ov text-brand-muted dark:text-brand-muted-dark">Top 10 finishes</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ top10Rate.pct }}</div>
-          <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ top10Rate.count }} / {{ top10Rate.total }}</div>
-        </div>
-      </div>
+      <PlacementRateTiles v-if="!isCommunity" :rates="placementRates" />
       <p v-if="!isCommunity" class="text-xs text-brand-muted dark:text-brand-muted-dark italic mt-2 mb-12">
         Excludes lone races (a race with a roster, but only one racer) and races with no place logged.
       </p>
@@ -175,21 +159,21 @@
            nowhere to live once the table becomes cards, so they're
            reproduced here (inline, not popup) behind a side tab. -->
       <FilterDrawer>
-        <SortMenu :columns="sortableColumns" :sort="sort" />
-        <ColumnFilterMenu v-if="isCommunity" inline label="Driver" v-model="columnFilters.driver" :options="driverOptions" />
-        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
-        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+        <SortMenu :columns="sortableColumns" :sort="sort" @toggle="toggleSort" @clear="clearSort" />
+        <ColumnFilterMenu v-if="isCommunity" inline label="Driver" v-model="columnFilters.driver" :options="filterOptions.driver" />
+        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="filterOptions.vehicleId" />
+        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="filterOptions.performanceIndex">
           <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
         </ColumnFilterMenu>
-        <ColumnFilterMenu inline label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
-        <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
-        <ColumnFilterMenu v-if="isSignedIn" inline label="Favorites" v-model="columnFilters.favorite" :options="favoriteOptions" />
+        <ColumnFilterMenu inline label="Tune" v-model="columnFilters.tuning" :options="filterOptions.tuning" />
+        <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="filterOptions.place" />
+        <ColumnFilterMenu v-if="isSignedIn" inline label="Favorites" v-model="columnFilters.favorite" :options="filterOptions.favorite" />
         <ColumnFilterMenu
           inline
           label="Columns"
           heading="Columns to Display"
           :searchable="false"
-          v-model="columnVisibility.state.hidden"
+          v-model="hiddenColumns"
           :options="columnOptions"
         />
       </FilterDrawer>
@@ -209,7 +193,7 @@
               icon-size="w-5 h-5"
               :searchable="false"
               :highlight-when-active="false"
-              v-model="columnVisibility.state.hidden"
+              v-model="hiddenColumns"
               :options="columnOptions"
             />
           </div>
@@ -252,98 +236,62 @@
               <tr>
                 <th v-if="isSignedIn" class="w-px py-2 pl-0 pr-2">
                   <span class="flex w-5 justify-center">
-                    <ColumnFilterMenu label="Favorites" :icon="columnFilters.favorite.length ? starFillIcon : starIcon" icon-size="w-4 h-4" v-model="columnFilters.favorite" :options="favoriteOptions" />
+                    <ColumnFilterMenu label="Favorites" :icon="columnFilters.favorite.length ? starFillIcon : starIcon" icon-size="w-4 h-4" v-model="columnFilters.favorite" :options="filterOptions.favorite" />
                   </span>
                 </th>
                 <th v-if="isShown('when')" class="py-2.5 pl-0 pr-3">
-                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('when', 'Date')" :aria-label="sort.titleFor('when', 'Date')" @click="sort.toggle('when')">
-                    Date
-                    <SortCaret :direction="sort.directionFor('when')" />
-                  </button>
+                  <SortHeader label="Date" sort-key="when" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('driver')" class="py-2 pr-3">
                   <span class="inline-flex items-center gap-1">
-                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('driver', 'Driver')" :aria-label="sort.titleFor('driver', 'Driver')" @click="sort.toggle('driver')">
-                      Driver
-                      <SortCaret :direction="sort.directionFor('driver')" />
-                    </button>
-                    <ColumnFilterMenu label="Driver" icon-size="w-4 h-4" v-model="columnFilters.driver" :options="driverOptions" />
+                    <SortHeader label="Driver" sort-key="driver" :sort="sort" @toggle="toggleSort" />
+                    <ColumnFilterMenu label="Driver" icon-size="w-4 h-4" v-model="columnFilters.driver" :options="filterOptions.driver" />
                   </span>
                 </th>
                 <th v-if="isShown('vehicle')" class="py-2 pr-3">
                   <span class="inline-flex items-center gap-1">
-                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('vehicle', 'Vehicle')" :aria-label="sort.titleFor('vehicle', 'Vehicle')" @click="sort.toggle('vehicle')">
-                      Vehicle
-                      <SortCaret :direction="sort.directionFor('vehicle')" />
-                    </button>
-                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                    <SortHeader label="Vehicle" sort-key="vehicle" :sort="sort" @toggle="toggleSort" />
+                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="filterOptions.vehicleId" />
                   </span>
                 </th>
                 <th v-if="isShown('pi')" class="py-2 pr-3">
                   <span class="inline-flex items-center gap-1">
-                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('pi', 'Class (PI)')" :aria-label="sort.titleFor('pi', 'Class (PI)')" @click="sort.toggle('pi')">
-                      Class (PI)
-                      <SortCaret :direction="sort.directionFor('pi')" />
-                    </button>
-                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="piOptions">
+                    <SortHeader label="Class (PI)" sort-key="pi" :sort="sort" @toggle="toggleSort" />
+                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="filterOptions.performanceIndex">
                       <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
                     </ColumnFilterMenu>
                   </span>
                 </th>
                 <th v-if="isShown('weight')" class="py-2 pr-3 text-right">
-                  <button type="button" class="group inline-flex items-center justify-end gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('weight', 'Weight')" :aria-label="sort.titleFor('weight', 'Weight')" @click="sort.toggle('weight')">
-                    Weight
-                    <SortCaret :direction="sort.directionFor('weight')" />
-                  </button>
+                  <SortHeader class="justify-end w-full" label="Weight" sort-key="weight" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('tune')" class="py-2 pr-3 text-center">
                   <span class="inline-flex items-center justify-center gap-1">
-                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('tune', 'Tune')" :aria-label="sort.titleFor('tune', 'Tune')" @click="sort.toggle('tune')">
-                      Tune
-                      <SortCaret :direction="sort.directionFor('tune')" />
-                    </button>
-                    <ColumnFilterMenu label="Tune" icon-size="w-4 h-4" v-model="columnFilters.tuning" :options="tuningOptions" />
+                    <SortHeader label="Tune" sort-key="tune" :sort="sort" @toggle="toggleSort" />
+                    <ColumnFilterMenu label="Tune" icon-size="w-4 h-4" v-model="columnFilters.tuning" :options="filterOptions.tuning" />
                   </span>
                 </th>
                 <th v-if="isShown('assists')" class="py-2 pr-3 text-center">
-                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('assists', 'Assists')" :aria-label="sort.titleFor('assists', 'Assists')" @click="sort.toggle('assists')">
-                    Assists
-                    <SortCaret :direction="sort.directionFor('assists')" />
-                  </button>
+                  <SortHeader class="justify-center w-full" label="Assists" sort-key="assists" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('parts')" class="w-px py-2 pr-3 text-center whitespace-nowrap">Parts</th>
                 <th v-if="isShown('place')" class="py-2 pr-3 text-center">
                   <span class="inline-flex items-center justify-center gap-1">
-                    <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('place', 'Place')" :aria-label="sort.titleFor('place', 'Place')" @click="sort.toggle('place')">
-                      Place
-                      <SortCaret :direction="sort.directionFor('place')" />
-                    </button>
-                    <ColumnFilterMenu label="Place" icon-size="w-4 h-4" v-model="columnFilters.place" :options="placeOptions" />
+                    <SortHeader label="Place" sort-key="place" :sort="sort" @toggle="toggleSort" />
+                    <ColumnFilterMenu label="Place" icon-size="w-4 h-4" v-model="columnFilters.place" :options="filterOptions.place" />
                   </span>
                 </th>
                 <th v-if="isShown('laps')" class="py-2 pr-3 text-center">
-                  <button type="button" class="group inline-flex items-center justify-center gap-1 w-full hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('laps', 'Laps')" :aria-label="sort.titleFor('laps', 'Laps')" @click="sort.toggle('laps')">
-                    Laps
-                    <SortCaret :direction="sort.directionFor('laps')" />
-                  </button>
+                  <SortHeader class="justify-center w-full" label="Laps" sort-key="laps" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('lap')" class="py-2 pr-3">
-                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('lap', 'Lap time')" :aria-label="sort.titleFor('lap', 'Lap time')" @click="sort.toggle('lap')">
-                    Lap time
-                    <SortCaret :direction="sort.directionFor('lap')" />
-                  </button>
+                  <SortHeader label="Lap time" sort-key="lap" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('gap')" class="py-2 pr-3">
-                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('gap', 'Δ goal')" :aria-label="sort.titleFor('gap', 'Δ goal')" @click="sort.toggle('gap')">
-                    Δ goal
-                    <SortCaret :direction="sort.directionFor('gap')" />
-                  </button>
+                  <SortHeader label="Δ goal" sort-key="gap" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th v-if="isShown('total')" class="py-2 pr-3">
-                  <button type="button" class="group inline-flex items-center gap-1 hover:text-brand-text dark:hover:text-brand-text-dark" :title="sort.titleFor('total', 'Total time')" :aria-label="sort.titleFor('total', 'Total time')" @click="sort.toggle('total')">
-                    Total time
-                    <SortCaret :direction="sort.directionFor('total')" />
-                  </button>
+                  <SortHeader label="Total time" sort-key="total" :sort="sort" @toggle="toggleSort" />
                 </th>
                 <th class="py-2 pr-3 text-right">Actions</th>
               </tr>
@@ -397,14 +345,14 @@
     <div
       v-if="showImageModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-      @click.self="closeImageModal"
+      @click.self="showImageModal = false"
     >
       <div class="relative max-w-4xl w-full mx-4">
         <button
           type="button"
           class="absolute -top-8 right-0 text-white/80 hover:text-white"
           aria-label="Close"
-          @click="closeImageModal"
+          @click="showImageModal = false"
         >
           <span class="w-6 h-6 inline-block" v-html="closeIcon"></span>
         </button>
@@ -418,9 +366,9 @@
   </Teleport>
 </template>
 
-<script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+<script>
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import RaceRow from '../components/RaceRow.vue'
 import DriverScope from '../components/DriverScope.vue'
 import VehicleBestLapChart from '../components/VehicleBestLapChart.vue'
@@ -428,57 +376,28 @@ import VariationAnnotations from '../components/VariationAnnotations.vue'
 import ColumnFilterMenu from '../components/ColumnFilterMenu.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
-import { getTrackBySlug, findVariation } from '../services/trackService.js'
-import { getVehicles } from '../services/vehicleService.js'
-import { getRacesByVariation, getCommunityRaces, COMMUNITY_PAGE_SIZE, updateRace, deleteRace } from '../services/raceService.js'
-import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
-import { getAnnotationsForVariation, saveAnnotations } from '../services/annotationService.js'
-import { marked } from 'marked'
-import DOMPurify from 'dompurify'
-import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { pushToast } from '../stores/toastStore.js'
+import PlacementRateTiles from '../components/PlacementRateTiles.vue'
+import LapTimeInput from '../components/LapTimeInput.vue'
+import SortHeader from '../components/SortHeader.vue'
+import SortMenu from '../components/SortMenu.vue'
+import {
+  getTrackBySlug, getVehicles, getRacesByVariation, getCommunityRaces, COMMUNITY_PAGE_SIZE, updateRace, deleteRace,
+  getGoalForVariation, upsertGoal, getAnnotationsForVariation, saveAnnotations
+} from '../api.js'
+import { authStore, prefsStore, pushToast, modals, openQuickAdd, setOnRaceSaved } from '../stores.js'
+import { scopedPage } from '../utils/scope.js'
+import { raceTable, DRIVER_FILTER, PI_FILTER, FAVORITE_FILTER, lapCount } from '../utils/raceTable.js'
+import { placementRate } from '../utils/stats.js'
+import { formatMsToTime, formatDelta, formatAssists } from '../utils/format.js'
+import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
+import { isPlainKeypress } from '../utils/keys.js'
 import editIcon from '../assets/icons/edit.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
-import { quickAddStore, setOnRaceSaved, clearOnRaceSaved, openQuickAdd } from '../stores/quickAddStore.js'
-import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
-import LapTimeInput from '../components/LapTimeInput.vue'
-import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
-import { useEventListener } from '../composables/useEventListener.js'
-import { buildOptions, sortOptions, FAVORITE_OPTION_LABELS } from '../utils/filterOptions.js'
-import { createColumnVisibility } from '../utils/columnVisibility.js'
-import { createSortState, sortRows } from '../utils/sortState.js'
-import { placementRate } from '../utils/raceStats.js'
-import { formatAssists } from '../utils/assistsFormat.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
 import starIcon from '../assets/icons/star.svg?raw'
 import starFillIcon from '../assets/icons/star-fill.svg?raw'
-import { isFavorite } from '../stores/favoritesStore.js'
-import SortCaret from '../components/SortCaret.vue'
-import SortMenu from '../components/SortMenu.vue'
 
-const route = useRoute()
-
-// Whose races these are — from the /<userId>/track/... URL. The goal tiles
-// render (and races are editable) only when that's you; your own track
-// notes and annotations show on any log while you're signed in.
-const userId = computed(() => route.params.userId)
-const isOwnView = computed(() => !!userId.value && authStore.user?.id === userId.value)
-// Track notes and annotations are always the viewer's own, on any log.
-const isSignedIn = computed(() => !!authStore.user)
-// Your own races can be edited wherever they show up, the community page
-// included — RLS refuses an edit or delete of anyone else's regardless.
-function isOwnRace(race) {
-  return !!authStore.user && race.user_id === authStore.user.id
-}
-// /community/track/...: every public driver's races at this variation.
-const isCommunity = computed(() => route.meta.scope === 'community')
-// Where variation/back links point: this driver's pages, or the community ones.
-const basePath = computed(() => isCommunity.value ? '/community' : `/${userId.value}`)
-// The nav's car-class filter narrows every race shown here; " in class C"
-// for the empty states while it's on.
-const classSuffix = computed(() => prefsStore.piClass ? ` in class ${prefsStore.piClass}` : '')
-
+// 'Actions' is left out — always shown, as the row's only way to edit/delete.
 const TABLE_COLUMNS = [
   { key: 'when', label: 'Date' },
   { key: 'driver', label: 'Driver' },
@@ -493,403 +412,290 @@ const TABLE_COLUMNS = [
   { key: 'lap', label: 'Lap time' },
   { key: 'gap', label: 'Δ goal' },
   { key: 'total', label: 'Total time' }
-  // 'Actions' is intentionally left out — it's always shown, since hiding it
-  // would remove the row's only in-table way to edit/delete a race.
 ]
-// Δ goal needs your goal, so it doesn't exist on another driver's page —
-// not as a column, nor in the column picker. (Notes show in the expanded row.)
-// Driver only exists on the community page, where rows come from many drivers.
-const OWNER_ONLY_COLUMNS = ['gap']
-const COMMUNITY_ONLY_COLUMNS = ['driver']
-const availableColumns = computed(() => TABLE_COLUMNS.filter(c => (
-  (isOwnView.value || !OWNER_ONLY_COLUMNS.includes(c.key)) &&
-  (isCommunity.value || !COMMUNITY_ONLY_COLUMNS.includes(c.key))
-)))
-const columnOptions = computed(() => availableColumns.value.map(c => ({ value: c.key, label: c.label })))
-// Shown only on a first-ever visit, before the column picker has written
-// anything to localStorage — after that, whatever the user has chosen wins.
-const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'gap', 'assists', 'parts']
-const columnVisibility = createColumnVisibility('wreckfest:columns:trackDetail', TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
-const visibleColumnKeys = computed(() => availableColumns.value.map(c => c.key).filter(columnVisibility.isVisible))
-// Whether a column's header renders — must agree with what RaceRow renders
-// (it gets visibleColumnKeys), so owner-/community-only columns can't leave a
-// header with no cells under it.
-function isShown(key) {
-  return visibleColumnKeys.value.includes(key)
-}
-// Every visible column, plus Actions, plus the favorite star's when signed in.
-const tableColspan = computed(() => visibleColumnKeys.value.length + 1 + (isSignedIn.value ? 1 : 0))
-const sort = createSortState()
-// Feeds the mobile filter drawer's SortMenu — only currently-visible,
-// sortable columns (Notes and Parts aren't sortable, and a hidden column
-// shouldn't be pickable either).
-const UNSORTABLE_COLUMNS = ['parts']
-const sortableColumns = computed(() => availableColumns.value.filter(c => !UNSORTABLE_COLUMNS.includes(c.key) && columnVisibility.isVisible(c.key)))
-
-const loading = ref(true)
-const track = ref(null)
-const currentVariation = ref(null)
-const vehicles = ref([])
-const races = ref([])
-const goal = ref(null)
-const goalInputMs = ref(null)
-const annotations = ref([])
-const showImageModal = ref(false)
-const notesEditMode = ref(false)
-const notesInput = ref('')
-const notesTextarea = ref(null)
 
 const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
-const columnFilters = ref({ driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] })
-// Community mode pages through races COMMUNITY_PAGE_SIZE at a time, like /community/races.
-const hasMore = ref(false)
-const loadingMore = ref(false)
-let fetchedCount = 0
 
-// Non-reactive: just tracks whether *this page* was the one that opened the
-// quick-add modal, so its "saved" callback below only refreshes races when
-// closing a modal it opened itself (not one opened from somewhere else).
-let quickAddOpenedHere = false
+// These mirror RaceRow's own display fallbacks exactly, so a race bucketed
+// under "—" is always one that shows "—" in the table.
+const vehicleOf = (race, vm) => vm.vehicles.find(v => v.id === race.vehicle_id)
+const vehicleLabel = (race, vm) => vehicleOf(race, vm)?.name ?? '—'
+// `tuning` is a numeric slider code, stringified to compare like the others.
+const tuneKey = race => race.tuning != null ? String(race.tuning) : '—'
+const placeKey = race => race.place || '—'
 
-const trackImage = computed(() => track.value ? trackImageUrl(track.value.slug) : '')
-const goalLapTimeMs = computed(() => goal.value ? goal.value.goal_lap_time_ms : null)
-const personalBestMs = computed(() => {
-  // A 0 lap_time_ms means no completed lap was recorded (same convention
-  // VehicleBestLapChart.vue uses), not an actual zero-millisecond lap — treat it
-  // like a missing time rather than letting it win every "personal best".
-  const valid = filteredRaces.value.map(r => r.lap_time_ms).filter(v => !!v)
-  if (!valid.length) return null
-  return Math.min(...valid)
-})
-// The race that set the best lap — community mode credits its driver.
-const bestRace = computed(() => (
-  personalBestMs.value == null ? null : filteredRaces.value.find(r => r.lap_time_ms === personalBestMs.value)
-))
-const pbDisplay = computed(() => personalBestMs.value != null ? formatMsToTime(personalBestMs.value) : '—')
-const gapMs = computed(() => {
-  if (personalBestMs.value == null || goalLapTimeMs.value == null) return null
-  return personalBestMs.value - goalLapTimeMs.value
-})
-const gapDisplay = computed(() => gapMs.value == null ? '—' : formatDelta(gapMs.value))
-const trackNotes = computed(() => goal.value ? (goal.value.notes || '') : '')
-const trackNotesHtml = computed(() => trackNotes.value ? DOMPurify.sanitize(marked.parse(trackNotes.value)) : '')
-const variationMapImage = computed(() => (
-  track.value && currentVariation.value
-    ? variationImageUrl(track.value.slug, currentVariation.value.slug)
-    : ''
-))
-
-// These mirror RaceRow's own display fallbacks exactly (`??` for tuning,
-// `||` for place, and vehicle lookup falling back to '—' for both a null
-// vehicle_id and one that no longer resolves against `vehicles`), so a race
-// bucketed under "—" here is always one that visually shows "—" in the table.
-function vehicleKey(race) {
-  const v = vehicles.value.find(x => x.id === race.vehicle_id)
-  return v ? v.id : UNRESOLVED_VEHICLE
-}
-function vehicleLabel(race) {
-  const v = vehicles.value.find(x => x.id === race.vehicle_id)
-  return v ? v.name : '—'
-}
-function piKey(race) {
-  return race.performance_index != null ? race.performance_index : null
-}
-function tuneKey(race) {
-  // `tuning` is a numeric slider-config code (see RaceForm.vue), not text —
-  // stringify it so it sorts/compares consistently with the other columns.
-  return race.tuning != null ? String(race.tuning) : '—'
-}
-function placeKey(race) {
-  return race.place || '—'
-}
-function driverKey(race) {
-  return race.user_id
-}
-function favoriteKey(race) {
-  return isFavorite(race.id) ? 'favorite' : 'other'
-}
-
-// One value-getter per sortable column (everything but Notes/Parts/Actions), fed
-// to sortRows() — each returns either a number (or a date's timestamp) or a
-// display string, so sortRows can compare by the right datatype instead of
-// always doing a string compare.
-function lapCountValue(race) {
-  if (race.lap_count != null) return race.lap_count
-  if (Array.isArray(race.lap_times_ms)) return race.lap_times_ms.length
-  return null
-}
-const SORT_VALUE_GETTERS = {
-  when: race => new Date(race.datetime).getTime(),
-  driver: race => race.driverName,
-  vehicle: vehicleLabel,
-  pi: race => race.performance_index,
-  weight: race => race.vehicle_weight_kg,
-  tune: race => race.tuning,
-  assists: race => formatAssists(race.assists),
-  place: race => race.place,
-  laps: lapCountValue,
-  lap: race => race.lap_time_ms,
-  gap: race => (race.lap_time_ms != null && goalLapTimeMs.value != null) ? race.lap_time_ms - goalLapTimeMs.value : null,
-  total: race => race.total_time_ms
-}
-
-// Matches a race against every column filter except `exceptKey` — used to
-// build each column's own option list off what's visible once every *other*
-// filter is applied (real cross-filtering, like Excel's AutoFilter), while
-// never narrowing a column by its own selection so its own checked/unchecked
-// values don't vanish from its own list.
-function matchesFilters(race, exceptKey) {
-  const f = columnFilters.value
-  if (exceptKey !== 'driver' && f.driver.includes(driverKey(race))) return false
-  if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
-  if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
-  if (exceptKey !== 'tuning' && f.tuning.includes(tuneKey(race))) return false
-  if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
-  if (exceptKey !== 'favorite' && f.favorite.includes(favoriteKey(race))) return false
-  return true
-}
-
-const driverOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'driver')), driverKey, race => race.driverName)
-))
-const vehicleOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'vehicleId')), vehicleKey, vehicleLabel)
-))
-const piOptions = computed(() => sortOptions(
-  buildOptions(
-    races.value.filter(r => matchesFilters(r, 'performanceIndex')),
-    piKey,
-    race => race.performance_index != null ? String(race.performance_index) : '—'
-  ),
-  { numeric: true }
-))
-const tuningOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'tuning')), tuneKey, tuneKey),
-  { numeric: true }
-))
-const placeOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'place')), placeKey, placeKey),
-  { numeric: true }
-))
-
-const favoriteOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'favorite')), favoriteKey, r => FAVORITE_OPTION_LABELS[favoriteKey(r)])
-))
-
-const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
-const sortedRaces = computed(() => sortRows(filteredRaces.value, sort.state, SORT_VALUE_GETTERS))
-
-const top3Rate = computed(() => placementRate(filteredRaces.value, 3))
-const top5Rate = computed(() => placementRate(filteredRaces.value, 5))
-const top10Rate = computed(() => placementRate(filteredRaces.value, 10))
-
-function resetColumnFilters() {
-  columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] }
-}
-
-// Switching variation or class mid-load starts another load; only the newest
-// one lands (and an older page from loadMoreRaces() is dropped).
-let loadToken = 0
-async function loadRaces() {
-  const token = ++loadToken
-  const piClass = prefsStore.piClass
-  if (isCommunity.value) {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass })
-    if (token !== loadToken) return
-    races.value = page
-    fetchedCount = page.length
-    hasMore.value = page.length === COMMUNITY_PAGE_SIZE
-    return
-  }
-  const rows = await getRacesByVariation(currentVariation.value.id, userId.value, { piClass })
-  if (token !== loadToken) return
-  races.value = rows
-  hasMore.value = false
-}
-// Same offset paging (and overlap de-dupe) as RacesPage's loadMore().
-async function loadMoreRaces() {
-  loadingMore.value = true
-  const token = loadToken
-  try {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass: prefsStore.piClass, offset: fetchedCount })
-    if (token !== loadToken) return
-    const seen = new Set(races.value.map(r => r.id))
-    races.value = races.value.concat(page.filter(r => !seen.has(r.id)))
-    fetchedCount += page.length
-    hasMore.value = page.length === COMMUNITY_PAGE_SIZE
-  } catch (err) {
-    pushToast(err.message || 'Failed to load older races', 'error')
-  } finally {
-    loadingMore.value = false
-  }
-}
-// Goals and annotations are RLS-scoped to the signed-in user, so these always
-// fetch *yours*, even on another driver's page — where only your track notes
-// and annotations show, but your goal must still load so saving notes keeps it.
-async function loadGoal() {
-  goal.value = isSignedIn.value ? await getGoalForVariation(currentVariation.value.id) : null
-  goalInputMs.value = goal.value ? goal.value.goal_lap_time_ms : null
-}
-async function loadAnnotations() {
-  annotations.value = isSignedIn.value ? await getAnnotationsForVariation(currentVariation.value.id) : []
-}
-async function loadAll() {
-  loading.value = true
-  resetColumnFilters()
-  const slug = route.params.trackSlug
-  const variationSlug = route.params.variationSlug
-  try {
-    const [trackData, vehicleList] = await Promise.all([
-      getTrackBySlug(slug),
-      getVehicles()
-    ])
-    track.value = trackData
-    vehicles.value = vehicleList
-    currentVariation.value = findVariation(trackData, variationSlug)
-    if (!currentVariation.value) {
-      pushToast('Variation not found', 'error')
-      return
+export default {
+  name: 'TrackDetailPage',
+  components: { RaceRow, DriverScope, VehicleBestLapChart, VariationAnnotations, ColumnFilterMenu, FilterDrawer, PerformanceIndexBadge, PlacementRateTiles, LapTimeInput, SortHeader, SortMenu },
+  mixins: [scopedPage, raceTable],
+  raceTable: {
+    storageKey: 'wreckfest:columns:trackDetail',
+    columns: TABLE_COLUMNS.map(c => c.key),
+    defaultHidden: ['weight', 'tune', 'gap', 'assists', 'parts'],
+    filters: {
+      driver: DRIVER_FILTER,
+      vehicleId: { value: (race, vm) => vehicleOf(race, vm)?.id ?? UNRESOLVED_VEHICLE, label: vehicleLabel },
+      performanceIndex: PI_FILTER,
+      tuning: { value: tuneKey, label: tuneKey, numeric: true },
+      place: { value: placeKey, label: placeKey, numeric: true },
+      favorite: FAVORITE_FILTER
+    },
+    sortValues: {
+      when: race => new Date(race.datetime).getTime(),
+      driver: race => race.driverName,
+      vehicle: vehicleLabel,
+      pi: race => race.performance_index,
+      weight: race => race.vehicle_weight_kg,
+      tune: race => race.tuning,
+      assists: race => formatAssists(race.assists),
+      place: race => race.place,
+      laps: lapCount,
+      lap: race => race.lap_time_ms,
+      gap: (race, vm) => (race.lap_time_ms != null && vm.goalLapTimeMs != null) ? race.lap_time_ms - vm.goalLapTimeMs : null,
+      total: race => race.total_time_ms
     }
-    quickAddStore.currentPageVariationId = currentVariation.value.id
-    await Promise.all([loadRaces(), loadGoal(), loadAnnotations()])
-  } catch (err) {
-    pushToast(err.message || 'Failed to load track', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-function isTypingTarget(el) {
-  if (!el) return false
-  const tag = (el.tagName || '').toLowerCase()
-  if (tag === 'input' || tag === 'textarea' || tag === 'select') return true
-  if (el.isContentEditable) return true
-  return false
-}
-
-function onAddRow() {
-  quickAddOpenedHere = true
-  openQuickAdd(currentVariation.value.id)
-}
-
-function onAddRaceKeydown(event) {
-  if (event.ctrlKey || event.metaKey || event.altKey) return
-  if (isTypingTarget(event.target)) return
-  if (event.key !== 'a' && event.key !== 'A') return
-  if (quickAddStore.open || showImageModal.value) return
-  if (!currentVariation.value || !isOwnView.value) return
-  event.preventDefault()
-  onAddRow()
-}
-
-function openImageModal() {
-  showImageModal.value = true
-}
-function closeImageModal() {
-  showImageModal.value = false
-}
-
-function startEditNotes() {
-  notesInput.value = trackNotes.value
-  notesEditMode.value = true
-  nextTick(() => notesTextarea.value?.focus())
-}
-function cancelEditNotes() {
-  notesEditMode.value = false
-}
-async function saveNotes() {
-  try {
-    const userId = authStore.user && authStore.user.id
-    goal.value = await upsertGoal({
-      variationId: currentVariation.value.id,
-      goalLapTimeMs: goalLapTimeMs.value,
-      notes: notesInput.value,
-      userId
+  },
+  data() {
+    return {
+      prefs: prefsStore,
+      loading: true,
+      track: null,
+      currentVariation: null,
+      vehicles: [],
+      races: [],
+      // Your goal for this variation; it also holds your track notes.
+      goal: null,
+      goalInputMs: null,
+      annotations: [],
+      showImageModal: false,
+      notesEditMode: false,
+      notesInput: '',
+      // Community mode pages through races COMMUNITY_PAGE_SIZE at a time, like /community/races.
+      hasMore: false,
+      loadingMore: false,
+      COMMUNITY_PAGE_SIZE,
+      editIcon,
+      closeIcon,
+      columnsIcon,
+      starIcon,
+      starFillIcon
+    }
+  },
+  computed: {
+    // Δ goal needs your goal, so it doesn't exist on anyone else's page — not
+    // as a column, nor in the picker. Driver only exists on the community page.
+    availableColumns() {
+      return TABLE_COLUMNS.filter(c => (this.isOwnView || c.key !== 'gap') && (this.isCommunity || c.key !== 'driver'))
+    },
+    columnOptions() {
+      return this.availableColumns.map(c => ({ value: c.key, label: c.label }))
+    },
+    // What RaceRow renders, so a header can never sit over no cells.
+    visibleColumnKeys() {
+      return this.availableColumns.map(c => c.key).filter(this.isVisible)
+    },
+    // Every visible column, plus Actions, plus the favorite star's when signed in.
+    tableColspan() {
+      return this.visibleColumnKeys.length + 1 + (this.isSignedIn ? 1 : 0)
+    },
+    // The mobile drawer's sort choices: visible columns only, and never Parts.
+    sortableColumns() {
+      return this.availableColumns.filter(c => c.key !== 'parts' && this.isVisible(c.key))
+    },
+    // " in class C" for the empty states while the nav's class filter is on.
+    classSuffix() {
+      return this.prefs.piClass ? ` in class ${this.prefs.piClass}` : ''
+    },
+    trackImage() {
+      return this.track ? trackImageUrl(this.track.slug) : ''
+    },
+    goalLapTimeMs() {
+      return this.goal ? this.goal.goal_lap_time_ms : null
+    },
+    // A 0 lap_time_ms means no completed lap was recorded, not a zero lap, so
+    // it never wins.
+    personalBestMs() {
+      const valid = this.filteredRaces.map(r => r.lap_time_ms).filter(v => !!v)
+      return valid.length ? Math.min(...valid) : null
+    },
+    // The race that set it — community mode credits its driver.
+    bestRace() {
+      return this.personalBestMs == null ? null : this.filteredRaces.find(r => r.lap_time_ms === this.personalBestMs)
+    },
+    gapMs() {
+      return this.personalBestMs == null || this.goalLapTimeMs == null ? null : this.personalBestMs - this.goalLapTimeMs
+    },
+    trackNotes() {
+      return this.goal ? (this.goal.notes || '') : ''
+    },
+    trackNotesHtml() {
+      return this.trackNotes ? DOMPurify.sanitize(marked.parse(this.trackNotes)) : ''
+    },
+    placementRates() {
+      return { 3: placementRate(this.filteredRaces, 3), 5: placementRate(this.filteredRaces, 5), 10: placementRate(this.filteredRaces, 10) }
+    }
+  },
+  watch: {
+    '$route.params': 'loadAll',
+    'prefs.piClass'() {
+      if (!this.currentVariation) return
+      this.resetColumnFilters()
+      this.loadRaces().catch(err => pushToast(err.message || 'Failed to load races', 'error'))
+    }
+  },
+  mounted() {
+    document.addEventListener('keydown', this.onKeydown)
+    setOnRaceSaved(variationId => {
+      if (variationId === this.currentVariation?.id) this.loadRaces()
     })
-    notesEditMode.value = false
-    pushToast('Notes saved', 'success', 1500)
-  } catch (err) {
-    pushToast(err.message || 'Failed to save notes', 'error')
+    this.loadAll()
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.onKeydown)
+    setOnRaceSaved(null)
+  },
+  methods: {
+    formatMsToTime,
+    formatDelta,
+    variationImageUrl,
+    isShown(key) {
+      return this.visibleColumnKeys.includes(key)
+    },
+    async loadAll() {
+      this.loading = true
+      this.resetColumnFilters()
+      const { trackSlug, variationSlug } = this.$route.params
+      try {
+        const [track, vehicles] = await Promise.all([getTrackBySlug(trackSlug), getVehicles()])
+        this.track = track
+        this.vehicles = vehicles
+        this.currentVariation = track?.track_variations?.find(v => v.slug === variationSlug) || null
+        if (!this.currentVariation) {
+          pushToast('Variation not found', 'error')
+          return
+        }
+        await Promise.all([this.loadRaces(), this.loadGoal(), this.loadAnnotations()])
+      } catch (err) {
+        pushToast(err.message || 'Failed to load track', 'error')
+      } finally {
+        this.loading = false
+      }
+    },
+    async loadRaces() {
+      // A newer load (variation or class changed) supersedes this one, and
+      // any older loadMoreRaces() page with it.
+      const token = (this.loadToken = (this.loadToken || 0) + 1)
+      const piClass = prefsStore.piClass
+      if (this.isCommunity) {
+        const page = await getCommunityRaces({ variationId: this.currentVariation.id, piClass })
+        if (token !== this.loadToken) return
+        this.races = page
+        this.fetchedCount = page.length
+        this.hasMore = page.length === COMMUNITY_PAGE_SIZE
+        return
+      }
+      const races = await getRacesByVariation(this.currentVariation.id, this.userId, { piClass })
+      if (token !== this.loadToken) return
+      this.races = races
+      this.hasMore = false
+    },
+    // Same offset paging (and overlap de-dupe) as RacesPage's loadMore().
+    async loadMoreRaces() {
+      this.loadingMore = true
+      const token = this.loadToken
+      try {
+        const page = await getCommunityRaces({ variationId: this.currentVariation.id, piClass: prefsStore.piClass, offset: this.fetchedCount })
+        if (token !== this.loadToken) return
+        const seen = new Set(this.races.map(r => r.id))
+        this.races = this.races.concat(page.filter(r => !seen.has(r.id)))
+        this.fetchedCount += page.length
+        this.hasMore = page.length === COMMUNITY_PAGE_SIZE
+      } catch (err) {
+        pushToast(err.message || 'Failed to load older races', 'error')
+      } finally {
+        this.loadingMore = false
+      }
+    },
+    // Goals and annotations are RLS-scoped to the signed-in user, so these
+    // always fetch *yours*, even on another driver's page — where your goal
+    // must still load so saving your notes keeps it.
+    async loadGoal() {
+      this.goal = this.isSignedIn ? await getGoalForVariation(this.currentVariation.id) : null
+      this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
+    },
+    async loadAnnotations() {
+      this.annotations = this.isSignedIn ? await getAnnotationsForVariation(this.currentVariation.id) : []
+    },
+    onAddRow() {
+      openQuickAdd(this.currentVariation.id)
+    },
+    onKeydown(event) {
+      if (event.key === 'Escape') this.showImageModal = false
+      // A: add a race here — your own page only.
+      if (event.key !== 'a' && event.key !== 'A') return
+      if (!isPlainKeypress(event) || modals.quickAdd || this.showImageModal) return
+      if (!this.currentVariation || !this.isOwnView) return
+      event.preventDefault()
+      this.onAddRow()
+    },
+    startEditNotes() {
+      this.notesInput = this.trackNotes
+      this.notesEditMode = true
+      this.$nextTick(() => this.$refs.notesTextarea?.focus())
+    },
+    // Notes and goal share a row, so each save carries the other along.
+    async saveGoal(patch, success, failure) {
+      try {
+        this.goal = await upsertGoal({
+          variationId: this.currentVariation.id,
+          goalLapTimeMs: this.goalLapTimeMs,
+          notes: this.trackNotes,
+          ...patch,
+          userId: authStore.user && authStore.user.id
+        })
+        pushToast(success, 'success', 1500)
+        return true
+      } catch (err) {
+        pushToast(err.message || failure, 'error')
+        return false
+      }
+    },
+    async saveNotes() {
+      if (await this.saveGoal({ notes: this.notesInput }, 'Notes saved', 'Failed to save notes')) this.notesEditMode = false
+    },
+    onSaveGoal() {
+      const ms = this.goalInputMs
+      if (!ms || (this.goal && this.goal.goal_lap_time_ms === ms)) return
+      this.saveGoal({ goalLapTimeMs: ms }, 'Goal saved', 'Failed to save goal')
+    },
+    async onSaveAnnotations(annotations) {
+      try {
+        this.annotations = await saveAnnotations({ variationId: this.currentVariation.id, annotations, userId: authStore.user && authStore.user.id })
+        pushToast('Annotations saved', 'success', 1500)
+      } catch (err) {
+        pushToast(err.message || 'Failed to save annotations', 'error')
+      }
+    },
+    async onUpdateRace({ id, patch }) {
+      try {
+        const updated = await updateRace(id, patch)
+        const idx = this.races.findIndex(r => r.id === id)
+        // updateRace() doesn't bring the driver's name back; the community view shows it.
+        if (idx !== -1) this.races.splice(idx, 1, { ...updated, driverName: this.races[idx].driverName })
+        pushToast('Race updated', 'success', 1500)
+      } catch (err) {
+        pushToast(err.message || 'Failed to update race', 'error')
+      }
+    },
+    async onDeleteRace(id) {
+      try {
+        await deleteRace(id)
+        this.races = this.races.filter(r => r.id !== id)
+        pushToast('Race deleted', 'success', 1500)
+      } catch (err) {
+        pushToast(err.message || 'Failed to delete race', 'error')
+      }
+    }
   }
 }
-
-async function onSaveAnnotations(newAnnotations) {
-  try {
-    const userId = authStore.user && authStore.user.id
-    annotations.value = await saveAnnotations({
-      variationId: currentVariation.value.id,
-      annotations: newAnnotations,
-      userId
-    })
-    pushToast('Annotations saved', 'success', 1500)
-  } catch (err) {
-    pushToast(err.message || 'Failed to save annotations', 'error')
-  }
-}
-
-async function onUpdateRace({ id, patch }) {
-  try {
-    const updated = await updateRace(id, patch)
-    const idx = races.value.findIndex(r => r.id === id)
-    // updateRace() doesn't bring the driver's name back; the community view shows it.
-    if (idx !== -1) races.value.splice(idx, 1, { ...updated, driverName: races.value[idx].driverName })
-    pushToast('Race updated', 'success', 1500)
-  } catch (err) {
-    pushToast(err.message || 'Failed to update race', 'error')
-  }
-}
-async function onDeleteRace(id) {
-  try {
-    await deleteRace(id)
-    races.value = races.value.filter(r => r.id !== id)
-    pushToast('Race deleted', 'success', 1500)
-  } catch (err) {
-    pushToast(err.message || 'Failed to delete race', 'error')
-  }
-}
-async function onSaveGoal() {
-  const ms = goalInputMs.value
-  if (!ms) return
-  if (goal.value && goal.value.goal_lap_time_ms === ms) return
-  try {
-    const userId = authStore.user && authStore.user.id
-    goal.value = await upsertGoal({
-      variationId: currentVariation.value.id,
-      goalLapTimeMs: ms,
-      notes: trackNotes.value,
-      userId
-    })
-    pushToast('Goal saved', 'success', 1500)
-  } catch (err) {
-    pushToast(err.message || 'Failed to save goal', 'error')
-  }
-}
-
-watch(() => route.params, loadAll)
-watch(() => prefsStore.piClass, () => {
-  if (!currentVariation.value) return
-  resetColumnFilters()
-  loadRaces().catch(err => pushToast(err.message || 'Failed to load races', 'error'))
-})
-watch(() => quickAddStore.open, (isOpen) => {
-  if (!isOpen && quickAddOpenedHere) {
-    quickAddOpenedHere = false
-    loadRaces()
-  }
-})
-
-useEventListener(document, 'keydown', (e) => { if (e.key === 'Escape') closeImageModal() })
-useEventListener(document, 'keydown', onAddRaceKeydown)
-
-onMounted(() => {
-  setOnRaceSaved((variationId) => {
-    if (variationId === currentVariation.value?.id) loadRaces()
-  })
-  loadAll()
-})
-
-onUnmounted(() => {
-  quickAddStore.currentPageVariationId = null
-  clearOnRaceSaved()
-})
 </script>

@@ -120,9 +120,9 @@
 </template>
 
 <script>
-import { getAllApiKeys, adminDeleteApiKey } from '../services/adminService.js'
-import { pushToast } from '../stores/toastStore.js'
-import { formatDateTime } from '../utils/dateFormat.js'
+import { getAllApiKeys, adminDeleteApiKey } from '../api.js'
+import { pushToast } from '../stores.js'
+import { formatDateTime } from '../utils/format.js'
 
 export default {
   name: 'AdminApiKeysPage',

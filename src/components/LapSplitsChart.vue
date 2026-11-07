@@ -1,115 +1,83 @@
 <template>
   <!-- contain-inline-size: keeps the canvas's px width out of the races
        table's min-content width (.wide-table-page), so it can still shrink. -->
-  <div v-if="hasData" class="relative h-48 [contain:inline-size]">
+  <div v-if="chartData" class="relative h-48 [contain:inline-size]">
     <canvas ref="canvas"></canvas>
   </div>
 </template>
 
-<script setup>
-import { computed, watch, nextTick, ref, onMounted } from 'vue'
-import {
-  Chart,
-  LineController,
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js'
-import { prefsStore } from '../stores/prefsStore.js'
-import { useChart } from '../composables/useChart.js'
-import { getChartTheme } from '../utils/chartTheme.js'
-import { formatMsCompact } from '../utils/timeFormat.js'
-
-Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, Filler)
+<script>
+import { chartMixin, getChartTheme } from '../utils/chart.js'
+import { formatMsCompact } from '../utils/format.js'
 
 const LINE_COLOR = '#C41E1E' // brand red
 
-const props = defineProps({
-  // Per-lap times in milliseconds, in lap order (index 0 = lap 1).
-  lapTimes: { type: Array, default: () => [] }
-})
-
-const canvas = ref(null)
-const { render } = useChart(canvas)
-
-const isDark = computed(() => prefsStore.darkMode)
-
-const chartData = computed(() => {
-  const laps = Array.isArray(props.lapTimes) ? props.lapTimes : []
-  if (!laps.some(ms => ms != null)) return null
-
-  return {
-    labels: laps.map((_, i) => `Lap ${i + 1}`),
-    datasets: [{
-      label: 'Lap time',
-      data: laps.map(ms => (ms == null ? null : Number(ms))),
-      borderColor: LINE_COLOR,
-      backgroundColor: LINE_COLOR + '18',
-      borderWidth: 2.5,
-      pointRadius: 4,
-      pointHoverRadius: 7,
-      pointBackgroundColor: LINE_COLOR,
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-      tension: 0.35,
-      fill: false,
-      spanGaps: true
-    }]
-  }
-})
-
-const hasData = computed(() => chartData.value !== null)
-
-function renderChart() {
-  if (!chartData.value || !canvas.value) return
-
-  const theme = getChartTheme(isDark.value)
-
-  render({
-    type: 'line',
-    data: chartData.value,
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          ...theme.tooltip,
-          callbacks: {
-            label: ctx => {
-              const ms = ctx.parsed.y
-              if (ms == null) return ''
-              return `  ${formatMsCompact(ms)}`
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: theme.gridColor, drawBorder: false },
-          border: { display: false },
-          ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45 }
-        },
-        y: {
-          grid: { color: theme.gridColor, drawBorder: false },
-          border: { display: false },
-          ticks: {
-            color: theme.tickColor,
-            font: { size: 11 },
-            callback: ms => formatMsCompact(ms)
-          }
-        }
+export default {
+  name: 'LapSplitsChart',
+  mixins: [chartMixin],
+  props: {
+    // Per-lap times in milliseconds, in lap order (index 0 = lap 1).
+    lapTimes: { type: Array, default: () => [] }
+  },
+  computed: {
+    chartData() {
+      const laps = Array.isArray(this.lapTimes) ? this.lapTimes : []
+      if (!laps.some(ms => ms != null)) return null
+      return {
+        labels: laps.map((_, i) => `Lap ${i + 1}`),
+        datasets: [{
+          label: 'Lap time',
+          data: laps.map(ms => (ms == null ? null : Number(ms))),
+          borderColor: LINE_COLOR,
+          backgroundColor: LINE_COLOR + '18',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointHoverRadius: 7,
+          pointBackgroundColor: LINE_COLOR,
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          tension: 0.35,
+          fill: false,
+          spanGaps: true
+        }]
       }
     }
-  })
+  },
+  watch: {
+    chartData() { this.$nextTick(this.renderChart) },
+    isDark() { this.$nextTick(this.renderChart) }
+  },
+  mounted() {
+    this.renderChart()
+  },
+  methods: {
+    renderChart() {
+      if (!this.chartData) return
+      const theme = getChartTheme(this.isDark)
+      const axis = { grid: { color: theme.gridColor, drawBorder: false }, border: { display: false } }
+      this.drawChart('canvas', {
+        type: 'line',
+        data: this.chartData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'nearest', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              ...theme.tooltip,
+              callbacks: {
+                label: ctx => ctx.parsed.y == null ? '' : `  ${formatMsCompact(ctx.parsed.y)}`
+              }
+            }
+          },
+          scales: {
+            x: { ...axis, ticks: { color: theme.tickColor, font: { size: 11 }, maxRotation: 45 } },
+            y: { ...axis, ticks: { color: theme.tickColor, font: { size: 11 }, callback: ms => formatMsCompact(ms) } }
+          }
+        }
+      })
+    }
+  }
 }
-
-watch(chartData, () => nextTick(renderChart))
-watch(isDark, () => nextTick(renderChart))
-onMounted(renderChart)
 </script>
