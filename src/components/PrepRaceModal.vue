@@ -66,17 +66,17 @@
                   <div class="truncate text-brand-text dark:text-brand-text-dark">{{ vehicleName(c.lap) }}</div>
                   <div
                     v-if="hasParts(c.lap.parts) || c.lap.tuning != null || c.lap.vehicle_weight_kg != null"
-                    class="sm:hidden mt-1 flex items-center gap-2 text-xs tabular text-brand-secondary dark:text-brand-secondary-dark"
+                    class="sm:hidden mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs tabular text-brand-secondary dark:text-brand-secondary-dark"
                   >
                     <PartsBadge v-if="hasParts(c.lap.parts)" :parts="c.lap.parts" />
-                    <span v-if="c.lap.tuning != null">Tune {{ c.lap.tuning }}</span>
-                    <span v-if="c.lap.vehicle_weight_kg != null">{{ c.lap.vehicle_weight_kg }} kg</span>
+                    <span v-if="c.lap.tuning != null" class="whitespace-nowrap text-sm text-brand-muted dark:text-brand-muted-dark">Tune {{ c.lap.tuning }}</span>
+                    <span v-if="c.lap.vehicle_weight_kg != null" class="whitespace-nowrap text-sm text-brand-muted dark:text-brand-muted-dark">{{ c.lap.vehicle_weight_kg }} kg</span>
                   </div>
                 </td>
-                <td class="hidden sm:table-cell py-2 pr-2 text-center text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.tuning ?? '—' }}</td>
+                <td class="hidden sm:table-cell py-2 pr-2 text-center text-brand-muted dark:text-brand-muted-dark">{{ c.lap.tuning ?? '—' }}</td>
                 <td class="hidden sm:table-cell py-2 pr-2"><PartsBadge :parts="c.lap.parts" /></td>
                 <td class="py-2 pr-2 whitespace-nowrap"><PerformanceIndexBadge :value="c.lap.performance_index" /></td>
-                <td class="hidden sm:table-cell py-2 pr-2 text-right tabular whitespace-nowrap text-brand-secondary dark:text-brand-secondary-dark">{{ c.lap.vehicle_weight_kg != null ? c.lap.vehicle_weight_kg + ' kg' : '—' }}</td>
+                <td class="hidden sm:table-cell py-2 pr-2 text-right tabular whitespace-nowrap text-brand-muted dark:text-brand-muted-dark">{{ c.lap.vehicle_weight_kg != null ? c.lap.vehicle_weight_kg + ' kg' : '—' }}</td>
                 <td class="py-2 text-right tabular font-semibold">{{ formatMsToTime(c.lap.lap_time_ms) }}</td>
               </template>
             </tr>
