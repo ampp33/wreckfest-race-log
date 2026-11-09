@@ -116,7 +116,7 @@
         @save="onSaveAnnotations"
       />
 
-      <VehicleBestLapChart :races="filteredRaces" :vehicles="vehicles" />
+      <VehicleBestLapChart :races="statRaces" :vehicles="vehicles" />
 
       <div class="grid grid-cols-2 gap-6 mb-8" :class="{ 'lg:grid-cols-4': isOwnView }">
         <div class="rule-top pt-3">
@@ -143,7 +143,7 @@
         </div>
         <div class="rule-top pt-3">
           <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
-          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ races.length }}{{ hasMore ? '+' : '' }}</div>
+          <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ statRaces.length }}{{ hasMore ? '+' : '' }}</div>
         </div>
       </div>
 
@@ -557,13 +557,13 @@ const personalBestMs = computed(() => {
   // A 0 lap_time_ms means no completed lap was recorded (same convention
   // VehicleBestLapChart.vue uses), not an actual zero-millisecond lap — treat it
   // like a missing time rather than letting it win every "personal best".
-  const valid = filteredRaces.value.map(r => r.lap_time_ms).filter(v => !!v)
+  const valid = statRaces.value.map(r => r.lap_time_ms).filter(v => !!v)
   if (!valid.length) return null
   return Math.min(...valid)
 })
 // The race that set the best lap — community mode credits its driver.
 const bestRace = computed(() => (
-  personalBestMs.value == null ? null : filteredRaces.value.find(r => r.lap_time_ms === personalBestMs.value)
+  personalBestMs.value == null ? null : statRaces.value.find(r => r.lap_time_ms === personalBestMs.value)
 ))
 const pbDisplay = computed(() => personalBestMs.value != null ? formatMsToTime(personalBestMs.value) : '—')
 const gapMs = computed(() => {
@@ -679,9 +679,12 @@ const favoriteOptions = computed(() => sortOptions(
 const filteredRaces = computed(() => races.value.filter(race => matchesFilters(race)))
 const sortedRaces = computed(() => sortRows(filteredRaces.value, sort.state, SORT_VALUE_GETTERS))
 
-const top3Rate = computed(() => placementRate(filteredRaces.value, 3))
-const top5Rate = computed(() => placementRate(filteredRaces.value, 5))
-const top10Rate = computed(() => placementRate(filteredRaces.value, 10))
+// Stats and the chart skip races with no vehicle_id (modded cars, invalid races).
+const statRaces = computed(() => filteredRaces.value.filter(r => r.vehicle_id))
+
+const top3Rate = computed(() => placementRate(statRaces.value, 3))
+const top5Rate = computed(() => placementRate(statRaces.value, 5))
+const top10Rate = computed(() => placementRate(statRaces.value, 10))
 
 function resetColumnFilters() {
   columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] }

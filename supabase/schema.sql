@@ -1456,7 +1456,9 @@ as $$
           and r.source = 'api'
           and (p_pi_class is null or r.pi_class = p_pi_class)
           and (p_vehicle_id is null or r.vehicle_id = p_vehicle_id)
-          and (p_exclude_vehicle_ids is null or r.vehicle_id is null or r.vehicle_id <> all(p_exclude_vehicle_ids))
+          -- No vehicle_id means a modded car or an invalid race.
+          and r.vehicle_id is not null
+          and (p_exclude_vehicle_ids is null or r.vehicle_id <> all(p_exclude_vehicle_ids))
         order by r.track_variation_id, r.lap_time_ms, r.datetime
     ) best
     join wf1.track_variations tv on tv.id = best.track_variation_id
@@ -1501,6 +1503,7 @@ as $$
         left join wf1.vehicles v on v.id = r.vehicle_id
         where r.source = 'api'
           and r.track_variation_id = p_variation_id
+          and r.vehicle_id is not null
           and r.lap_time_ms > 0
           and r.pi_class is not null
 
@@ -1546,6 +1549,8 @@ as $$
         left join wf1.vehicles v on lower(v.name) = lower(e.entry->>'car')
         where r.source = 'api'
           and r.track_variation_id = p_variation_id
+          -- Skip modded-car / invalid races (no vehicle_id), rosters included.
+          and r.vehicle_id is not null
           and r.results_roster is not null
           and jsonb_typeof(r.results_roster) = 'array'
           and c.pi_class is not null
