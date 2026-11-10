@@ -51,7 +51,7 @@
           <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 mb-6 max-w-2xl">
             <li><b class="text-brand-text dark:text-brand-text-dark">Whose races</b> — the first icon. Everyone, your own log, a driver you've looked at lately, or find one by name. Clicking a driver's name anywhere opens their log too.</li>
             <li><b class="text-brand-text dark:text-brand-text-dark">Car class</b> — the icon beside it. All, D, C, B or A narrows leaderboards, tracks, races and stats to that class, and stays picked until you change it.</li>
-            <li><b class="text-brand-text dark:text-brand-text-dark">The view</b> — Leaderboard (everyone only), Tracks, Races, Stats, and Profile on your own log. Switch whose races and you stay on the same view.</li>
+            <li><b class="text-brand-text dark:text-brand-text-dark">The view</b> — Leaderboard, Tracks, Races, Stats, and Profile on your own log. Switch whose races and you stay on the same view.</li>
           </ul>
           <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mb-6 max-w-2xl">
             Rather keep your races to yourself? Make them private in <router-link to="/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Profile settings</router-link>. Notes, map annotations, goals and API keys are always yours alone.

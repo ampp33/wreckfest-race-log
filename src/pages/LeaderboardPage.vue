@@ -254,7 +254,7 @@ export default {
     const { classKey, lapsKey, piClass, vehicleId } = this
     try {
       const [mostRaces, fastestLaps] = await Promise.all([
-        getMostRacesLeaderboard(25, piClass),
+        getMostRacesLeaderboard(10, piClass),
         getFastestLaps(piClass, vehicleId),
         // The dropdown is a nice-to-have; without it the boards still work.
         getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {})
@@ -272,7 +272,7 @@ export default {
       if (key in this.mostRacesByClass) return
       this.mostRacesFailed = { ...this.mostRacesFailed, [key]: false }
       try {
-        const rows = await getMostRacesLeaderboard(25, this.piClass)
+        const rows = await getMostRacesLeaderboard(10, this.piClass)
         this.mostRacesByClass = { ...this.mostRacesByClass, [key]: rows }
       } catch (err) {
         this.mostRacesFailed = { ...this.mostRacesFailed, [key]: true }
