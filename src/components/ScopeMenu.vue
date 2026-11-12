@@ -2,20 +2,20 @@
   <!-- "Whose races?" — the scope picker's list: everyone, you, the drivers
        you looked at lately, and a search for anyone else. The same list
        renders as the red mobile drop-down and the dark desktop dropdown. -->
-  <div :class="variant === 'red' ? 'text-white' : 'text-brand-text-dark'">
+  <div :class="[variant === 'red' ? 'text-white' : 'text-brand-text-dark', alignRight ? 'text-right' : 'text-left']">
     <div class="ov pt-3 pb-2" :class="mutedClass">Whose races</div>
     <button
       v-for="row in mainRows"
       :key="row.key"
       type="button"
-      class="w-full min-h-[48px] flex items-center gap-3 text-left text-[15px]"
+      class="w-full min-h-[48px] flex items-center gap-3 text-[15px] [text-align:inherit]"
       :class="[rowClass, isCurrent(row.scope) ? 'font-bold' : 'font-medium']"
       @click="$emit('pick', row.scope)"
     >
       <span class="w-8 h-8 shrink-0 flex items-center justify-center" :class="badgeClass(row.scope)">
         <ScopeIcon :kind="row.scope.kind" :name="row.name" icon-class="w-4 h-4" />
       </span>
-      <span class="flex-1 min-w-0 truncate">{{ row.label }}</span>
+      <span class="min-w-0 truncate" :class="alignRight ? 'flex-initial' : 'flex-1'">{{ row.label }}</span>
       <span class="w-4 text-center font-black" :class="checkClass">{{ isCurrent(row.scope) ? '✓' : '' }}</span>
     </button>
 
@@ -25,14 +25,14 @@
         v-for="row in recentRows"
         :key="row.key"
         type="button"
-        class="w-full min-h-[48px] flex items-center gap-3 text-left text-[15px]"
+        class="w-full min-h-[48px] flex items-center gap-3 text-[15px] [text-align:inherit]"
         :class="[rowClass, isCurrent(row.scope) ? 'font-bold' : 'font-medium']"
         @click="$emit('pick', row.scope)"
       >
         <span class="w-8 h-8 shrink-0 flex items-center justify-center text-[14px]" :class="badgeClass(row.scope)">
           <ScopeIcon kind="driver" :name="row.name" />
         </span>
-        <span class="flex-1 min-w-0 truncate">{{ row.label }}</span>
+        <span class="min-w-0 truncate" :class="alignRight ? 'flex-initial' : 'flex-1'">{{ row.label }}</span>
         <span class="w-4 text-center font-black" :class="checkClass">{{ isCurrent(row.scope) ? '✓' : '' }}</span>
       </button>
     </template>
@@ -44,7 +44,7 @@
         type="search"
         placeholder="Find a driver"
         aria-label="Find a driver"
-        class="flex-1 min-w-0 h-10 bg-transparent border-0 text-[15px] focus:outline-none"
+        class="flex-1 min-w-0 h-10 bg-transparent border-0 text-[15px] [text-align:inherit] focus:outline-none"
         :class="variant === 'red' ? 'placeholder:text-white/70' : 'placeholder:text-brand-muted-dark'"
       />
     </label>
@@ -55,14 +55,14 @@
         v-for="row in resultRows"
         :key="row.key"
         type="button"
-        class="w-full min-h-[48px] flex items-center gap-3 text-left text-[15px] font-medium"
+        class="w-full min-h-[48px] flex items-center gap-3 text-[15px] [text-align:inherit] font-medium"
         :class="rowClass"
         @click="$emit('pick', row.scope)"
       >
         <span class="w-8 h-8 shrink-0 flex items-center justify-center text-[14px]" :class="badgeClass(row.scope)">
           <ScopeIcon :kind="row.scope.kind" :name="row.name" icon-class="w-4 h-4" />
         </span>
-        <span class="flex-1 min-w-0 truncate">{{ row.label }}</span>
+        <span class="min-w-0 truncate" :class="alignRight ? 'flex-initial' : 'flex-1'">{{ row.label }}</span>
       </button>
     </div>
   </div>
@@ -81,6 +81,8 @@ export default {
   props: {
     // 'red' (the mobile drop-down slab) or 'dark' (the desktop dropdown).
     variant: { type: String, default: 'red' },
+    // Right-align the text (the mobile drop-down, which hangs off the right edge).
+    alignRight: { type: Boolean, default: false },
     // The scope being shown now, to tick.
     current: { type: Object, default: null },
     myId: { type: String, default: null },
@@ -124,15 +126,20 @@ export default {
       return this.variant === 'red' ? 'text-white/70' : 'text-brand-muted-dark'
     },
     rowClass() {
-      return this.variant === 'red'
-        ? 'border-b border-white/20'
-        : 'px-2 -mx-2 hover:bg-brand-border-dark'
+      return [
+        this.variant === 'red' ? 'border-b border-white/20' : 'px-2 -mx-2 hover:bg-brand-border-dark',
+        // Mirrored, so the icon sits on the right beside the right-aligned label.
+        this.alignRight && 'flex-row-reverse'
+      ]
     },
     checkClass() {
       return this.variant === 'red' ? 'text-white' : 'text-brand-accent-dark'
     },
     inputWrapClass() {
-      return this.variant === 'red' ? 'bg-white/15 text-white' : 'bg-brand-border-dark text-brand-text-dark'
+      return [
+        this.variant === 'red' ? 'bg-white/15 text-white' : 'bg-brand-border-dark text-brand-text-dark',
+        this.alignRight && 'flex-row-reverse'
+      ]
     }
   },
   watch: {

@@ -2,21 +2,21 @@
   <!-- "Car class" — the class filter's list: every class, or one of D–A.
        The same dark list renders as the desktop dropdown and the mobile
        drop-down. -->
-  <div class="text-brand-text-dark">
+  <div class="text-brand-text-dark" :class="alignRight ? 'text-right' : 'text-left'">
     <div class="ov pt-3 pb-2 text-brand-muted-dark">Car class</div>
     <button
       v-for="row in rows"
       :key="row.key"
       type="button"
-      class="w-full min-h-[48px] px-2 -mx-2 flex items-center gap-3 text-left text-[15px] hover:bg-brand-border-dark"
-      :class="row.value === current ? 'font-bold' : 'font-medium'"
+      class="w-full min-h-[48px] px-2 -mx-2 flex items-center gap-3 text-[15px] [text-align:inherit] hover:bg-brand-border-dark"
+      :class="[row.value === current ? 'font-bold' : 'font-medium', alignRight && 'flex-row-reverse']"
       :aria-pressed="row.value === current"
       @click="$emit('pick', row.value)"
     >
       <span class="w-8 h-8 shrink-0 flex items-center justify-center text-[15px] bg-brand-border-dark" :style="badgeStyle(row.value)">
         <ClassIcon :cls="row.value" />
       </span>
-      <span class="flex-1 min-w-0 truncate">{{ row.label }}</span>
+      <span class="min-w-0 truncate" :class="alignRight ? 'flex-initial' : 'flex-1'">{{ row.label }}</span>
       <span class="text-[12px] tabular text-brand-muted-dark">{{ row.detail }}</span>
       <span class="w-4 text-center font-black text-brand-accent-dark">{{ row.value === current ? '✓' : '' }}</span>
     </button>
@@ -32,7 +32,9 @@ export default {
   components: { ClassIcon },
   props: {
     // The class being shown now ('A'..'D'), or null for all, to tick.
-    current: { type: String, default: null }
+    current: { type: String, default: null },
+    // Right-align the text (the mobile drop-down, which hangs off the right edge).
+    alignRight: { type: Boolean, default: false }
   },
   emits: ['pick'],
   computed: {

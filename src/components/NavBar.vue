@@ -252,6 +252,7 @@
           <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
             <ScopeMenu
               variant="red"
+              align-right
               :current="scope"
               :my-id="myId"
               :my-name="myName"
@@ -265,20 +266,20 @@
       <div v-else-if="mobileMenu === 'class'" key="class" class="min-[1200px]:hidden grid bg-brand-slab dark:bg-brand-surface-dark dark:border-b dark:border-brand-border-dark font-body">
         <div class="overflow-hidden">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
-            <ClassMenu :current="prefs.piClass" @pick="pickClass" />
+            <ClassMenu align-right :current="prefs.piClass" @pick="pickClass" />
           </div>
         </div>
       </div>
 
       <div v-else-if="mobileMenu === 'menu'" key="menu" class="min-[1200px]:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
         <div class="overflow-hidden">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 text-right">
             <div class="ov text-white/70 pt-3 pb-2">{{ scopeLabel }}</div>
             <router-link
               v-for="view in views"
               :key="view.key"
               :to="view.to"
-              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+              class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
               :class="{ 'font-bold': view.active }"
               @click="mobileMenu = null"
             >{{ view.label }}</router-link>
@@ -290,7 +291,7 @@
                 v-for="item in telemetryItems"
                 :key="item.to"
                 :to="item.to"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >{{ item.label }}</router-link>
@@ -299,7 +300,7 @@
               <div class="ov text-white/70 pt-4 pb-2">More</div>
               <router-link
                 to="/plugin"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >Install Plugin</router-link>
@@ -311,7 +312,7 @@
                 v-for="item in adminItems"
                 :key="item.to"
                 :to="item.to"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >{{ item.label }}</router-link>
@@ -321,19 +322,19 @@
               <div class="ov text-white/70 pt-4 pb-2">More</div>
               <router-link
                 to="/help"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >Help</router-link>
               <router-link
                 to="/news"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                class="flex min-h-[44px] items-center justify-end border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
               >News</router-link>
             </template>
 
-            <div class="flex gap-2 pt-3 pb-2">
+            <div class="flex justify-end gap-2 pt-3 pb-2">
               <button
                 type="button"
                 class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
