@@ -25,16 +25,17 @@ function scopePrefix(scope, myId) {
   return `/${scope.kind === 'you' ? myId : scope.userId}`
 }
 
-// The pages a scope has, in nav order. Leaderboard only exists for
-// everyone, Profile only for you.
+// The pages a scope has, in nav order. Leaderboard is always everyone's, so
+// it shows in every scope and following it resets the scope to everyone.
+// Profile only exists for you.
 export function scopeViews(scope, myId) {
   const prefix = scopePrefix(scope, myId)
   const views = [
+    { key: 'leaderboard', label: 'Leaderboard', to: '/community/leaderboard' },
     { key: 'tracks', label: 'Tracks', to: `${prefix}/tracks` },
     { key: 'races', label: 'Races', to: `${prefix}/races` },
     { key: 'stats', label: 'Stats', to: `${prefix}/stats` }
   ]
-  if (scope.kind === 'everyone') views.unshift({ key: 'leaderboard', label: 'Leaderboard', to: '/community/leaderboard' })
   if (scope.kind === 'you') views.push({ key: 'profile', label: 'Profile', to: '/settings/profile' })
   return views
 }

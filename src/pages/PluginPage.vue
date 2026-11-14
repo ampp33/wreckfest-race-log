@@ -1,61 +1,112 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
-      Wreckfest <em class="signal ml-2">Telemetry</em> Plugin
-    </h1>
-    <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-3.5 mb-2 max-w-xl">
-      An auto-loading ASI plugin that reads your Wreckfest race results live, straight out of the
-      game's own memory, and logs each completed race to this site automatically.
-    </p>
-    <div class="ov text-brand-muted dark:text-brand-muted-dark mb-6">Works on Windows and Linux (Steam + Proton)</div>
+  <!-- -mb-12/pb-12: run the red through the footer's mt-12 gap -->
+  <div class="bg-brand-accent dark:bg-brand-accent-dark text-white min-h-[calc(100vh-64px)] -mb-12 pb-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <div class="ov text-white/70 mb-4">Telemetry plugin · Windows &amp; Linux</div>
+      <h1 class="font-heading font-normal tracking-normal leading-none text-display-xl">Installation Instructions</h1>
+      <p class="font-body text-[17px] leading-relaxed text-white/85 mt-5 max-w-xl">
+        Four steps, about two minutes. Once it's installed, every race you finish shows up here automatically.
+      </p>
 
-    <!-- Setup -->
-    <section class="rule-top pt-5">
-      <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-5">
-        Installation <em class="signal">instructions</em>
-      </h2>
-      <ol class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark space-y-4 list-decimal list-inside">
-        <li>
-          Download the latest <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark mx-1">wreckfest-telemetry-asi-*.zip</code> file from the
-          <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases" target="_blank" rel="noopener noreferrer" class="text-brand-accent hover:underline">Releases</a>
-          page.
+      <ol class="mt-12 border-t-2 border-white">
+        <li class="grid grid-cols-[64px_1fr] sm:grid-cols-[140px_1fr_auto] gap-x-6 gap-y-4 items-center py-8 border-b border-white/30">
+          <span class="font-heading text-display-lg leading-none text-white/40 row-span-2 sm:row-span-1">01</span>
+          <div>
+            <h2 class="font-body font-bold text-[22px]">Download the plugin</h2>
+          </div>
+          <button class="ov min-h-[52px] px-7 bg-white text-brand-accent dark:text-brand-accent-dark hover:bg-white/90 justify-self-start" :disabled="pluginState === 'busy'" @click="getPlugin">
+            {{ pluginState === 'done' ? `✓ Got ${pluginVersion || 'it'} — Click to Download Again` : pluginState === 'busy' ? 'Finding latest…' : 'Download plugin' }}
+          </button>
         </li>
-        <li>
-          Extract it into your Wreckfest install root directory (next to
-          <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">Wreckfest_x64.exe</code>), so
-          <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">version.dll</code> and
-          <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">scripts/</code> land there.
+
+        <li class="grid grid-cols-[64px_1fr] sm:grid-cols-[140px_1fr] gap-x-6 py-8 border-b border-white/30">
+          <span class="font-heading text-display-lg leading-none text-white/40">02</span>
+          <div>
+            <h2 class="font-body font-bold text-[22px]">Unzip it into your Wreckfest install folder</h2>
+            <p class="font-body text-white/80 text-[15px] mt-1 max-w-xl">
+              In Steam: right-click <b>Wreckfest</b> → <b>Manage</b> → <b>Browse local files</b>.
+              Extract everything there, next to <code class="font-mono text-[13px] text-white bg-black/25 px-1.5 py-0.5">Wreckfest_x64.exe</code>.
+            </p>
+          </div>
         </li>
-        <li>
-          Generate an <router-link to="/settings/api-keys" class="text-brand-accent hover:underline">API Key</router-link>,
-          then open <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">scripts/api-key.txt</code>
-          and replace the placeholder text with it (one line, nothing else).
+
+        <li class="grid grid-cols-[64px_1fr] sm:grid-cols-[140px_1fr_auto] gap-x-6 gap-y-4 items-center py-8 border-b border-white/30">
+          <span class="font-heading text-display-lg leading-none text-white/40 row-span-2 sm:row-span-1">03</span>
+          <div>
+            <h2 class="font-body font-bold text-[22px]">Get your key</h2>
+            <p class="font-body text-white/80 text-[15px] mt-1 max-w-xl">
+              Download your API key (it ties logged races to your account), then drop it in your Wreckfest install's <code class="font-mono text-[13px] text-white bg-black/25 px-1.5 py-0.5">scripts</code> folder, replacing the placeholder file.
+            </p>
+          </div>
+          <router-link v-if="!signedIn" :to="loginRoute" class="ov min-h-[52px] px-7 inline-flex items-center border-2 border-white hover:bg-white/10 justify-self-start">Sign in first</router-link>
+          <button v-else class="ov min-h-[52px] px-7 bg-white text-brand-accent dark:text-brand-accent-dark hover:bg-white/90 justify-self-start" :disabled="keyState === 'busy'" @click="getKey">
+            {{ keyState === 'done' ? '✓ Saved api-key.txt' : keyState === 'busy' ? 'Creating…' : 'Download my key' }}
+          </button>
         </li>
-        <li>
-          <strong class="text-brand-text dark:text-brand-text-dark">Steam + Linux (Proton) only:</strong>
-          add
-          <code class="font-mono text-[13px] font-medium text-brand-text dark:text-brand-text-dark">WINEDLLOVERRIDES="version=n,b" %command%</code>
-          to Wreckfest's launch options in Steam.  Not needed on Windows.
-        </li>
-        <li>
-          Complete a race in Wreckfest — the entry should appear at the top of the table on the
-          <router-link to="/races" class="text-brand-accent hover:underline">races</router-link> page.
+
+        <li class="grid grid-cols-[64px_1fr] sm:grid-cols-[140px_1fr] gap-x-6 py-8 border-b border-white/30">
+          <span class="font-heading text-display-lg leading-none text-white/40">04</span>
+          <div>
+            <h2 class="font-body font-bold text-[22px]">Go race</h2>
+            <p class="font-body text-white/80 text-[15px] mt-1 max-w-xl">
+              Finish a race and make sure it lands at the top of <router-link to="/races" class="underline">your races</router-link>.
+            </p>
+            <details class="mt-4 font-body text-[14px] text-white/85">
+              <summary class="cursor-pointer ov text-white">Playing on Linux / Steam Deck?</summary>
+              <p class="mt-3">Add this to Wreckfest's Steam launch options first:</p>
+              <button class="mt-2 font-mono text-[13px] bg-black/25 hover:bg-black/35 px-3 py-2 text-left" @click="copyLaunch">
+                {{ launchOptions }} <span class="ov ml-2 text-white/70">{{ launchCopied ? 'copied' : 'copy' }}</span>
+              </button>
+            </details>
+          </div>
         </li>
       </ol>
-    </section>
-    <a
-      href="https://github.com/ampp33/wreckfest-telemetry-asi"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="ov min-h-[44px] mt-4 px-6 inline-flex items-center bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85 mb-12"
-    >
-      View Code on GitHub
-    </a>
+      <a href="https://github.com/ampp33/wreckfest-telemetry-asi" target="_blank" rel="noopener noreferrer" class="ov inline-block mt-8 text-white/70 hover:text-white">Source on GitHub ↗</a>
+    </div>
   </div>
 </template>
 
 <script>
+import { authStore } from '../stores/authStore.js'
+import { pushToast } from '../stores/toastStore.js'
+import { downloadLatestPlugin, downloadNewApiKey } from '../services/pluginService.js'
+
 export default {
-  name: 'TelemetryPage'
+  name: 'TelemetryPage',
+  data() {
+    return {
+      launchOptions: 'WINEDLLOVERRIDES="version=n,b" %command%',
+      pluginState: 'idle', // idle | busy | done
+      pluginVersion: null,
+      keyState: 'idle',
+      launchCopied: false
+    }
+  },
+  computed: {
+    signedIn() { return authStore.isAuthenticated },
+    loginRoute() { return { name: 'login', query: { redirect: this.$route.fullPath } } }
+  },
+  methods: {
+    async getPlugin() {
+      this.pluginState = 'busy'
+      this.pluginVersion = await downloadLatestPlugin()
+      this.pluginState = 'done'
+    },
+    async getKey() {
+      this.keyState = 'busy'
+      try {
+        await downloadNewApiKey()
+        this.keyState = 'done'
+      } catch (err) {
+        this.keyState = 'idle'
+        pushToast(err.message || 'Could not create a key', 'error')
+      }
+    },
+    async copyLaunch() {
+      await navigator.clipboard.writeText(this.launchOptions)
+      this.launchCopied = true
+      setTimeout(() => { this.launchCopied = false }, 1500)
+    }
+  }
 }
 </script>
