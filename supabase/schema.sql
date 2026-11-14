@@ -1414,6 +1414,41 @@ $$;
 
 grant execute on function wf1.get_most_races_leaderboard to anon, authenticated;
 
+-- Drivers "online" now: everyone with a plugin race in the last 15 minutes,
+-- one row each with their latest race, most recent first. Filters on
+-- datetime (not created_at) so races_datetime_idx serves it; plugin races
+-- are logged as they finish, so the two are close.
+create or replace function wf1.get_online_drivers()
+returns table(
+    user_id        uuid,
+    display_name   text,
+    vehicle_name   text,
+    track_name     text,
+    variation_name text,
+    server_name    text,
+    datetime       timestamptz
+)
+language sql
+stable set search_path = wf1
+as $$
+    select last.user_id, p.display_name, v.name, t.name, tv.name, last.server_name, last.datetime
+    from (
+        select distinct on (r.user_id) r.*
+        from wf1.races r
+        where r.source = 'api'
+          and r.server_name is not null
+          and r.datetime > now() - interval '10 minutes'
+        order by r.user_id, r.datetime desc
+    ) last
+    left join wf1.profiles p on p.user_id = last.user_id
+    left join wf1.vehicles v on v.id = last.vehicle_id
+    left join wf1.track_variations tv on tv.id = last.track_variation_id
+    left join wf1.tracks t on t.id = tv.track_id
+    order by last.datetime desc
+$$;
+
+grant execute on function wf1.get_online_drivers to anon, authenticated;
+
 -- The fastest lap ever logged on each track variation, one row per
 -- variation, ordered by track then variation name — optionally only laps in
 -- one PI class ('A'..'D', see races.pi_class) and/or in one vehicle, and

@@ -13,6 +13,49 @@
     <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else class="space-y-14">
+      <!-- Online now: anyone with a plugin race in the last 15 minutes -->
+      <section v-if="onlineDrivers.length" class="rounded-xl bg-brand-accent dark:bg-brand-accent-dark text-white px-4 sm:px-6 py-5 sm:py-6">
+        <div class="flex items-center justify-between gap-4 mb-4">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm">
+            Online <em>now</em>
+          </h2>
+          <span class="ov flex items-center gap-2 bg-white/15 px-2.5 py-1 text-white">
+            <span class="relative flex w-2 h-2">
+              <span class="absolute inset-0 rounded-full bg-white animate-ping opacity-75"></span>
+              <span class="relative w-2 h-2 rounded-full bg-white"></span>
+            </span>
+            {{ onlineDrivers.length }} racing
+          </span>
+        </div>
+
+        <!-- Desktop: aligned columns. Mobile: each driver stacks into label/value pairs. -->
+        <div class="hidden sm:grid grid-cols-[10rem_9rem_minmax(0,1fr)_minmax(0,1fr)] gap-x-6 ov text-white/70 pb-2 border-b border-white/40">
+          <span>Driver</span><span>Vehicle</span><span>Track</span><span>Server</span>
+        </div>
+        <ul class="divide-y divide-white/20">
+          <li
+            v-for="d in visibleOnlineDrivers"
+            :key="d.user_id"
+            class="py-3 grid grid-cols-[5rem_1fr] sm:grid-cols-[10rem_9rem_minmax(0,1fr)_minmax(0,1fr)] gap-x-6 gap-y-1 items-center text-sm"
+          >
+            <span class="sm:hidden ov text-white/70">Driver</span>
+            <router-link :to="`/${d.user_id}/races`" class="font-bold hover:underline truncate">{{ d.display_name || '—' }}</router-link>
+            <span class="sm:hidden ov text-white/70">Vehicle</span>
+            <span>{{ d.vehicle_name || '—' }}</span>
+            <span class="sm:hidden ov text-white/70">Track</span>
+            <span>{{ d.track_name || '—' }}<span v-if="d.variation_name" class="text-white/70"> — {{ d.variation_name }}</span></span>
+            <span class="sm:hidden ov text-white/70">Server</span>
+            <span class="min-w-0"><ServerName v-if="d.server_name" :name="d.server_name" /><template v-else>—</template></span>
+          </li>
+        </ul>
+        <button
+          v-if="onlineDrivers.length > 10"
+          type="button"
+          class="mt-3 ov text-white hover:underline"
+          @click="showAllOnline = !showAllOnline"
+        >{{ showAllOnline ? 'Show fewer' : `Show all ${onlineDrivers.length}` }}</button>
+      </section>
+
       <!-- Most races -->
       <section>
         <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-4">
@@ -180,7 +223,8 @@
 <script>
 import PerformanceIndexBadge from '../components/PerformanceIndexBadge.vue'
 import ScopeKicker from '../components/ScopeKicker.vue'
-import { getMostRacesLeaderboard, getFastestLaps } from '../services/leaderboardService.js'
+import ServerName from '../components/ServerName.vue'
+import { getMostRacesLeaderboard, getFastestLaps, getOnlineDrivers } from '../services/leaderboardService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { formatDate } from '../utils/dateFormat.js'
@@ -192,11 +236,13 @@ import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
-  components: { PerformanceIndexBadge, ScopeKicker },
+  components: { PerformanceIndexBadge, ScopeKicker, ServerName },
   data() {
     return {
       loading: true,
       error: null,
+      onlineDrivers: [],
+      showAllOnline: false,
       // Most races per car class, fetched the first time each is picked.
       mostRacesByClass: {},
       mostRacesFailed: {},
@@ -218,6 +264,9 @@ export default {
     },
     classKey() {
       return this.piClass || 'all'
+    },
+    visibleOnlineDrivers() {
+      return this.showAllOnline ? this.onlineDrivers : this.onlineDrivers.slice(0, 10)
     },
     mostRaces() {
       return this.mostRacesByClass[this.classKey] || []
@@ -257,7 +306,9 @@ export default {
         getMostRacesLeaderboard(10, piClass),
         getFastestLaps(piClass, vehicleId),
         // The dropdown is a nice-to-have; without it the boards still work.
-        getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {})
+        getVehicles().then(vehicles => { this.vehicles = vehicles }, () => {}),
+        // Also a nice-to-have: on failure the box just stays hidden.
+        getOnlineDrivers().then(drivers => { this.onlineDrivers = drivers }, () => {})
       ])
       this.mostRacesByClass = { ...this.mostRacesByClass, [classKey]: mostRaces }
       this.lapsByFilter = { ...this.lapsByFilter, [lapsKey]: fastestLaps }

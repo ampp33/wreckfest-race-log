@@ -12,6 +12,15 @@ export async function getMostRacesLeaderboard(limit = 25, piClass = null) {
   return (data ?? []).map(row => ({ ...row, race_count: Number(row.race_count) }))
 }
 
+// Drivers with a plugin race in the last 15 minutes, most recent first, with
+// their latest race: [{ user_id, display_name, vehicle_name, track_name,
+// variation_name, server_name, datetime }].
+export async function getOnlineDrivers() {
+  const { data, error } = await supabase.rpc('get_online_drivers')
+  if (error) throw error
+  return data ?? []
+}
+
 // The fastest lap on each track variation, ordered by track then variation
 // name — across every class, or just one ('A'..'D'), and every vehicle, or
 // just one, optionally leaving out excludeVehicleIds:
