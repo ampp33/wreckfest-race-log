@@ -37,8 +37,11 @@
             :class="isFastestLap(row) ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-text dark:text-brand-text-dark'"
           >{{ formatTime(row.best_lap_ms) }}</td>
           <td class="py-1.5 pr-3 text-right tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTime(row.total_time_ms) }}</td>
-          <td class="py-1.5 pr-3 text-right tabular whitespace-nowrap" :class="row.dnf ? 'text-brand-accent dark:text-brand-accent-dark font-semibold' : 'text-brand-muted dark:text-brand-muted-dark'">
-            {{ row.dnf ? 'DNF' : (row.laps_completed ?? '—') }}
+          <td class="py-1.5 pr-3 text-right tabular whitespace-nowrap" :class="row.quit ? 'text-black' : row.dnf ? 'text-brand-accent dark:text-brand-accent-dark' : 'text-brand-muted dark:text-brand-muted-dark'">
+            <template v-if="row.quit || row.dnf">
+              <span :class="row.quit ? 'font-bold' : 'font-semibold'">{{ row.quit ? 'QUIT' : 'DNF' }}</span><template v-if="row.laps_completed != null"> - {{ row.laps_completed }}</template>
+            </template>
+            <template v-else>{{ row.laps_completed ?? '—' }}</template>
           </td>
         </tr>
       </tbody>
