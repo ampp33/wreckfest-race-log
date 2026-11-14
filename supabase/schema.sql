@@ -1434,7 +1434,7 @@ as $$
         from wf1.races r
         where r.source = 'api'
           and r.server_name is not null
-          and r.datetime > now() - interval '15 minutes'
+          and r.datetime > now() - interval '10 minutes'
         order by r.user_id, r.datetime desc
     ) last
     left join wf1.profiles p on p.user_id = last.user_id
