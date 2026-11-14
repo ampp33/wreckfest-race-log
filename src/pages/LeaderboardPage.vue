@@ -14,7 +14,7 @@
 
     <div v-else class="space-y-14">
       <!-- Online now: anyone with a plugin race in the last 15 minutes -->
-      <section v-if="onlineDrivers.length" class="bg-brand-accent dark:bg-brand-accent-dark text-white px-4 sm:px-6 py-5 sm:py-6">
+      <section v-if="onlineDrivers.length" class="rounded-xl bg-brand-accent dark:bg-brand-accent-dark text-white px-4 sm:px-6 py-5 sm:py-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm">
             Online <em>now</em>
