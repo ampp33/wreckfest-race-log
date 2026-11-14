@@ -14,7 +14,7 @@
       <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Most raced variation</div>
       <router-link
         v-if="stats.mostRacedVariation"
-        :to="`/track/${stats.mostRacedVariation.trackSlug}/${stats.mostRacedVariation.variationSlug}`"
+        :to="`${basePath}/track/${stats.mostRacedVariation.trackSlug}/${stats.mostRacedVariation.variationSlug}`"
         class="block mt-1 font-display font-black tracking-tight text-2xl text-brand-accent hover:underline"
       >
         {{ stats.mostRacedVariation.trackName }}
@@ -42,7 +42,11 @@ export default {
     // { mostUsedVehicle, mostRacedVariation, totalRaces } — the first two
     // may be null (StatsPage.vue's real, possibly-empty account data);
     // HomeStatsPreview.vue's demo data always has them populated.
-    stats: { type: Object, required: true }
+    stats: { type: Object, required: true },
+    // Prefix for the track links: '/<userId>' for a driver's stats, '/community'
+    // for site-wide ones. The homepage demo leaves it '', which resolves via
+    // the legacy /track/... redirect.
+    basePath: { type: String, default: '' }
   }
 }
 </script>

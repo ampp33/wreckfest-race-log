@@ -1,43 +1,121 @@
 <template>
   <nav class="bg-brand-bg dark:bg-brand-bg-dark border-b border-brand-border dark:border-brand-border-dark">
-    <div class="max-w-7xl mx-auto px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center justify-between gap-4">
-      <router-link to="/races" class="flex items-baseline gap-2.5 shrink-0">
-        <span class="font-display font-black tracking-tightest leading-none text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
-        <span class="ov-lg text-brand-accent dark:text-brand-accent-dark" style="font-size: 16px">RACE LOG</span>
+    <!-- One row at every width. From 1200px up it holds everything: the
+         scope picker and its views beside the logo, the site links and
+         controls on the right. Below that there isn't room, so it switches
+         to the phone layout — scope icon and hamburger, views in the menu. -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-4 sm:gap-6">
+      <!-- A size smaller on phones, where it shares the row with up to four
+           buttons — too many for "RACE LOG" to fit beside the wordmark, so
+           it tucks underneath instead. -->
+      <router-link :to="homePath" class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2.5 min-w-0">
+        <span class="font-display font-black tracking-tightest leading-none text-[21px] sm:text-[26px] text-brand-text dark:text-brand-text-dark">WRECKFEST</span>
+        <span class="ov-lg max-sm:leading-none whitespace-nowrap text-[12px] sm:text-[16px] text-brand-accent dark:text-brand-accent-dark">RACE LOG</span>
       </router-link>
 
-      <!-- Desktop nav -->
-      <div class="hidden sm:flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-[13px] font-body">
-        <!-- Getting Started stays red so a new account can spot it without
+      <!-- Desktop: whose races (the scope icon), which car class, and which
+           view of them. On pages outside any scope —
+           News, admin — it keeps the last scope you were in, with no view lit.
+           `data-nav-intro` (here and on the mobile group below) is what
+           NavIntroOverlay spotlights. -->
+      <div data-nav-intro class="hidden min-[1200px]:flex items-center gap-6 shrink-0">
+        <div class="flex items-center gap-2">
+          <div ref="scopePicker" class="relative">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+              :class="scopeButtonClass(desktopScopeOpen)"
+              :aria-expanded="desktopScopeOpen"
+              aria-haspopup="true"
+              :aria-label="`Whose races: ${scopeKickerLabel}`"
+              :title="scopeKickerLabel"
+              @click="desktopScopeOpen = !desktopScopeOpen"
+            >
+              <ScopeIcon :kind="scope.kind" :name="scopeName" />
+            </button>
+            <div
+              v-if="desktopScopeOpen"
+              class="absolute left-0 top-full mt-2 z-50 w-80 bg-brand-slab dark:bg-brand-surface-dark dark:border dark:border-brand-border-dark px-4 pb-4 shadow-[0_18px_40px_rgba(10,10,10,0.3)]"
+            >
+              <ScopeMenu
+                variant="dark"
+                :current="scope"
+                :my-id="myId"
+                :my-name="myName"
+                :recent="recentDrivers"
+                @pick="pickScope"
+              />
+            </div>
+          </div>
+          <div ref="classPicker" class="relative">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+              :class="classButtonClass(desktopClassOpen)"
+              :style="classButtonStyle(desktopClassOpen)"
+              :aria-expanded="desktopClassOpen"
+              aria-haspopup="true"
+              :aria-label="`Car class: ${classLabel}`"
+              :title="classLabel"
+              @click="desktopClassOpen = !desktopClassOpen"
+            >
+              <ClassIcon :cls="prefs.piClass" />
+            </button>
+            <div
+              v-if="desktopClassOpen"
+              class="absolute left-0 top-full mt-2 z-50 w-72 bg-brand-slab dark:bg-brand-surface-dark dark:border dark:border-brand-border-dark px-4 pb-4 shadow-[0_18px_40px_rgba(10,10,10,0.3)]"
+            >
+              <ClassMenu :current="prefs.piClass" @pick="pickClass" />
+            </div>
+          </div>
+        </div>
+        <nav class="flex items-center gap-5 text-[13px] font-body" aria-label="Views">
+          <router-link
+            v-for="view in views"
+            :key="view.key"
+            :to="view.to"
+            class="min-h-[44px] flex items-center"
+            :class="view.active
+              ? 'text-brand-accent dark:text-brand-accent-dark font-semibold underline decoration-2 underline-offset-[10px]'
+              : 'hover:text-brand-accent dark:hover:text-brand-accent-dark'"
+            :aria-current="view.active ? 'page' : undefined"
+          >{{ view.label }}</router-link>
+        </nav>
+      </div>
+
+      <!-- Desktop: site links and controls -->
+      <div class="hidden min-[1200px]:flex items-center justify-end gap-x-5 ml-auto text-[13px] font-body">
+        <!-- Help stays red so a new account can spot it without
              reading the row, but otherwise matches the plain links around it. -->
         <router-link
-          to="/getting-started"
+          v-if="auth.isAuthenticated"
+          to="/help"
           class="min-h-[44px] flex items-center text-brand-accent dark:text-brand-accent-dark hover:opacity-80"
           active-class="font-semibold"
-        >Getting Started</router-link>
+        >Help</router-link>
 
         <router-link
+          v-if="auth.isAuthenticated"
           to="/news"
           class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
           active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
         >News</router-link>
 
+        <!-- Signed out there's only the setup guide (API keys need an
+             account), so a plain link rather than a one-item dropdown. -->
         <router-link
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
+          v-if="!auth.isAuthenticated"
+          to="/plugin"
           class="min-h-[44px] flex items-center hover:text-brand-accent dark:hover:text-brand-accent-dark"
           active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
-          :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': item.to === '/tracks' && isTrackListRoute }"
-        >{{ item.label }}</router-link>
-
-        <div class="relative group">
+        >Install Plugin</router-link>
+        <div v-else class="relative group">
           <button
             type="button"
             class="min-h-[44px] flex items-center gap-1 hover:text-brand-accent dark:hover:text-brand-accent-dark"
             :class="{ 'text-brand-accent dark:text-brand-accent-dark font-semibold': isTelemetryRoute }"
           >
-            Telemetry
+            Install Plugin
             <span class="w-3 h-3 mt-px inline-block" v-html="chevronDownIcon"></span>
           </button>
           <div class="absolute right-0 top-full pt-1 hidden group-hover:block z-50">
@@ -75,13 +153,53 @@
           </div>
         </div>
 
-        <!-- Icon-only control cluster, same sun/moon + door icons as
-             PublicHeader's compact controls, grouped with a tighter gap than
-             the text links so the tiles read as one set. -->
+        <!-- Icon-only control cluster (alerts, profile), grouped with a
+             tighter gap than the text links so the tiles read as one set.
+             Signed out there's no profile menu, so the sun/moon stands
+             alone beside Sign in. -->
         <div class="flex items-center gap-2">
-          <AlertBell />
+          <AlertBell v-if="auth.isAuthenticated" />
+
+          <div v-if="auth.isAuthenticated" class="relative group">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+              :class="isProfileRoute ? 'text-brand-accent dark:text-brand-accent-dark border-brand-accent dark:border-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
+              aria-haspopup="true"
+              :aria-label="`Account: ${myName}`"
+              :title="myName"
+            >
+              <span class="w-4 h-4 inline-block" v-html="gearIcon"></span>
+            </button>
+            <div class="absolute right-0 top-full pt-1 hidden group-hover:block group-focus-within:block z-50">
+              <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
+                <router-link
+                  to="/settings/profile"
+                  class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+                >Profile</router-link>
+                <button
+                  type="button"
+                  class="w-full flex min-h-[44px] items-center gap-2 px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  @click="onToggleDark"
+                >
+                  <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+                  {{ prefs.darkMode ? 'Light mode' : 'Dark mode' }}
+                </button>
+                <button
+                  type="button"
+                  class="w-full flex min-h-[44px] items-center gap-2 px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  @click="onSignOut"
+                >
+                  <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
 
           <button
+            v-else
             type="button"
             class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
             @click="onToggleDark"
@@ -90,53 +208,60 @@
             <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
           </button>
 
-          <button
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            aria-label="Send feedback"
-            @click="onOpenFeedback"
-          >
-            <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
-          </button>
-
-          <button
-            v-if="auth.isAuthenticated"
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            aria-label="Sign out"
-            @click="onSignOut"
-          >
-            <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
-          </button>
+          <router-link
+            v-if="!auth.isAuthenticated"
+            :to="signInRoute"
+            class="ov min-h-[44px] px-5 flex items-center whitespace-nowrap bg-brand-accent dark:bg-brand-accent-dark text-white hover:opacity-85"
+          >Sign in</router-link>
         </div>
       </div>
 
-      <!-- Mobile: the alerts bell stays on the bar beside the hamburger
-           rather than inside the drawer, so its unread badge is visible
-           without opening the menu. -->
-      <div class="sm:hidden flex items-center gap-2 shrink-0">
-        <AlertBell variant="mobile" @open="mobileMenuOpen = false" />
-
-        <!-- Mobile hamburger -->
+      <!-- Mobile: whose races (scope), car class and the menu, each opening its own red drop-down. Only one is open at a
+           time; the open one turns red. The alerts bell sits on the bar before the menu so its unread badge shows
+           without opening anything. -->
+      <div data-nav-intro class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
         <button
           type="button"
-          class="min-h-[44px] min-w-[44px] flex items-center justify-center border shrink-0"
-          :class="mobileMenuOpen
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+          :class="scopeButtonClass(mobileMenu === 'scope')"
+          :aria-expanded="mobileMenu === 'scope'"
+          :aria-label="`Whose races: ${scopeKickerLabel}`"
+          @click="toggleMobileMenu('scope')"
+        >
+          <ScopeIcon :kind="scope.kind" :name="scopeName" />
+        </button>
+        <button
+          type="button"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center text-[17px]"
+          :class="classButtonClass(mobileMenu === 'class')"
+          :style="classButtonStyle(mobileMenu === 'class')"
+          :aria-expanded="mobileMenu === 'class'"
+          :aria-label="`Car class: ${classLabel}`"
+          @click="toggleMobileMenu('class')"
+        >
+          <ClassIcon :cls="prefs.piClass" />
+        </button>
+        <AlertBell v-if="auth.isAuthenticated" variant="mobile" @open="mobileMenu = null" />
+        <button
+          type="button"
+          class="min-h-[44px] min-w-[44px] flex items-center justify-center border"
+          :class="mobileMenu === 'menu'
             ? 'bg-brand-accent dark:bg-brand-accent-dark border-brand-accent dark:border-brand-accent-dark text-white'
             : 'border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'"
-          :aria-expanded="mobileMenuOpen"
+          :aria-expanded="mobileMenu === 'menu'"
           aria-label="Toggle menu"
-          @click="mobileMenuOpen = !mobileMenuOpen"
+          @click="toggleMobileMenu('menu')"
         >
-          <span class="w-5 h-5 inline-block" v-html="mobileMenuOpen ? closeIcon : menuIcon"></span>
+          <span class="w-5 h-5 inline-block" v-html="mobileMenu === 'menu' ? closeIcon : menuIcon"></span>
         </button>
       </div>
     </div>
 
-    <!-- Mobile menu: a red slab, full bleed, squared off. Slides open/closed
-         via a grid-template-rows 0fr->1fr transition rather than height,
-         since height:auto can't be animated directly and this content's
-         height varies (e.g. whether the Admin section is present). -->
+    <!-- Mobile drop-downs: red slabs (the class one dark, like its desktop
+         dropdown), full bleed, squared off. They slide
+         open/closed via a grid-template-rows 0fr->1fr transition rather
+         than height, since height:auto can't be animated directly and the
+         content's height varies. -->
     <Transition
       enter-active-class="transition-[grid-template-rows] duration-300 ease-out"
       enter-from-class="grid-rows-[0fr]"
@@ -144,43 +269,82 @@
       leave-active-class="transition-[grid-template-rows] duration-200 ease-in"
       leave-from-class="grid-rows-[1fr]"
       leave-to-class="grid-rows-[0fr]"
+      mode="out-in"
     >
-      <div v-if="mobileMenuOpen" class="sm:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
+      <div v-if="mobileMenu === 'scope'" key="scope" class="min-[1200px]:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
         <div class="overflow-hidden">
-          <div class="max-w-7xl mx-auto px-6 py-2">
-            <router-link
-              to="/getting-started"
-              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-              active-class="font-bold"
-              @click="mobileMenuOpen = false"
-            >Getting Started</router-link>
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
+            <ScopeMenu
+              variant="red"
+              :current="scope"
+              :my-id="myId"
+              :my-name="myName"
+              :recent="recentDrivers"
+              @pick="pickScope"
+            />
+          </div>
+        </div>
+      </div>
 
-            <router-link
-              to="/news"
-              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-              active-class="font-bold"
-              @click="mobileMenuOpen = false"
-            >News</router-link>
+      <div v-else-if="mobileMenu === 'class'" key="class" class="min-[1200px]:hidden grid bg-brand-slab dark:bg-brand-surface-dark dark:border-b dark:border-brand-border-dark font-body">
+        <div class="overflow-hidden">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-1 pb-4">
+            <ClassMenu :current="prefs.piClass" @pick="pickClass" />
+          </div>
+        </div>
+      </div>
 
+      <div v-else-if="mobileMenu === 'menu'" key="menu" class="min-[1200px]:hidden grid bg-brand-accent dark:bg-brand-accent-dark text-white font-body">
+        <div class="overflow-hidden">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2">
+            <div class="ov text-white/70 pt-3 pb-2">{{ scopeLabel }}</div>
             <router-link
-              v-for="item in navItems"
-              :key="item.to"
-              :to="item.to"
+              v-for="view in views"
+              :key="view.key"
+              :to="view.to"
               class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-              active-class="font-bold"
-              :class="{ 'font-bold': item.to === '/tracks' && isTrackListRoute }"
-              @click="mobileMenuOpen = false"
-            >{{ item.label }}</router-link>
+              :class="{ 'font-bold': view.active }"
+              @click="mobileMenu = null"
+            >{{ view.label }}</router-link>
 
-            <div class="ov text-white/70 pt-4 pb-2">Telemetry</div>
-            <router-link
-              v-for="item in telemetryItems"
-              :key="item.to"
-              :to="item.to"
-              class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-              active-class="font-bold"
-              @click="mobileMenuOpen = false"
-            >{{ item.label }}</router-link>
+            <!-- Same order as the desktop row: Help and News, then the plugin. -->
+            <template v-if="auth.isAuthenticated">
+              <div class="ov text-white/70 pt-4 pb-2">More</div>
+              <router-link
+                to="/help"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >Help</router-link>
+              <router-link
+                to="/news"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >News</router-link>
+            </template>
+
+            <!-- One plain link while signed out, like the desktop row. -->
+            <template v-if="auth.isAuthenticated">
+              <div class="ov text-white/70 pt-4 pb-2">Install Plugin</div>
+              <router-link
+                v-for="item in telemetryItems"
+                :key="item.to"
+                :to="item.to"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >{{ item.label }}</router-link>
+            </template>
+            <template v-else>
+              <div class="ov text-white/70 pt-4 pb-2">More</div>
+              <router-link
+                to="/plugin"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >Install Plugin</router-link>
+            </template>
 
             <template v-if="auth.isAdmin">
               <div class="ov text-white/70 pt-4 pb-2">Admin</div>
@@ -190,11 +354,38 @@
                 :to="item.to"
                 class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
                 active-class="font-bold"
-                @click="mobileMenuOpen = false"
+                @click="mobileMenu = null"
               >{{ item.label }}</router-link>
             </template>
 
-            <div class="flex gap-2 pt-3 pb-2">
+            <template v-if="auth.isAuthenticated">
+              <div class="ov text-white/70 pt-4 pb-2">{{ myName }}</div>
+              <router-link
+                to="/settings/profile"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >Profile</router-link>
+              <button
+                type="button"
+                class="w-full flex min-h-[44px] items-center gap-2 border-b border-white/20 text-[15px]"
+                @click="onToggleDark"
+              >
+                <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+                {{ prefs.darkMode ? 'Light mode' : 'Dark mode' }}
+              </button>
+              <button
+                type="button"
+                class="w-full flex min-h-[44px] items-center gap-2 mb-2 text-[15px]"
+                @click="onSignOut"
+              >
+                <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
+                Sign out
+              </button>
+            </template>
+
+            <!-- Signed in, the sun/moon and sign out live in the account section above. -->
+            <div v-if="!auth.isAuthenticated" class="flex gap-2 pt-3 pb-2">
               <button
                 type="button"
                 class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
@@ -204,24 +395,11 @@
                 <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
               </button>
 
-              <button
-                type="button"
-                class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
-                aria-label="Send feedback"
-                @click="onOpenFeedback"
-              >
-                <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
-              </button>
-
-              <button
-                v-if="auth.isAuthenticated"
-                type="button"
-                class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
-                @click="onSignOut"
-              >
-                <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
-                Sign out
-              </button>
+              <router-link
+                :to="signInRoute"
+                class="ml-2 flex min-h-[44px] items-center px-4 border border-white/50 hover:bg-white/10 text-[13px] font-semibold"
+                @click="mobileMenu = null"
+              >Sign in</router-link>
             </div>
           </div>
         </div>
@@ -231,24 +409,31 @@
 </template>
 
 <script>
+import ScopeIcon from './ScopeIcon.vue'
+import ScopeMenu from './ScopeMenu.vue'
+import ClassIcon from './ClassIcon.vue'
+import ClassMenu from './ClassMenu.vue'
 import { authStore, clearAuthSession } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
+import { recentDriversStore, rememberDriver } from '../stores/recentDriversStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
-import { openFeedback } from '../stores/feedbackStore.js'
 import AlertBell from './AlertBell.vue'
+import { getProfile } from '../services/profileService.js'
+import { scopeOfRoute, scopeViews, viewOfRoute, pathForScope, sameScope } from '../utils/scope.js'
+import { classLetterColor } from '../utils/piInfo.js'
 import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
 import signOutIcon from '../assets/icons/sign-out.svg?raw'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
-import feedbackIcon from '../assets/icons/feedback.svg?raw'
 import menuIcon from '../assets/icons/menu.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
+import gearIcon from '../assets/icons/gear.svg?raw'
 
 // The sign-out icon knocks its figure out of the doorway with an SVG <mask>,
 // which is referenced by id — so inlining the same markup twice puts two
 // elements with that id in the document, and both copies resolve to the first
-// one. Below the sm breakpoint the first copy lives in the desktop cluster's
+// one. Below the 1200px breakpoint the first copy lives in the desktop cluster's
 // `hidden` (display:none) subtree, which builds no mask at all, and the mobile
 // drawer's copy then renders as a bare filled square. Giving the drawer its
 // own id keeps the two instances independent.
@@ -256,29 +441,29 @@ const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
-  components: { AlertBell },
+  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu, AlertBell },
   data() {
     return {
       auth: authStore,
       prefs: prefsStore,
-      mobileMenuOpen: false,
+      recent: recentDriversStore,
+      // Which mobile drop-down is open: 'scope', 'class', 'menu' or null.
+      mobileMenu: null,
+      desktopScopeOpen: false,
+      desktopClassOpen: false,
+      // The scope of the last scoped page you were on, so pages outside any
+      // scope (News, admin) keep the picker and tabs where you left them.
+      lastScope: null,
+      // Profile of the driver whose pages are open, for their name.
+      viewedProfile: null,
       sunIcon,
       moonIcon,
       chevronDownIcon,
-      feedbackIcon,
       menuIcon,
       closeIcon,
+      gearIcon,
       signOutIcon,
       signOutIconMobile,
-      navItems: [
-        { to: '/tracks', label: 'Tracks' },
-        { to: '/races', label: 'Races' },
-        { to: '/stats', label: 'Stats' }
-      ],
-      telemetryItems: [
-        { to: '/plugin', label: 'Instructions' },
-        { to: '/settings/api-keys', label: 'API keys' }
-      ],
       adminItems: [
         { to: '/admin/users', label: 'Users' },
         { to: '/admin/api-keys', label: 'API keys' },
@@ -288,31 +473,176 @@ export default {
     }
   },
   computed: {
-    isTrackListRoute() {
-      return this.$route.path === '/tracks'
+    // Same place sign-in lands (router's signedInHomeRoute); the landing
+    // page when signed out.
+    homePath() {
+      return this.auth.user ? '/community/leaderboard' : '/'
+    },
+    myId() {
+      return this.auth.user?.id ?? null
+    },
+    myName() {
+      return this.auth.isAuthenticated ? (this.auth.profile?.display_name ?? 'You') : null
+    },
+    recentDrivers() {
+      return this.recent.drivers
+    },
+    routeScope() {
+      return scopeOfRoute(this.$route, this.myId)
+    },
+    scope() {
+      const scope = this.routeScope || this.lastScope
+      // "You" means nothing once signed out.
+      if (!scope || (scope.kind === 'you' && !this.myId)) return { kind: 'everyone' }
+      return scope
+    },
+    scopeName() {
+      if (this.scope.kind === 'you') return this.myName ?? ''
+      if (this.scope.kind !== 'driver') return ''
+      if (this.viewedProfile && this.viewedProfile.user_id === this.scope.userId) return this.viewedProfile.display_name
+      return this.recentDrivers.find(d => d.id === this.scope.userId)?.name ?? ''
+    },
+    // The picker's label: who, in a word or a name.
+    scopeLabel() {
+      if (this.scope.kind === 'everyone') return 'Everyone'
+      if (this.scope.kind === 'you') return 'Your log'
+      return this.scopeName || 'Driver'
+    },
+    scopeKickerLabel() {
+      if (this.scope.kind === 'driver') return `Viewing ${this.scopeLabel}`
+      return this.scopeLabel
+    },
+    classLabel() {
+      return this.prefs.piClass ? `Class ${this.prefs.piClass}` : 'All classes'
+    },
+    views() {
+      const onScope = sameScope(this.routeScope, this.scope)
+      const current = viewOfRoute(this.$route)
+      return scopeViews(this.scope, this.myId).map(view => ({
+        ...view,
+        active: onScope && view.key === current
+      }))
+    },
+    // API keys need an account; the setup guide doesn't.
+    telemetryItems() {
+      const items = [{ to: '/plugin', label: 'Instructions' }]
+      if (this.auth.isAuthenticated) items.push({ to: '/settings/api-keys', label: 'API keys' })
+      return items
+    },
+    // Back to the page you were on once you've signed in.
+    signInRoute() {
+      return { name: 'login', query: { redirect: this.$route.fullPath } }
     },
     isAdminRoute() {
       return this.$route.path.startsWith('/admin')
+    },
+    isProfileRoute() {
+      return this.$route.path === '/settings/profile'
     },
     isTelemetryRoute() {
       return this.telemetryItems.some(item => item.to === this.$route.path)
     }
   },
   watch: {
-    '$route'() {
-      this.mobileMenuOpen = false
+    '$route': {
+      immediate: true,
+      handler() {
+        this.mobileMenu = null
+        this.desktopScopeOpen = false
+        this.desktopClassOpen = false
+        if (this.routeScope) this.lastScope = this.routeScope
+      }
+    },
+    // Fetch the open driver's name, and remember them for the scope menu's
+    // "Recently viewed".
+    'routeScope.userId': {
+      immediate: true,
+      async handler(userId) {
+        if (!userId) return
+        try {
+          const profile = await getProfile(userId)
+          // Ignore a slow answer for a driver we've already navigated away from.
+          if (userId !== this.routeScope?.userId || !profile) return
+          this.viewedProfile = profile
+          rememberDriver(userId, profile.display_name)
+        } catch {
+          // The page itself reports load failures; the nav just goes nameless.
+        }
+      }
     }
   },
+  mounted() {
+    document.addEventListener('click', this.onDocumentClick)
+    document.addEventListener('keydown', this.onDocumentKeydown)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.onDocumentClick)
+    document.removeEventListener('keydown', this.onDocumentKeydown)
+  },
   methods: {
+    // The scope button, desktop or mobile: solid red while its menu is open,
+    // red-outlined on another driver's log, otherwise like the other tiles.
+    scopeButtonClass(open) {
+      if (open) {
+        return 'border bg-brand-accent dark:bg-brand-accent-dark border-brand-accent dark:border-brand-accent-dark text-white'
+      }
+      if (this.scope.kind === 'driver') {
+        return 'border-2 border-brand-accent dark:border-brand-accent-dark text-brand-accent dark:text-brand-accent-dark'
+      }
+      return 'border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'
+    },
+    // The class button, desktop or mobile: the dark of the desktop dropdown
+    // while its menu is open, filled with the class's own colour while
+    // filtered to one — the inverse of the scope button, so a class letter
+    // never reads as another driver's outlined initial — otherwise like the
+    // other tiles.
+    classButtonClass(open) {
+      if (open) {
+        // In dark mode the slab is the nav's own colour, so a step lighter.
+        return 'border bg-brand-slab dark:bg-brand-border-dark border-brand-slab dark:border-brand-border-dark text-white'
+      }
+      if (this.prefs.piClass) return 'border text-white'
+      return 'border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark'
+    },
+    classButtonStyle(open) {
+      if (open || !this.prefs.piClass) return undefined
+      const color = classLetterColor(this.prefs.piClass)
+      return { backgroundColor: color, borderColor: color }
+    },
+    pickClass(piClass) {
+      this.mobileMenu = null
+      this.desktopClassOpen = false
+      this.prefs.piClass = piClass
+    },
+    toggleMobileMenu(which) {
+      this.mobileMenu = this.mobileMenu === which ? null : which
+    },
+    pickScope(scope) {
+      this.mobileMenu = null
+      this.desktopScopeOpen = false
+      this.$router.push(pathForScope(this.$route, scope, this.myId))
+    },
+    // Close a desktop picker on a click anywhere outside it.
+    onDocumentClick(event) {
+      if (this.desktopScopeOpen && !this.$refs.scopePicker?.contains(event.target)) {
+        this.desktopScopeOpen = false
+      }
+      if (this.desktopClassOpen && !this.$refs.classPicker?.contains(event.target)) {
+        this.desktopClassOpen = false
+      }
+    },
+    onDocumentKeydown(event) {
+      if (event.key === 'Escape') {
+        this.desktopScopeOpen = false
+        this.desktopClassOpen = false
+        this.mobileMenu = null
+      }
+    },
     onToggleDark() {
       this.prefs.darkMode = !this.prefs.darkMode
     },
-    onOpenFeedback() {
-      this.mobileMenuOpen = false
-      openFeedback()
-    },
     async onSignOut() {
-      this.mobileMenuOpen = false
+      this.mobileMenu = null
       try {
         await signOut()
         clearAuthSession()

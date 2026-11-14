@@ -1,12 +1,12 @@
 <template>
   <div class="app-shell min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
-    <NavBar v-if="auth.isAuthenticated && !isLoginRoute" />
+    <NavBar v-if="showNavBar" />
     <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
 
     <main class="flex-1">
       <p
         v-if="!auth.ready"
-        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark px-6 py-6"
+        class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark px-4 sm:px-6 py-6"
       >
         Loading session…
       </p>
@@ -16,10 +16,12 @@
     <AppFooter v-if="!isLoginRoute && !isHomeRoute" />
 
     <QuickAddModal v-if="auth.isAuthenticated" />
-    <TrackSearchModal v-if="auth.isAuthenticated" />
+    <TrackSearchModal />
+    <PrepRaceModal />
     <FeedbackModal v-if="auth.isAuthenticated" />
     <FloatingQuickAddButton v-if="auth.isAuthenticated && !isLoginRoute" />
     <ToastContainer />
+    <NavIntroOverlay v-if="auth.ready && auth.isAuthenticated && showNavBar" />
   </div>
 </template>
 
@@ -29,17 +31,20 @@ import AppFooter from './components/AppFooter.vue'
 import WF2Banner from './components/WF2Banner.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
+import PrepRaceModal from './components/PrepRaceModal.vue'
 import FeedbackModal from './components/FeedbackModal.vue'
 import FloatingQuickAddButton from './components/FloatingQuickAddButton.vue'
 import ToastContainer from './components/ToastContainer.vue'
+import NavIntroOverlay from './components/NavIntroOverlay.vue'
 import { authStore } from './stores/authStore.js'
 import { prefsStore, applyDarkModeClass } from './stores/prefsStore.js'
 import { openQuickAdd, quickAddStore } from './stores/quickAddStore.js'
 import { openTrackSearch, trackSearchStore } from './stores/trackSearchStore.js'
+import { openPrepRace, prepRaceStore } from './stores/prepRaceStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, FeedbackModal, FloatingQuickAddButton, ToastContainer },
+  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, PrepRaceModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
     return {
       auth: authStore,
@@ -52,6 +57,10 @@ export default {
     },
     isHomeRoute() {
       return this.$route && this.$route.name === 'home'
+    },
+    // Every page but sign-in gets the real nav, signed in or not.
+    showNavBar() {
+      return !this.isLoginRoute
     }
   },
   mounted() {
@@ -64,17 +73,23 @@ export default {
   methods: {
     onGlobalKeydown(event) {
       if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (!authStore.isAuthenticated) return
       if (this.isTypingTarget(event.target)) return
 
       if (event.key === 'q' || event.key === 'Q') {
-        if (quickAddStore.open || trackSearchStore.open) return
+        // Quick add writes to your own log, so it stays signed-in only.
+        if (!authStore.isAuthenticated) return
+        if (quickAddStore.open || trackSearchStore.open || prepRaceStore.open) return
         event.preventDefault()
         openQuickAdd()
       } else if (event.key === 't' || event.key === 'T') {
-        if (trackSearchStore.open || quickAddStore.open) return
+        if (trackSearchStore.open || quickAddStore.open || prepRaceStore.open) return
         event.preventDefault()
         openTrackSearch()
+      } else if (event.key === 'p' || event.key === 'P') {
+        // Community lap times are public, so like T this works signed out too.
+        if (prepRaceStore.open || quickAddStore.open || trackSearchStore.open) return
+        event.preventDefault()
+        openPrepRace()
       }
     },
     isTypingTarget(el) {

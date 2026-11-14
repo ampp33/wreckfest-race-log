@@ -1,15 +1,7 @@
 <template>
-  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0' : 'inline-flex items-center gap-1 shrink-0'">
+  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0 -mr-3.5' : 'inline-flex items-center gap-1 shrink-0'">
     <button
-      v-if="showExpand"
-      type="button"
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-      :title="expanded ? 'Collapse' : 'Expand'"
-      @click.stop="$emit('toggle-expand')"
-    >
-      <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
-    </button>
-    <button
+      v-if="editable"
       type="button"
       class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Edit"
@@ -18,12 +10,25 @@
       <span class="w-4 h-4 inline-block" v-html="editIcon"></span>
     </button>
     <button
+      v-if="editable"
       type="button"
       class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Delete"
       @click.stop="$emit('delete')"
     >
       <span class="w-4 h-4 inline-block" v-html="trashIcon"></span>
+    </button>
+    <!-- Extra controls that sit between delete and expand — the mobile cards'
+         favorite star. -->
+    <slot />
+    <button
+      v-if="showExpand"
+      type="button"
+      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      :title="expanded ? 'Collapse' : 'Expand'"
+      @click.stop="$emit('toggle-expand')"
+    >
+      <span class="w-4 h-4 inline-block" v-html="expanded ? collapseIcon : expandIcon"></span>
     </button>
   </div>
 </template>
@@ -42,7 +47,9 @@ export default {
     // Stacks the buttons in a column instead of a row — used on mobile
     // cards, where the actions sit beside the card's content rather than
     // in its header row.
-    vertical: { type: Boolean, default: false }
+    vertical: { type: Boolean, default: false },
+    // false on someone else's race: only the expand toggle is shown.
+    editable: { type: Boolean, default: true }
   },
   emits: ['toggle-expand', 'edit', 'delete'],
   data() {

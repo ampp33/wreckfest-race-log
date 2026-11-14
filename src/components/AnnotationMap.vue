@@ -3,6 +3,7 @@
     ref="container"
     class="relative select-none overflow-hidden bg-brand-surface dark:bg-brand-surface-dark"
     :class="editMode ? 'cursor-crosshair' : ''"
+    :style="sizeStyle"
     @click="onContainerClick"
   >
     <!-- The layout drawn as its own name, set round the racing line. Only
@@ -11,7 +12,7 @@
     <svg
       v-if="ringPath"
       ref="mapImg"
-      :viewBox="`0 0 ${ringPath.w} ${ringPath.h}`"
+      :viewBox="viewBox"
       class="block w-full h-auto"
       role="img"
       :aria-label="`${alt} layout`"
@@ -31,11 +32,12 @@
         <path :id="`${pathId}-${i}`" :ref="el => setSegRef(el, i)" :d="seg.d" fill="none" stroke="none" />
         <text
           :ref="el => setTextRef(el, i)"
-          font-family="Switzer, Helvetica, Arial, sans-serif"
-          font-size="18"
-          font-weight="800"
+          :font-family="RING_FAMILY"
+          :font-size="BASE_FONT"
+          :font-weight="RING_WEIGHT"
           :letter-spacing="tracking[i] ?? BASE_TRACKING"
-          dominant-baseline="middle"
+          :dy="capShift ?? undefined"
+          :dominant-baseline="capShift == null ? 'middle' : undefined"
           class="fill-brand-text dark:fill-brand-text-dark"
         >
           <textPath :href="`#${pathId}-${i}`" startOffset="0">{{ ringText(i) }}</textPath>
@@ -58,6 +60,7 @@
       :alt="alt"
       class="w-full h-auto block pointer-events-none map-art"
       draggable="false"
+      @load="e => imgAspect = e.target.naturalWidth / e.target.naturalHeight"
     />
 
     <!-- Edit mode hint -->
@@ -69,7 +72,7 @@
     </div>
 
     <!-- Controls: pencil in view mode, discard+save in edit mode -->
-    <div class="absolute top-2 right-2 flex gap-1 z-10">
+    <div v-if="editable" class="absolute top-2 right-2 flex gap-1 z-10">
       <template v-if="!editMode">
         <button
           type="button"
@@ -121,7 +124,7 @@
           : 'bg-brand-accent dark:bg-brand-accent-dark hover:scale-105',
         editMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
       ]"
-      :style="{ left: ann.x + '%', top: ann.y + '%' }"
+      :style="markerStyle(ann)"
       @click.stop="$emit('select', ann.id)"
       @pointerdown.stop="onMarkerPointerDown($event, ann)"
       @pointermove.stop="onMarkerPointerMove($event, ann)"
@@ -143,12 +146,41 @@ let uid = 0
 
 // The ring is set in an 18px face; tracking is quoted in the same user units.
 const BASE_FONT = 18
+const RING_FAMILY = 'Switzer, Helvetica, Arial, sans-serif'
+const RING_WEIGHT = 800
 const BASE_TRACKING = 0.18
+// Venue and layout nouns: meaningless as a label on their own. Mirrored in
+// tools/line-editor-shell.html so the editor's Name preview matches.
+const GENERIC_WORDS = new Set(['CIRCUIT', 'RACEWAY', 'SPEEDWAY', 'RING', 'STADIUM', 'MOTORPARK',
+  'MOTOCENTER', 'RACEPARK', 'ROUTE', 'TRACK', 'RACE', 'RACING', 'OVAL', 'STAGE'])
 // A stroke too short for even one pass of the name gets a smaller face rather
 // than crushed letter-spacing. Below this it would be unreadable anyway, so the
 // tail is allowed to run off the end instead.
 // Direction marker, drawn pointing along +x and rotated into place.
 const ARROW_SHAPE = '20,0 -10,13 -10,-13'
+
+// The name is all caps, so it sits centred on the line when dropped half a
+// capital's height below it. dominant-baseline can't do that portably —
+// WebKit (so every iOS browser) ignores it on a textPath and sets the caps
+// wholly to one side — so the cap height is read off the loaded face itself.
+// Shared by every map; null where canvas text metrics aren't available, and
+// the template falls back to dominant-baseline.
+let capShiftPromise = null
+function measureCapShift() {
+  capShiftPromise ??= (async () => {
+    const font = `${RING_WEIGHT} ${BASE_FONT}px ${RING_FAMILY}`
+    try {
+      await document.fonts?.load(font)
+      const ctx = document.createElement('canvas').getContext('2d')
+      ctx.font = font
+      const capHeight = ctx.measureText('H').actualBoundingBoxAscent
+      return capHeight > 0 ? capHeight / 2 : null
+    } catch {
+      return null
+    }
+  })()
+  return capShiftPromise
+}
 
 export default {
   name: 'AnnotationMap',
@@ -157,9 +189,14 @@ export default {
     alt: { type: String, default: 'Track map' },
     annotations: { type: Array, default: () => [] },
     editMode: { type: Boolean, default: false },
+    // false shows the map alone, with no pencil (e.g. the prep for race dialog).
+    editable: { type: Boolean, default: true },
     selectedId: { type: String, default: null },
     trackSlug: { type: String, default: '' },
     variationSlug: { type: String, default: '' },
+    // Caps the map's height (px) by narrowing the box to the track's own
+    // shape, so markers never land on letterboxing.
+    maxHeight: { type: Number, default: null },
     // What gets written round the line. Defaults to the variation's own name.
     ringLabel: { type: String, default: '' }
   },
@@ -170,6 +207,9 @@ export default {
       closeIcon,
       checkIcon,
       ringPath: null,
+      // [x, y, w, h] hugging the drawn line; only used when not editable.
+      cropBox: null,
+      imgAspect: null,
       // One entry per stroke — a junction layout carries several.
       reps: [],
       tracking: [],
@@ -178,7 +218,12 @@ export default {
       textEls: [],
       pathId: `ring-${++uid}`,
       BASE_TRACKING,
+      BASE_FONT,
+      RING_FAMILY,
+      RING_WEIGHT,
       ARROW_SHAPE,
+      // How far to drop the name to centre it on the line; see measureCapShift.
+      capShift: null,
       // id of the annotation currently being dragged, or null. Only ever
       // one at a time — pointer capture (see the marker's pointerdown
       // handler) makes concurrent drags a non-issue in practice.
@@ -186,6 +231,21 @@ export default {
     }
   },
   computed: {
+    // Turn markers sit at percentages of the full artwork, so only a map
+    // that can't carry them is cropped to the line itself.
+    viewBox() {
+      return this.frame.join(' ')
+    },
+    // [x, y, w, h] of the artwork currently on screen.
+    frame() {
+      if (!this.editable && this.cropBox) return this.cropBox
+      return [0, 0, this.ringPath.w, this.ringPath.h]
+    },
+    sizeStyle() {
+      const aspect = this.ringPath ? this.frame[2] / this.frame[3] : this.imgAspect
+      if (!this.maxHeight || !aspect) return null
+      return { maxWidth: `${this.maxHeight * aspect}px`, marginLeft: 'auto', marginRight: 'auto' }
+    },
     ringUnit() {
       const label = (this.ringLabel || this.alt || 'Track').toUpperCase()
       return `${label} · `
@@ -209,6 +269,12 @@ export default {
         out.push(parts[parts.length - 1])
         out.push(parts[0])
       }
+      // Last resort for short spurs: single words, longest first so the most
+      // distinctive one that fits wins. Venue and layout nouns say nothing on
+      // their own, so they are skipped.
+      const words = full.split(/[\s—]+/).filter(w => w.length > 2 && !GENERIC_WORDS.has(w))
+      words.sort((a, b) => b.length - a.length)
+      out.push(...words)
       return out.filter((v, i, a) => v && a.indexOf(v) === i).map(v => `${v} · `)
     }
   },
@@ -222,10 +288,21 @@ export default {
     this.textEls = []
   },
   async mounted() {
+    measureCapShift().then(shift => { this.capShift = shift })
     await loadTrackPaths()
     this.resolvePath()
   },
   methods: {
+    // Markers are stored as percentages of the full artwork; a cropped ring
+    // shows only part of it, so map them into the visible frame.
+    markerStyle(ann) {
+      if (!this.ringPath) return { left: ann.x + '%', top: ann.y + '%' }
+      const [fx, fy, fw, fh] = this.frame
+      return {
+        left: (ann.x / 100 * this.ringPath.w - fx) / fw * 100 + '%',
+        top: (ann.y / 100 * this.ringPath.h - fy) / fh * 100 + '%'
+      }
+    },
     setSegRef(el, i) { if (el) this.segEls[i] = el },
     setTextRef(el, i) { if (el) this.textEls[i] = el },
     // One repeat count per stroke; the template asks for these before fitRing
@@ -262,6 +339,7 @@ export default {
     // stops the reset and the re-measure chasing each other.
     fitRing() {
       if (!this.ringPath) return
+      if (!this.editable) this.measureCrop()
       const n = this.ringPath.paths.length
       this.reps = new Array(n).fill(1)
       this.tracking = new Array(n).fill(BASE_TRACKING)
@@ -314,6 +392,17 @@ export default {
       // A shorter label may now fit several times, so measure again before
       // settling; otherwise go straight to spacing.
       this.$nextTick(() => (shrank ? this.fitPass(pass + 1) : this.applyTracking()))
+    },
+    measureCrop() {
+      const boxes = this.segEls.filter(Boolean).map(el => el.getBBox())
+      if (!boxes.length) return
+      // Half the 30-wide ribbon, plus a little air.
+      const pad = 25
+      const x = Math.min(...boxes.map(b => b.x)) - pad
+      const y = Math.min(...boxes.map(b => b.y)) - pad
+      const r = Math.max(...boxes.map(b => b.x + b.width)) + pad
+      const b = Math.max(...boxes.map(b => b.y + b.height)) + pad
+      this.cropBox = [x, y, r - x, b - y]
     },
     applyTracking() {
       if (!this.ringPath) return

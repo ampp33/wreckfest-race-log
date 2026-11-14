@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
       API <em class="signal">Keys</em>
     </h1>
@@ -38,7 +38,7 @@
               </div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">
                 <router-link
-                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  :to="{ path: `/${key.user_id}/races`, query: { source: 'api', api_key_id: key.id } }"
                   class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
                 >{{ key.race_count.toLocaleString() }} {{ key.race_count === 1 ? 'race' : 'races' }} logged</router-link>
               </div>
@@ -90,7 +90,7 @@
               </td>
               <td class="pr-4 py-2.5 tabular text-right whitespace-nowrap">
                 <router-link
-                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  :to="{ path: `/${key.user_id}/races`, query: { source: 'api', api_key_id: key.id } }"
                   class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
                 >{{ key.race_count.toLocaleString() }}</router-link>
               </td>

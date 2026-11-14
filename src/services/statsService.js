@@ -1,26 +1,26 @@
 import { getAllRaces } from './raceService.js'
 import { getVehicles } from './vehicleService.js'
 import { getTracks } from './trackService.js'
-import { getAllGoals } from './goalService.js'
 import { placementRate } from '../utils/raceStats.js'
 
-// Aggregate stats for the Stats page. We pull everything client-side because
-// the dataset per user is small (hundreds of races at most) and avoids round
-// trips for each metric.
-export async function getStats() {
-  const [races, vehicles, tracks, goals] = await Promise.all([
-    getAllRaces(),
+// Aggregate stats for the Stats page, computed client-side from the driver's
+// full race history in one fetch rather than a round trip per metric.
+//
+// `piClass` ('A'..'D') narrows every stat to races in that car class.
+export async function getStats(userId, { piClass = null } = {}) {
+  const [races, vehicles, tracks] = await Promise.all([
+    getAllRaces({ userId, piClass }),
     getVehicles(),
-    getTracks(),
-    getAllGoals()
+    getTracks()
   ])
 
+  const vehicleCounts = computeVehicleCounts(races, vehicles)
+
   return {
-    mostUsedVehicle: computeMostUsedVehicle(races, vehicles),
+    mostUsedVehicle: vehicleCounts[0] ?? null,
     mostRacedVariation: computeMostRacedVariation(races, tracks),
-    biggestImprovements: computeBiggestImprovements(races, tracks),
+    vehicleCounts,
     totalRaces: races.length,
-    goalProgress: computeGoalProgress(races, tracks, goals),
     raceCounts: computeRaceCounts(races),
     recentRaces: computeRecentRaces(races, tracks, vehicles),
     top3Rate: placementRate(races, 3),
@@ -29,12 +29,14 @@ export async function getStats() {
   }
 }
 
-function computeMostUsedVehicle(races, vehicles) {
+// Every vehicle the driver has raced, most races first: [{ id, name, count }].
+// Ties go alphabetically so the order doesn't shuffle between loads.
+function computeVehicleCounts(races, vehicles) {
   const counts = countBy(races, r => r.vehicle_id)
-  const winnerId = topKey(counts)
-  if (!winnerId) return null
-  const vehicle = vehicles.find(v => v.id === winnerId)
-  return vehicle ? { name: vehicle.name, count: counts[winnerId] } : null
+  return Object.keys(counts)
+    .map(id => ({ id, name: vehicles.find(v => v.id === id)?.name, count: counts[id] }))
+    .filter(row => row.name)
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
 function computeMostRacedVariation(races, tracks) {
@@ -44,71 +46,6 @@ function computeMostRacedVariation(races, tracks) {
   const found = findVariationName(tracks, winnerId)
   if (!found) return null
   return { ...found, count: counts[winnerId] }
-}
-
-function computeBiggestImprovements(races, tracks) {
-  const grouped = groupBy(races, r => r.track_variation_id)
-  const improvements = []
-
-  for (const variationId of Object.keys(grouped)) {
-    // A 0 lap_time_ms means no completed lap was recorded (same convention
-    // as LapTimeChart.vue and TrackDetailPage.vue's personal-best calc), not
-    // an actual zero-millisecond lap — exclude it rather than letting it
-    // masquerade as the fastest (or, here, the most recent) lap.
-    const sorted = grouped[variationId]
-      .filter(r => !!r.lap_time_ms)
-      .sort((a, b) => new Date(a.datetime) - new Date(b.datetime))
-    if (sorted.length < 2) continue
-
-    const oldest = sorted[0].lap_time_ms
-    const newest = sorted[sorted.length - 1].lap_time_ms
-    const deltaMs = oldest - newest
-    if (deltaMs <= 0) continue
-
-    const found = findVariationName(tracks, variationId)
-    if (!found) continue
-    improvements.push({ ...found, deltaMs, oldest, newest })
-  }
-
-  improvements.sort((a, b) => b.deltaMs - a.deltaMs)
-  return improvements.slice(0, 5)
-}
-
-function computeGoalProgress(races, tracks, goals) {
-  const pbByVariation = {}
-  for (const race of races) {
-    // Same 0-means-no-lap convention as above — a 0 would otherwise win
-    // every "personal best" comparison since it's always the smallest.
-    if (!race.lap_time_ms) continue
-    const vid = race.track_variation_id
-    if (pbByVariation[vid] == null || race.lap_time_ms < pbByVariation[vid]) {
-      pbByVariation[vid] = race.lap_time_ms
-    }
-  }
-
-  const result = []
-  for (const goal of goals) {
-    if (!goal.goal_lap_time_ms) continue
-    const found = findVariationName(tracks, goal.track_variation_id)
-    if (!found) continue
-    const pb = pbByVariation[goal.track_variation_id] ?? null
-    result.push({
-      ...found,
-      goalMs: goal.goal_lap_time_ms,
-      pbMs: pb,
-      deltaMs: pb != null ? pb - goal.goal_lap_time_ms : null
-    })
-  }
-
-  // Beat goal (negative delta) first, then closest to goal, then no PB yet
-  result.sort((a, b) => {
-    if (a.deltaMs == null && b.deltaMs == null) return 0
-    if (a.deltaMs == null) return 1
-    if (b.deltaMs == null) return -1
-    return a.deltaMs - b.deltaMs
-  })
-
-  return result
 }
 
 function computeRaceCounts(races) {
@@ -166,17 +103,6 @@ function countBy(items, keyFn) {
     counts[key] = (counts[key] || 0) + 1
   }
   return counts
-}
-
-function groupBy(items, keyFn) {
-  const out = {}
-  for (const item of items) {
-    const key = keyFn(item)
-    if (key == null) continue
-    if (!out[key]) out[key] = []
-    out[key].push(item)
-  }
-  return out
 }
 
 function topKey(counts) {

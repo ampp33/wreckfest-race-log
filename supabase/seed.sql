@@ -231,6 +231,18 @@ insert into wf1.vehicles (name) values ('Hammerhead RS') on conflict (name) do n
 insert into wf1.vehicles (name) values ('Speedbird GT') on conflict (name) do nothing;
 insert into wf1.vehicles (name) values ('Eagle R') on conflict (name) do nothing;
 insert into wf1.vehicles (name) values ('Hotbomb') on conflict (name) do nothing;
-insert into wf1.vehicles (name) values ('Harvesteri') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Harvester') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Boomer (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Gremlin (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Hammerhead (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Harvester (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Killerbee (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Lawn Mower (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Motorhome (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Rammer (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('School Bus (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Sofa Car (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Starbeast (L)') on conflict (name) do nothing;
+insert into wf1.vehicles (name) values ('Supervan (L)') on conflict (name) do nothing;
 
 commit;

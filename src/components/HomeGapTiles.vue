@@ -1,4 +1,5 @@
-<!-- The homepage's "target and the gap" tile row. Matches the real
+<!-- The homepage's "target and the gap" tiles, plus the Top 3/5/10 finishes
+     row under them. Matches the real
      TrackDetailPage.vue tile layout (4 tiles, including a live LapTimeInput
      for "Goal lap time" — editable here too, just not wired to save since
      there's no signed-in variation behind it on the homepage).
@@ -12,27 +13,38 @@
      next tile at any viewport past that breakpoint. 2 columns always gives
      each tile enough width for that type size, verified in a screenshot. -->
 <template>
-  <div class="grid grid-cols-2 gap-6">
-    <div class="rule-top pt-3">
-      <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
-      <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ formatMsToTime(goal.bestMs) }}</div>
-    </div>
-    <div class="rule-top pt-3">
-      <div class="ov text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
-      <div class="mt-2">
-        <LapTimeInput v-model="goalMsLocal" />
+  <div>
+    <div class="grid grid-cols-2 gap-6">
+      <div class="rule-top pt-3">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">Personal best</div>
+        <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ formatMsToTime(goal.bestMs) }}</div>
+      </div>
+      <div class="rule-top pt-3">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">Goal lap time</div>
+        <div class="mt-2">
+          <LapTimeInput v-model="goalMsLocal" />
+        </div>
+      </div>
+      <div class="pt-3 border-t-2 border-brand-accent dark:border-brand-accent-dark">
+        <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
+        <div
+          class="font-display font-black tracking-tightest text-display-sm tabular mt-2"
+          :class="goal.beat ? 'text-brand-good dark:text-brand-good-dark' : 'text-brand-accent dark:text-brand-accent-dark'"
+        >{{ formatDelta(goal.deltaMs) }}</div>
+      </div>
+      <div class="rule-top pt-3">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
+        <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ goal.racesHere }}</div>
       </div>
     </div>
-    <div class="pt-3 border-t-2 border-brand-accent dark:border-brand-accent-dark">
-      <div class="ov text-brand-accent dark:text-brand-accent-dark">Gap to goal</div>
-      <div
-        class="font-display font-black tracking-tightest text-display-sm tabular mt-2"
-        :class="goal.beat ? 'text-brand-good dark:text-brand-good-dark' : 'text-brand-accent dark:text-brand-accent-dark'"
-      >{{ formatDelta(goal.deltaMs) }}</div>
-    </div>
-    <div class="rule-top pt-3">
-      <div class="ov text-brand-muted dark:text-brand-muted-dark">Races here</div>
-      <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ goal.racesHere }}</div>
+
+    <!-- Same placement-rate row as TrackDetailPage.vue. -->
+    <div v-if="goal.placements" class="grid grid-cols-3 gap-6 mt-6">
+      <div v-for="p in goal.placements" :key="p.label" class="rule-top pt-3">
+        <div class="ov text-brand-muted dark:text-brand-muted-dark">{{ p.label }}</div>
+        <div class="font-display font-black tracking-tightest text-display-sm tabular text-brand-text dark:text-brand-text-dark mt-2">{{ percent(p) }}</div>
+        <div class="text-xs tabular text-brand-muted dark:text-brand-muted-dark mt-1">{{ p.count }} / {{ p.total }}</div>
+      </div>
     </div>
   </div>
 </template>
@@ -53,6 +65,13 @@ export default {
     // play with without it going anywhere.
     return { goalMsLocal: this.goal.goalMs }
   },
-  methods: { formatMsToTime, formatDelta }
+  methods: {
+    formatMsToTime,
+    formatDelta,
+    // Formatted like placementRate() in utils/raceStats.js.
+    percent(p) {
+      return p.total ? `${Math.round((p.count / p.total) * 100)}%` : '—'
+    }
+  }
 }
 </script>

@@ -1,14 +1,5 @@
 import { supabase } from './supabase.js'
 
-export async function getAllGoals() {
-  const { data, error } = await supabase
-    .from('goals')
-    .select('id, track_variation_id, goal_lap_time_ms, notes, updated_at')
-    .not('goal_lap_time_ms', 'is', null)
-  if (error) throw error
-  return data || []
-}
-
 export async function getGoalForVariation(variationId) {
   const { data, error } = await supabase
     .from('goals')

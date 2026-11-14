@@ -6,7 +6,10 @@ const defaults = {
   lastVehicleId: null,
   lastTuning: null,
   lastTrackVariationId: null,
-  darkMode: false
+  darkMode: false,
+  // The nav's car-class filter: 'A'..'D', or null for every class. Applies
+  // to every page's races, whoever's log is open.
+  piClass: null
 }
 
 function loadFromStorage() {

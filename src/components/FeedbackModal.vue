@@ -16,7 +16,7 @@
         Email
       </a>
       <a
-        href="https://discordapp.com/channels/@me/431110818302656530/"
+        href="https://discord.gg/j7c4JCtxVs"
         target="_blank"
         rel="noopener noreferrer"
         class="inline-flex items-center gap-1.5 font-body text-[13px] text-brand-accent dark:text-brand-accent-dark hover:underline"

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-accent dark:text-brand-accent-dark">
       News
     </h1>
@@ -30,6 +30,38 @@ export default {
   data() {
     return {
       entries: [
+        {
+          id: 8,
+          title: 'Prep for Race: See What\'s Fast Before You Start',
+          date: '2026-10-12',
+          items: [
+            'The round button in the bottom right used to quick-add a race. It\'s now <b class="text-brand-text dark:text-brand-text-dark">Prep for race</b> — look for the checkered flag.',
+            'Pick a track and it shows the fastest lap anyone has set there in each class (D, C, B and A), with the car that set it: its <b>tune</b>, <b>parts</b>, PI and weight. The track map is at the bottom so you can see the layout at a glance.',
+            'Press <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">P</kbd> on any screen to open it. Quick add hasn\'t gone anywhere: <kbd class="font-display font-black text-[11px] px-1.5 py-1 bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark">Q</kbd> still opens it.'
+          ]
+        },
+        {
+          id: 7,
+          title: 'Going Public: Leaderboards, Everyone\'s Races, and a New Nav',
+          date: '2026-10-06',
+          items: [
+            'Logging races on your own gets lonely, so the site has opened up: you can now see everyone\'s races, not just your own — and so can visitors who aren\'t signed in.',
+            'Races are <b>public by default</b> — <b>Notes stay private, always</b>, as do your track notes, goal times and map annotations.',
+            'Don\'t want your races shown? Head to <a href="#/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">your profile</a> and set them to private — you can change it any time. While you\'re there, pick a display name; everyone starts out as "Driver-something".',
+            '<b class="text-brand-text dark:text-brand-text-dark">Leaderboards:</b> <a href="#/community/leaderboard" class="text-brand-accent dark:text-brand-accent-dark hover:underline">see who\'s logged the most races</a>, and the fastest lap on every track and variation — filter by car class or by vehicle to see who\'s quickest in what. Only races logged by the <a href="#/plugin" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Telemetry plugin</a> count. Signing in now lands you here.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Everyone\'s races and tracks:</b> browse <a href="#/community/races" class="text-brand-accent dark:text-brand-accent-dark hover:underline">everyone\'s latest races</a>, or open a track to see every driver\'s laps there, plus the best lap and who set it. Community-wide stats are coming soon.',
+            '<b class="text-brand-text dark:text-brand-text-dark">Driver pages:</b> click any driver\'s name to see their tracks, races and stats.',
+            '<b class="text-brand-text dark:text-brand-text-dark">New navigation:</b> the icon next to the logo can be used to set the scope: <i>whose</i> races you\'re looking at — the globe for everyone, the person for you, or another driver\'s initial — and the links beside it (Leaderboard, Tracks, Races, Stats) are the views for the selected scope. Its menu also lists drivers you\'ve viewed recently and has a "Find a driver" search. On phones, the icon sits next to the menu button.',
+          ]
+        },
+        {
+          id: 6,
+          title: 'Fixed Telemetry Tuning Bug (Again) + Opponent Tunings',
+          date: '2026-09-30',
+          items: [
+            'Actually fixed tunings to be properly scraped, my bad.  The plugin now also pulls your opponent\'s tuning values too :)  <a href="https://github.com/ampp33/wreckfest-telemetry-asi/releases/tag/v1.2.0" target="_blank" rel="noopener" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Download it here</a>.'
+          ]
+        },
         {
           id: 5,
           title: 'Fixed Telemetry Tuning Bug',

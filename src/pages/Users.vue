@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       <em class="signal">Users</em>
     </h1>
@@ -16,9 +16,19 @@
           <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ users.length }}</div>
         </div>
 
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block" title="Raced in the last 60 days">
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Active users</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ activeUserCount }}</div>
+        </div>
+
         <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block">
           <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Total races logged</div>
           <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ totalRaces }}</div>
+        </div>
+
+        <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4 inline-block" title="Total races divided by days since the first user signed up">
+          <div class="font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark">Avg races per day</div>
+          <div class="mt-1 font-display font-black tracking-tight text-3xl text-brand-text dark:text-brand-text-dark">{{ avgRacesPerDay }}</div>
         </div>
       </div>
 
@@ -64,10 +74,11 @@
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
                   <div class="truncate">
-                    {{ user.email }}
+                    {{ user.display_name || '—' }}
                     <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
                   </div>
-                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDate(user.created_at) }}</div>
+                  <div class="truncate text-xs text-brand-muted dark:text-brand-muted-dark">{{ user.email }}</div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDateTime(user.created_at) }}</div>
                   <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Last race {{ formatDateTime(user.last_race_at) }}</div>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
@@ -152,7 +163,7 @@
             <table class="min-w-full text-sm">
               <thead>
                 <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-                  <th class="px-4 py-2 font-medium">Email</th>
+                  <th class="px-4 py-2 font-medium">User</th>
                   <th class="px-4 py-2 font-medium">Joined</th>
                   <th class="px-4 py-2 font-medium">Last race</th>
                   <th class="px-4 py-2 font-medium">Role</th>
@@ -171,11 +182,12 @@
                   :class="{ 'opacity-60': user.banned }"
                 >
                   <td class="px-4 py-2">
-                    {{ user.email }}
+                    {{ user.display_name || '—' }}
                     <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                    <div class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ user.email }}</div>
                   </td>
                   <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
-                    {{ formatDate(user.created_at) }}
+                    {{ formatDateTime(user.created_at) }}
                   </td>
                   <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
                     {{ formatDateTime(user.last_race_at) }}
@@ -326,10 +338,11 @@ import {
 } from 'chart.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
-import { getAllUsers, getUserGrowth, getRaceLogGrowth, setUserRole, setUserBanned } from '../services/adminService.js'
+import { getAllUsers, getRaceLogBins, getUserActivityBins, setUserRole, setUserBanned } from '../services/adminService.js'
+import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket, activeUsersPerBucket } from '../utils/chartBuckets.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
-import { formatDate, formatDateTime } from '../utils/dateFormat.js'
+import { formatDateTime } from '../utils/dateFormat.js'
 import { useChart } from '../composables/useChart.js'
 import { getChartTheme } from '../utils/chartTheme.js'
 import { useEventListener } from '../composables/useEventListener.js'
@@ -363,6 +376,19 @@ const { render: renderGrowth } = useChart(growthCanvas)
 const racesCanvas = ref(null)
 const { render: renderRaces } = useChart(racesCanvas)
 
+const ACTIVE_WINDOW_MS = 60 * 24 * 60 * 60 * 1000
+const activityBins = ref([])
+const activeUserCount = computed(() =>
+  users.value.filter(u => u.last_race_at && Date.now() - new Date(u.last_race_at).getTime() <= ACTIVE_WINDOW_MS).length
+)
+
+// shortcut: spans from the first signup (no race can predate it), not the first race; fetch min(races.datetime) if that gap matters.
+const avgRacesPerDay = computed(() => {
+  const first = Math.min(...users.value.map(u => new Date(u.created_at).getTime()))
+  const days = Math.max(1, (Date.now() - first) / 86400000)
+  return (totalRaces.value / days).toFixed(1)
+})
+
 const isDark = computed(() => prefsStore.darkMode)
 const currentUserId = computed(() => authStore.user?.id ?? null)
 
@@ -370,18 +396,25 @@ const currentUserId = computed(() => authStore.user?.id ?? null)
 // blob — drop them for dense ranges (1y/all) and let the line carry it.
 const DENSE_POINT_COUNT = 60
 
+function bucketLabel(bucket, unit) {
+  return unit === 'hour'
+    ? bucket.toLocaleTimeString(undefined, { hour: 'numeric' })
+    : bucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
 function renderGrowthChart() {
   if (!growthCanvas.value || !growthData.value.length) return
 
   const dark = isDark.value
   const theme = getChartTheme(dark)
   const color = dark ? '#E5332F' : '#C41E1E'
+  const activeColor = dark ? '#FF6B61' : '#F0443A'
   const dense = growthData.value.length > DENSE_POINT_COUNT
 
-  const labels = growthData.value.map(row =>
-    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  )
-  const counts = growthData.value.map(row => Number(row.user_count))
+  const unit = bucketUnit(usersRange.value)
+  const labels = growthData.value.map(row => bucketLabel(row.bucket, unit))
+  const counts = growthData.value.map(row => row.user_count)
+  const activeCounts = growthData.value.map(row => row.active_count)
 
   renderGrowth({
     type: 'line',
@@ -400,6 +433,19 @@ function renderGrowthChart() {
         pointBorderWidth: 2,
         tension: 0.35,
         fill: true
+      }, {
+        label: 'Active users',
+        data: activeCounts,
+        borderColor: activeColor,
+        backgroundColor: activeColor + '33',
+        borderWidth: 2.5,
+        pointRadius: dense ? 0 : 3,
+        pointHoverRadius: dense ? 4 : 6,
+        pointBackgroundColor: activeColor,
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true
       }]
     },
     options: {
@@ -407,11 +453,11 @@ function renderGrowthChart() {
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: false },
+        legend: { display: true, align: 'end', labels: { color: theme.tickColor, boxHeight: 2, font: { size: 11 } } },
         tooltip: {
           ...theme.tooltip,
           callbacks: {
-            label: ctx => `  ${ctx.parsed.y} users`
+            label: ctx => `  ${ctx.parsed.y} ${ctx.dataset.label.toLowerCase()}`
           }
         }
       },
@@ -444,10 +490,9 @@ function renderRacesChart() {
   const color = dark ? '#E5332F' : '#C41E1E'
   const dense = racesData.value.length > DENSE_POINT_COUNT
 
-  const labels = racesData.value.map(row =>
-    new Date(row.day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-  )
-  const counts = racesData.value.map(row => Number(row.race_count))
+  const unit = bucketUnit(racesRange.value)
+  const labels = racesData.value.map(row => bucketLabel(row.bucket, unit))
+  const counts = racesData.value.map(row => row.race_count)
 
   renderRaces({
     type: 'line',
@@ -515,9 +560,28 @@ watch(loading, (isLoading) => {
   if (!isLoading) nextTick(renderCharts)
 })
 
-async function loadGrowth() {
+// Both charts are bucketed here, by the viewer's local hour (1D) or day (see
+// src/utils/chartBuckets.js). User growth is a running total built from the
+// signup dates the users list already carries; active users (raced in the
+// trailing 60 days) from the per-user activity bins.
+function buildUserGrowth() {
+  const signups = users.value.map(u => u.created_at)
+  const unit = bucketUnit(usersRange.value)
+  const buckets = growthBuckets(usersRange.value, signups)
+  const active = activeUsersPerBucket(activityBins.value, buckets, unit, ACTIVE_WINDOW_MS)
+  growthData.value = runningTotalPerBucket(signups, buckets, unit)
+    .map(({ bucket, count }, i) => ({ bucket, user_count: count, active_count: active[i].count }))
+}
+// Races logged is a per-bucket count, not a running total.
+function buildRaceGrowth(bins) {
+  const unit = bucketUnit(racesRange.value)
+  const buckets = growthBuckets(racesRange.value, bins.map(b => b.at))
+  racesData.value = countPerBucket(bins, buckets, unit).map(({ bucket, count }) => ({ bucket, race_count: count }))
+}
+async function onUsersRangeChange() {
   try {
-    growthData.value = await getUserGrowth(usersRange.value)
+    activityBins.value = await getUserActivityBins(usersRange.value)
+    buildUserGrowth()
     nextTick(renderGrowthChart)
   } catch (err) {
     pushToast(err.message || 'Failed to load user growth', 'error')
@@ -525,13 +589,13 @@ async function loadGrowth() {
 }
 async function loadRaceGrowth() {
   try {
-    racesData.value = await getRaceLogGrowth(racesRange.value)
+    buildRaceGrowth(await getRaceLogBins(racesRange.value))
     nextTick(renderRacesChart)
   } catch (err) {
     pushToast(err.message || 'Failed to load race growth', 'error')
   }
 }
-watch(usersRange, loadGrowth)
+watch(usersRange, onUsersRangeChange)
 watch(racesRange, loadRaceGrowth)
 
 function openDialog(user) {
@@ -585,15 +649,16 @@ useEventListener(window, 'keydown', e => { if (e.key === 'Escape') closeDialog()
 
 onMounted(async () => {
   try {
-    const [allUsers, growth, racesGrowth, raceCount] = await Promise.all([
+    const [allUsers, raceLogBins, raceCount, userActivityBins] = await Promise.all([
       getAllUsers(),
-      getUserGrowth(usersRange.value),
-      getRaceLogGrowth(racesRange.value),
-      getTotalRaceCount()
+      getRaceLogBins(racesRange.value),
+      getTotalRaceCount(),
+      getUserActivityBins(usersRange.value)
     ])
     users.value = allUsers
-    growthData.value = growth
-    racesData.value = racesGrowth
+    activityBins.value = userActivityBins
+    buildUserGrowth()
+    buildRaceGrowth(raceLogBins)
     totalRaces.value = raceCount
   } catch (err) {
     error.value = err.message || 'Failed to load users'

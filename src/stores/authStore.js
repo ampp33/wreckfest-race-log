@@ -7,6 +7,9 @@ export const authStore = reactive({
   ready: false,
   userRoles: [],
   banned: false,
+  // { display_name, is_public } from wf1.profiles — the public face of the
+  // account. null while signed out or before it loads.
+  profile: null,
 
   get user() {
     return this.session ? this.session.user : null
@@ -35,15 +38,23 @@ export function clearAuthSession() {
   authStore.session = null
   authStore.userRoles = []
   authStore.banned = false
+  authStore.profile = null
+}
+
+// Called after the profile settings page saves, so the rest of the app
+// sees the new name/visibility without re-resolving the session.
+export function setAuthProfile(profile) {
+  authStore.profile = profile
 }
 
 async function fetchUserRoles() {
   if (!authStore.user) {
     authStore.userRoles = []
     authStore.banned = false
+    authStore.profile = null
     return
   }
-  const [{ data: roleData }, { data: detailsData }] = await Promise.all([
+  const [{ data: roleData }, { data: detailsData }, { data: profileData }] = await Promise.all([
     supabase
       .from('user_roles')
       .select('role_id, roles(name)')
@@ -52,10 +63,16 @@ async function fetchUserRoles() {
       .from('user_details')
       .select('status')
       .eq('user_id', authStore.user.id)
+      .maybeSingle(),
+    supabase
+      .from('profiles')
+      .select('display_name, is_public')
+      .eq('user_id', authStore.user.id)
       .maybeSingle()
   ])
   authStore.userRoles = roleData ?? []
   authStore.banned = detailsData?.status === 'banned'
+  authStore.profile = profileData ?? null
 }
 
 let initialized = false

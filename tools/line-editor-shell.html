@@ -99,7 +99,7 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
   </div>
   <p class="hint">Drag a handle to move it · click the line or empty space to add one ·
     double-click a handle to delete · <kbd>←</kbd> <kbd>→</kbd> tracks ·
-    <kbd>Z</kbd> undo · <kbd>Enter</kbd> confirm</p>
+    <kbd>Z</kbd> undo · <kbd>Del</kbd> delete selected handle · <kbd>Enter</kbd> confirm</p>
 
   <div class="strip" id="strip"></div>
 
@@ -295,9 +295,17 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     return out
   }
 
+  // One decimal: whole units are coarse enough at artwork scale to kink the
+  // tangent that textPath rotates each glyph by.
+  // Venue and layout nouns: meaningless as a label on their own.
+  var GENERIC_WORDS = ['CIRCUIT', 'RACEWAY', 'SPEEDWAY', 'RING', 'STADIUM', 'MOTORPARK',
+    'MOTOCENTER', 'RACEPARK', 'ROUTE', 'TRACK', 'RACE', 'RACING', 'OVAL', 'STAGE']
+
+  function r1 (v) { return Math.round(v * 10) / 10 }
+
   function poly (out, closed) {
     return out.map(function (q, i) {
-      return (i ? 'L' : 'M') + Math.round(q[0]) + ',' + Math.round(q[1])
+      return (i ? 'L' : 'M') + r1(q[0]) + ',' + r1(q[1])
     }).join('') + (closed === false ? '' : 'Z')
   }
 
@@ -312,13 +320,16 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     var f = fitOf(all)
     if (!f) return null
     return curves.map(function (x) {
+      // Simplify BEFORE rounding. Snapping dense samples to whole units first
+      // turns a straight diagonal into a staircase of 34°/56° steps that
+      // simplify() can't collapse, and textPath tilts each glyph to match.
       var mapped = x.c.map(function (q) {
-        return [Math.round(q[0]*f.sc + f.ox), Math.round(q[1]*f.sc + f.oy)]
+        return [q[0]*f.sc + f.ox, q[1]*f.sc + f.oy]
       })
       var lean = simplify(mapped, SIMPLIFY_TOL)
       return {
         d: lean.map(function (q, i) {
-          return (i ? 'L' : 'M') + q[0] + ',' + q[1]
+          return (i ? 'L' : 'M') + r1(q[0]) + ',' + r1(q[1])
         }).join('') + (x.closed ? 'Z' : ''),
         closed: x.closed
       }
@@ -335,6 +346,10 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     var d = DATA[cur()], list = strokes(), ai = activeIdx()
     svg.setAttribute('viewBox', '0 0 ' + d.w + ' ' + d.h)
     while (svg.firstChild) svg.removeChild(svg.firstChild)
+    // The preview pads the viewBox, which changes the stage's aspect ratio, so
+    // the stretched <img> would no longer sit under the line. Draw the artwork
+    // inside the SVG instead, in the same coordinates as the curve.
+    document.getElementById('artimg').style.visibility = previewOn ? 'hidden' : ''
 
     if (previewOn) {
       var built = buildTrack(list)
@@ -348,12 +363,18 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
           var pad = PAD / f.sc
           svg.setAttribute('viewBox',
             (-pad) + ' ' + (-pad) + ' ' + (d.w + 2*pad) + ' ' + (d.h + 2*pad))
+          svg.appendChild(el('image', { href: ART[cur()], x: 0, y: 0, width: d.w, height: d.h,
+            style: 'filter:var(--art);opacity:var(--artop);pointer-events:none' }))
           // Shorter things to write when a stroke is too short for the full
           // label — a spur does not need to repeat the track name.
           var full = d.name.toUpperCase()
           var parts = full.split('—').map(function (t) { return t.trim() }).filter(Boolean)
           var ladder = [full]
           if (parts.length > 1) { ladder.push(parts[parts.length - 1]); ladder.push(parts[0]) }
+          // Single words last, longest first — mirrors unitLadder in AnnotationMap.vue.
+          ladder = ladder.concat(full.split(/[\s—]+/).filter(function (w) {
+            return w.length > 2 && GENERIC_WORDS.indexOf(w) < 0
+          }).sort(function (a, b) { return b.length - a.length }))
           ladder = ladder.filter(function (v, i, a) { return v && a.indexOf(v) === i })
             .map(function (v) { return v + ' · ' })
           // Back to front, so line 1 sits above line 2 — matching the site.
@@ -456,7 +477,7 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     // Only the active stroke shows handles, so a click never grabs the wrong line.
     strokes()[ai].pts.forEach(function (q, i) {
       var c = el('circle', { cx: q[0], cy: q[1], r: Math.max(3, d.w / 145),
-        fill: 'var(--bg)', stroke: 'var(--acc)', 'stroke-width': Math.max(1.5, d.w / 340) })
+        fill: i === selected() ? 'var(--acc)' : 'var(--bg)', stroke: 'var(--acc)', 'stroke-width': Math.max(1.5, d.w / 340) })
       c.setAttribute('data-i', i)
       c.style.cursor = 'grab'
       svg.appendChild(c)
@@ -565,6 +586,31 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
   }
 
   var dragI = -1
+  // The handle Delete removes. Tied to the track and stroke it was picked on,
+  // so switching either quietly drops it rather than pointing at another line.
+  var sel = null
+  function selected () {
+    if (!sel || sel.slug !== cur() || sel.stroke !== activeIdx()) return -1
+    return sel.i < pts().length ? sel.i : -1
+  }
+  function select (i) { sel = i < 0 ? null : { slug: cur(), stroke: activeIdx(), i: i } }
+
+  // Same floor as double-click: a loop needs three handles, an open line two.
+  function removeHandle (i) {
+    if (pts().length <= (isClosed() ? 3 : 2)) { setState('A line needs at least ' + (isClosed() ? 3 : 2) + ' handles'); return false }
+    snapshot()
+    pts().splice(i, 1)
+    return true
+  }
+  function deleteSelected () {
+    var i = selected()
+    if (i < 0) { setState('Click a handle to select it first'); return }
+    if (!removeHandle(i)) return
+    // Move the selection to the neighbour so repeated presses keep deleting.
+    select(pts().length ? Math.min(i, pts().length - 1) : -1)
+    changed()
+  }
+
   svg.addEventListener('pointerdown', function (ev) {
     if (previewOn) return
     if (arrowMode) {
@@ -576,9 +622,14 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     snapshot()
     if (raw !== null && raw !== undefined) {
       dragI = +raw
+      select(dragI)
       try { svg.setPointerCapture(ev.pointerId) } catch (e) {}
     } else {
-      insertNear(toLocal(ev))
+      var l0 = toLocal(ev)
+      insertNear(l0)
+      // Select the handle just added, so a mis-click is one Delete away.
+      var rx = Math.round(l0[0]), ry = Math.round(l0[1])
+      select(pts().findIndex(function (q) { return q[0] === rx && q[1] === ry }))
       changed()
     }
   })
@@ -593,9 +644,8 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
   svg.addEventListener('dblclick', function (ev) {
     var raw = ev.target.getAttribute && ev.target.getAttribute('data-i')
     if (raw === null || raw === undefined) return
-    if (pts().length <= (isClosed() ? 3 : 2)) return
-    snapshot()
-    pts().splice(+raw, 1)
+    if (!removeHandle(+raw)) return
+    sel = null
     changed()
   })
 
@@ -663,7 +713,7 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
       })
       wrap.appendChild(b)
     })
-    document.getElementById('delline').disabled = list.length < 2
+    document.getElementById('delline').disabled = list.length < 2 && !list[0].pts.length
     document.getElementById('loopmode').textContent = isClosed() ? 'Open loop' : 'Close loop'
   }
 
@@ -689,12 +739,16 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     changed(); paintLines()
   }
   document.getElementById('delline').onclick = function () {
-    var list = strokes()
-    if (list.length < 2) return
+    var list = strokes(), ai = activeIdx()
+    if (list.length < 2 && !list[0].pts.length) return
     snapshot()
-    list.splice(activeIdx(), 1)
-    edits[cur()].active = Math.max(0, activeIdx() - 1)
+    // A track always keeps one stroke to draw into, so deleting the last line
+    // empties it rather than removing it.
+    if (list.length < 2) list[0] = { pts: [], closed: list[0].closed }
+    else list.splice(ai, 1)
+    edits[cur()].active = Math.max(0, ai - 1)
     changed(); paintLines()
+    setState('Deleted line ' + (ai + 1) + ' — Z to undo')
   }
   document.getElementById('loopmode').onclick = function () {
     snapshot()
@@ -710,6 +764,7 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     var st = stack()
     if (!st.length) return
     var prevState = JSON.parse(st.pop())
+    sel = null
     edits[cur()].strokes = prevState.strokes
     edits[cur()].arrow = prevState.arrow || null
     if (edits[cur()].active >= edits[cur()].strokes.length) edits[cur()].active = 0
@@ -815,6 +870,11 @@ textarea{width:100%;height:150px;background:var(--panel);color:var(--ink);border
     else if (e.key === 'ArrowRight' && idx < SLUGS.length - 1) { idx++; show() }
     else if (e.key === 'z' || e.key === 'Z') document.getElementById('undo').click()
     else if (e.key === 'Enter') document.getElementById('done').click()
+    // Backspace too: it is the key labelled "delete" on a Mac keyboard.
+    else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault(); deleteSelected()
+    }
+    else if (e.key === 'Escape' && selected() >= 0) { sel = null; draw() }
     else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
       if (!window.getSelection || String(window.getSelection()) === '') {
         e.preventDefault(); document.getElementById('copy').click()

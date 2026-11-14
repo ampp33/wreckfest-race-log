@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       API <em class="signal">Keys</em>
     </h1>
@@ -102,7 +102,7 @@
               </td>
               <td class="px-4 py-2 text-right whitespace-nowrap">
                 <router-link
-                  :to="{ path: '/races', query: { source: 'api', api_key_id: key.id } }"
+                  :to="{ path: `/${auth.user.id}/races`, query: { source: 'api', api_key_id: key.id } }"
                   class="font-semibold text-brand-accent dark:text-brand-accent-dark hover:underline"
                 >{{ key.race_count.toLocaleString() }}</router-link>
               </td>
@@ -145,11 +145,15 @@
 import { getApiKeys, createApiKey, deleteApiKey } from '../services/apiKeyService.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDate } from '../utils/dateFormat.js'
+import { authStore } from '../stores/authStore.js'
+
+const DEFAULT_KEY_NAME = 'Default'
 
 export default {
   name: 'ApiKeysPage',
   data() {
     return {
+      auth: authStore,
       keys: [],
       loading: true,
       loadError: null,
@@ -174,6 +178,8 @@ export default {
       this.loadError = null
       try {
         this.keys = await getApiKeys()
+        // First key: pre-fill a name so the user can just hit Generate.
+        if (!this.keys.length && !this.newName) this.newName = DEFAULT_KEY_NAME
       } catch (err) {
         this.loadError = err.message || 'Failed to load API keys'
       } finally {
@@ -201,6 +207,7 @@ export default {
       try {
         await deleteApiKey(id)
         this.keys = this.keys.filter(k => k.id !== id)
+        if (!this.keys.length && !this.newName) this.newName = DEFAULT_KEY_NAME
         pushToast('API key revoked', 'success')
       } catch (err) {
         pushToast(err.message || 'Failed to revoke key', 'error')

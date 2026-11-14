@@ -6,16 +6,21 @@ export async function getAllUsers() {
   return data ?? []
 }
 
-export async function getUserGrowth(range = '30d') {
-  const { data, error } = await supabase.rpc('get_user_growth', { p_range: range })
+// Race counts per 15-minute UTC bin, as [{ at, count }] with `at` in epoch
+// ms — the caller regroups them by the viewer's local hour or day (see
+// src/utils/chartBuckets.js and get_race_log_bins() in supabase/schema.sql).
+export async function getRaceLogBins(range = '30d') {
+  const { data, error } = await supabase.rpc('get_race_log_bins', { p_range: range })
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(([at, count]) => ({ at, count: Number(count) }))
 }
 
-export async function getRaceLogGrowth(range = '30d') {
-  const { data, error } = await supabase.rpc('get_race_log_growth', { p_range: range })
+// Distinct (user, 15-minute UTC bin) race pairs as [{ userId, at }], reaching
+// 60 days before the range — see get_user_activity_bins() in supabase/schema.sql.
+export async function getUserActivityBins(range = '30d') {
+  const { data, error } = await supabase.rpc('get_user_activity_bins', { p_range: range })
   if (error) throw error
-  return data ?? []
+  return (data ?? []).map(([userId, at]) => ({ userId, at }))
 }
 
 export async function setUserRole(userId, role) {

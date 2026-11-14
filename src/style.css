@@ -64,6 +64,21 @@ html {
 body {
   overflow-x: hidden;
   font-feature-settings: 'kern' 1;
+  text-rendering: geometricPrecision;
+}
+
+/* Race-table pages (RacesPage, TrackDetailPage), desktop only: rather than
+ * giving a wide table its own horizontal scrollbar, let the whole page grow
+ * past max-w-7xl to the table's min-content width, and let the browser
+ * window scroll sideways to reach it (body's overflow-x: hidden would clip
+ * it otherwise). Below that width the page lays out exactly as before. */
+@media (min-width: 640px) {
+  .wide-table-page {
+    min-width: min-content;
+  }
+  body:has(.wide-table-page) {
+    overflow-x: visible;
+  }
 }
 
 /* The homepage hero's Swiss-punk car watermark (Rocket RX, driving up the
@@ -155,7 +170,7 @@ body {
  * a graphic this size without crowding the text.
  *
  * The `top 88px` in background-position clears the header's own height at
- * this breakpoint exactly (PublicHeader/NavBar are 88px tall here) — a
+ * this breakpoint exactly (NavBar is 88px tall here) — a
  * vw-based offset doesn't work for this because vw grows with viewport
  * width while the header's height is fixed, so any header-height-minus-Nvw
  * value still goes negative (bleeding back into the header) at

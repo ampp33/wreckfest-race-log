@@ -53,12 +53,15 @@ convention — field names must exactly match the SQL parameter names):
 | `gear_ratio`         | integer | no       | Tuning dial position. |
 | `differential`       | integer | no       | Tuning dial position. |
 | `brake_balance`      | integer | no       | Tuning dial position. |
-| `notes`              | string  | no       | Free-form notes stored on the race. |
+| `notes`              | string  | no       | Free-form notes stored with the race. Private: only the key's owner can see them, even though the race itself is public. |
 | `lap_count`          | integer | no       | Number of laps in the race. Defaults to the length of `lap_times_ms` when omitted. |
 | `lap_times_ms`       | array   | no       | JSON array of per-lap times in milliseconds, in lap order — first entry is lap 1, second is lap 2, and so on (e.g. `[19160, 18994, 19340]`). Stored as a JSON object on the race and charted in the race's expand drawer on the track page. |
 | `results_roster`     | array   | no       | JSON array of all racers in finishing order. Each entry is an object with the fields described below. Stored verbatim and intended for display as a structured results table in the app. |
 | `assists`            | object  | no       | Driving-assist difficulty settings in effect for the race, as a single JSON object — see shape below. Stored verbatim as `jsonb`. |
 | `vehicle_weight_kg`  | integer | no       | Vehicle weight in kg at race time. Must be `>= 0`. |
+| `server_name`        | string  | no       | Name of the online server the race was run on, exactly as the game reports it — **including** Wreckfest's color codes (`^` followed by one character, e.g. `^2`, `^:`), so the site can strip them or render the colors. Omit it for offline races. At most 256 characters; an empty string is stored as `null`. |
+| `plugin_version`     | string  | no       | Version of the companion plugin making the call (e.g. `"1.4.0"`). Stored privately with the race so we can track which plugin versions users are running, and trace bad or missing data back to the plugin release that sent it. Plugins should always send it. At most 64 characters; an empty string is stored as `null`. |
+| `parts`              | object  | no       | Engine and armor upgrades on the calling player's car, as a single JSON object — see shape below. Stored verbatim as `jsonb`. The same object may also appear in that player's `results_roster` entry. |
 
 #### `results_roster` entry shape
 
@@ -72,6 +75,7 @@ convention — field names must exactly match the SQL parameter names):
 | `total_time_ms`  | integer | Total race time in milliseconds. `0` if the player completed zero laps. |
 | `dnf`            | boolean | `true` if the engine's own DNF flag is set for this player. |
 | `laps_completed` | integer | Number of laps actually completed (0 for a DNF with no laps). |
+| `tuning`         | object  | Optional. That racer's tuning dials, 1-5 each: `{"suspension": 5, "gear_ratio": 3, "differential": 4, "brake_balance": 2}`. Omit it when unknown (e.g. AI cars). Shown in the roster's Tuning column as `5342`. |
 
 If all four tuning fields are provided, they're combined server-side into
 a single `tuning` code as `suspension*1000 + gear_ratio*100 +
@@ -92,6 +96,19 @@ is simply absent from the stored object.
 | `stability_control`     | `"off"`, `"half"`, or `"full"` |
 
 Example: `{"shifting": "manual", "abs": "half", "traction_control": "off", "stability_control": "half"}`.
+
+#### `parts` shape
+
+Stored as-is. All three keys are optional; anything the plugin couldn't
+resolve is simply absent.
+
+| Key            | Value |
+|----------------|-------|
+| `engine`       | `"street"`, `"sport"` or `"race"`, or the raw engine part name for engines that don't fit that pattern (e.g. `"bigrig"`). |
+| `engine_parts` | Object of engine sub-part → raw preset name, e.g. `{"air_filter": "racing", "pistons": "sport"}`. Sub-parts seen: `air_filter`, `cooling`, `intake_manifold`, `fuel_system`, `ignition`, `exhaust`, `exhaust_manifold`, `valves`, `camshaft`, `pistons`. Presets seen: `"stock"`, `"street"`, `"sport"`, `"racing"`. |
+| `armor`        | Object of armor slot → `{"name": <display name in the game's language, or null>, "weight_kg": <integer kg the part adds to the car — 0 for "None" parts — or null>}`. Slots: `front_bumper`, `rear_bumper`, `roll_cage`, `side_protector`, `window_bars`. |
+
+Example: `{"engine": "street", "engine_parts": {"air_filter": "racing", "pistons": "sport"}, "armor": {"front_bumper": {"name": "Mesh Guard", "weight_kg": 20}, "side_protector": {"name": "Combat Bars", "weight_kg": 120}}}`.
 
 The race's timestamp is always set to the server's current time — there
 is no way to submit a backdated race through this endpoint.
@@ -124,7 +141,17 @@ curl -X POST "{SUPABASE_URL}/rest/v1/rpc/insert_race_with_api_key_wf1" \
       "traction_control": "off",
       "stability_control": "half"
     },
-    "vehicle_weight_kg": 1069
+    "vehicle_weight_kg": 1069,
+    "server_name": "^7WWF ^1| ^7Wednesday Wreck Fest ^1| ^7No Rules ^1| ^7Voting ^1",
+    "plugin_version": "1.4.0",
+    "parts": {
+      "engine": "street",
+      "engine_parts": { "air_filter": "racing", "pistons": "sport" },
+      "armor": {
+        "front_bumper": { "name": "Mesh Guard", "weight_kg": 20 },
+        "roll_cage": { "name": "Driver Cage", "weight_kg": 30 }
+      }
+    }
   }'
 ```
 
@@ -170,6 +197,11 @@ error).
 { "success": false, "error": "assists must be a JSON object" }
 ```
 
+**`parts` sent as something other than a JSON object:**
+```json
+{ "success": false, "error": "parts must be a JSON object" }
+```
+
 **Negative lap count:**
 ```json
 { "success": false, "error": "lap_count must be >= 0" }
@@ -178,6 +210,16 @@ error).
 **Negative vehicle weight:**
 ```json
 { "success": false, "error": "vehicle_weight_kg must be >= 0" }
+```
+
+**Server name too long:**
+```json
+{ "success": false, "error": "server_name must be at most 256 characters" }
+```
+
+**Plugin version too long:**
+```json
+{ "success": false, "error": "plugin_version must be at most 64 characters" }
 ```
 
 **Unknown vehicle name:** not an error — the race is still inserted with

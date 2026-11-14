@@ -1,7 +1,5 @@
 <template>
   <div>
-    <PublicHeader />
-
     <!-- HERO — inlined here rather than its own component now that the
          design (car watermark + gutter) is settled; it used to be a
          separate HeroIntro.vue while that was still being worked out. Its
@@ -14,7 +12,7 @@
          bled off the left edge), so the wheels point at empty space rather
          than the text. Only kicks in at the same sm breakpoint the car
          itself appears at; below that the car is hidden and this container
-         falls back to the plain centered px-6 gutter. This 22vw is the
+         falls back to the plain centered px-4 gutter. This 22vw is the
          page's one shared body-copy left edge at sm+ — the "Everything, on
          record."/"How to get started." sections and the numbered timeline
          below all key off this same value (see their own comments) so
@@ -28,14 +26,18 @@
          the block reads as a centered column instead of one huge gutter on
          the left and a bare 40px on the right. -->
     <section>
-      <div class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
+      <div class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
           Track every race.<br><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
         </h1>
+        <h2 v-if="totalRaceCount" class="leading-[0.9] text-display-sm text-brand-text dark:text-brand-text-dark mt-8">
+          <span class="font-display font-black tracking-tightest text-brand-accent dark:text-brand-accent-dark">{{ totalRaceCount.toLocaleString() }}</span>
+          <span class="font-display font-bold tracking-tightest"> races logged, and counting.</span>
+        </h2>
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-8">
           <b>Wreckfest Race Log</b> is exactly what the name says — it's an online race log and note tracking tool for Wreckfest. Track every race automatically with the <router-link to="/plugin" class="font-bold hover:underline">Telemetry plugin</router-link>,
           or manually log them yourself here — then use the site to watch your stats improve, take notes
-          track by track, and work toward mastering the game.
+          track by track, see how you stack up against everyone else, and work toward mastering the game.
         </p>
         <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark max-w-lg mt-4">
           <i>I built this site because I wanted a pretty and simple way to log my races and take notes, and I hope it helps you as much as it's helped me.</i> — Ampp33
@@ -50,7 +52,7 @@
            bleed runs the full height of this section too (747px hero + up
            to 1436px of car vs. this section's own ~560px), so its heading
            and copy need the same clearance, not just the hero's. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
           Everything, on <em class="font-heading font-normal tracking-normal signal">record</em>.
         </h1>
@@ -75,6 +77,13 @@
           </div>
 
           <div>
+            <h2 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">Public by Default</h2>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Everyone's races are public, so you can see how you stack up on the leaderboards, see who set the fastest lap on a track, and see what cars and tunings the fast drivers are running.</p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Rather keep your log to yourself? One switch in your profile settings hides all your races from everyone but you.</p>
+            <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">Your notes, goals and track annotations are always private.</p>
+          </div>
+
+          <div>
             <h2 class="font-body font-bold text-[15px] tracking-tight text-brand-text dark:text-brand-text-dark mb-1.5">More on the Horizon</h2>
             <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark">This site is actively being developed — expect more features and fixes in the near future.</p>
             <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark italic">Don't see a feature you want? Hit the Feedback button and leave a comment.</p>
@@ -86,7 +95,7 @@
            separate <section>s, the heading with its own outer padding and
            the timeline with a different one) — that split is exactly how
            the two drifted out of alignment with each other across this
-           conversation. One shared px-6/sm:pl-[22vw]/sm:pr-[22vw] here
+           conversation. One shared px-4/sm:pl-[22vw]/sm:pr-[22vw] here
            (matching the "Everything, on record." section above) means
            there's only one place left to change if this needs to move
            again.
@@ -108,13 +117,23 @@
            dedicated wrapper, fixed and unresponsive, is what lets the
            circles and line hold their fixed offsets (left-5 / -left-9) at
            every width, full stop. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
           <em class="font-heading font-normal tracking-normal signal">How</em> to get started.
         </h1>
 
         <div class="relative pl-10">
           <div class="absolute left-5 top-2 bottom-2 w-0.5 bg-brand-border dark:bg-brand-border-dark"></div>
+
+          <div class="relative mb-12">
+            <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-accent dark:bg-brand-accent-dark text-white font-display font-black text-[13px] flex items-center justify-center">0</div>
+            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">See what everyone's logging.</h2>
+            <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">No account needed. Check out the leaderboards for who's raced the most and the fastest lap on every track, or browse everyone's races to see what people have been logging.</p>
+            <div class="flex flex-wrap gap-x-6 gap-y-2">
+              <router-link to="/community/leaderboard" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">See the leaderboards →</router-link>
+              <router-link to="/community/races" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Browse races →</router-link>
+            </div>
+          </div>
 
           <div class="relative mb-12">
             <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-accent dark:bg-brand-accent-dark text-white font-display font-black text-[13px] flex items-center justify-center">1</div>
@@ -129,7 +148,7 @@
               <router-link to="/plugin" class="hover:underline">Install the Telemetry plugin.</router-link>
             </h2>
             <p class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark max-w-3xl mb-3">Install it once. It runs quietly alongside Wreckfest and reads your results straight out of the game's own memory the instant a race ends — then posts them here automatically.</p>
-            <router-link to="/plugin" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Install Telemetry →</router-link>
+            <router-link to="/plugin" class="ov text-brand-accent dark:text-brand-accent-dark hover:underline">Install Telemetry Plugin →</router-link>
           </div>
 
           <div class="relative mb-12">
@@ -146,7 +165,7 @@
 
           <div class="relative mb-12">
             <div class="absolute -left-9 -top-[7px] w-8 h-8 rounded-full bg-brand-strong dark:bg-brand-strong-dark text-brand-bg dark:text-brand-bg-dark font-display font-black text-[13px] flex items-center justify-center">5</div>
-            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Set your goals and chase them.</h2>
+            <h2 class="font-body font-bold text-[18px] leading-none tracking-tightest text-brand-text dark:text-brand-text-dark mb-2">Set your goals and chase them, and see how often you finish on top.</h2>
             <HomeGapTiles :goal="flagshipGoal" />
           </div>
 
@@ -167,7 +186,7 @@
 
       <!-- CTA — max-w-7xl matches the rest of the page; the original
            production homepage's own CTA band used this same width. -->
-      <section class="mx-auto px-6 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
+      <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-8">
         <div class="relative bg-brand-accent dark:bg-brand-accent-dark text-center overflow-hidden py-[clamp(28px,8cqw,80px)] [container-type:inline-size]">
           <h2
             aria-hidden="true"
@@ -176,7 +195,7 @@
           <div class="relative flex flex-wrap justify-center gap-3">
             <span class="sr-only">What are you waiting for?</span>
             <router-link to="/login" class="min-h-[48px] px-7 inline-flex items-center border border-white/50 text-white font-bold text-[14px] bg-brand-accent dark:bg-brand-accent-dark">Create an Account</router-link>
-            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry</router-link>
+            <router-link to="/plugin" class="min-h-[48px] px-7 inline-flex items-center bg-white text-brand-accent font-bold text-[14px]">Install Telemetry Plugin</router-link>
           </div>
         </div>
       </section>
@@ -185,15 +204,15 @@
 </template>
 
 <script>
-import PublicHeader from '../components/PublicHeader.vue'
 import HomeGapTiles from '../components/HomeGapTiles.vue'
 import HomeRacesTable from '../components/HomeRacesTable.vue'
 import HomeStatsPreview from '../components/HomeStatsPreview.vue'
 import { races, flagshipRaceIndex, flagshipGoal, statsPreview } from '../data/homePageDemoData.js'
+import { getTotalRaceCount } from '../services/publicStatsService.js'
 
 export default {
   name: 'HomePage',
-  components: { PublicHeader, HomeGapTiles, HomeRacesTable, HomeStatsPreview },
+  components: { HomeGapTiles, HomeRacesTable, HomeStatsPreview },
   // The car watermark itself is a background-image on #app, the Vue mount
   // div (see style.css for why #app rather than <body>) — toggled here via
   // mounted/beforeUnmount rather than living in the hero section's own
@@ -204,6 +223,9 @@ export default {
   // abandoned) rather than being clipped to it.
   mounted() {
     document.getElementById('app').classList.add('has-hero-car-bg')
+    getTotalRaceCount()
+      .then(count => { this.totalRaceCount = count })
+      .catch(() => {})
   },
   beforeUnmount() {
     document.getElementById('app').classList.remove('has-hero-car-bg')
@@ -213,7 +235,8 @@ export default {
       races,
       flagshipRaceIndex,
       flagshipGoal,
-      statsPreview
+      statsPreview,
+      totalRaceCount: null
     }
   }
 }
