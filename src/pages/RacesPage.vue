@@ -497,7 +497,7 @@
 </template>
 
 <script>
-import { getAllRaces, getCommunityRaces, COMMUNITY_PAGE_SIZE, updateRace, deleteRace } from '../services/raceService.js'
+import { getAllRaces, getCommunityRaces, getRaceDetails, COMMUNITY_PAGE_SIZE, updateRace, deleteRace } from '../services/raceService.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import DriverScope from '../components/DriverScope.vue'
@@ -857,8 +857,8 @@ export default {
         const piClass = this.prefs.piClass
         const [races, tracks, vehicles] = await Promise.all([
           this.isCommunity
-            ? getCommunityRaces({ piClass })
-            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, vehicleId: this.vehicleIdFilter, piClass }),
+            ? getCommunityRaces({ piClass, light: true })
+            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, vehicleId: this.vehicleIdFilter, piClass, light: true }),
           getTracks(),
           getVehicles()
         ])
@@ -925,7 +925,7 @@ export default {
       this.loadingMore = true
       const token = this.loadToken
       try {
-        const races = await getCommunityRaces({ piClass: this.prefs.piClass, offset: this.fetchedCount })
+        const races = await getCommunityRaces({ piClass: this.prefs.piClass, offset: this.fetchedCount, light: true })
         if (token !== this.loadToken) return
         const seen = new Set(this.rows.map(r => r.id))
         this.rows = this.rows.concat(races.filter(r => !seen.has(r.id)).map(this.decorateRace))
@@ -948,10 +948,14 @@ export default {
       if (Array.isArray(race.lap_times_ms)) return race.lap_times_ms.length
       return '—'
     },
+    // Rows load without splits/roster (see getRaceDetails); until a row is
+    // expanded, the first-entry probes stand in for them.
     hasLapTimes(race) {
+      if (!('lap_times_ms' in race)) return race.first_lap_ms != null
       return Array.isArray(race.lap_times_ms) && race.lap_times_ms.some(ms => ms != null)
     },
     hasRoster(race) {
+      if (!('results_roster' in race)) return race.first_roster_entry != null
       return Array.isArray(race.results_roster) && race.results_roster.length > 0
     },
     apiSourceTitle(race) {
@@ -962,8 +966,15 @@ export default {
     isOwnRace(race) {
       return !!authStore.user && race.user_id === authStore.user.id
     },
-    toggleExpanded(id) {
+    async toggleExpanded(id) {
       this.expanded[id] = !this.expanded[id]
+      const race = this.rows.find(r => r.id === id)
+      if (!this.expanded[id] || !race || 'results_roster' in race) return
+      try {
+        Object.assign(race, await getRaceDetails(id))
+      } catch (err) {
+        pushToast(err.message || 'Failed to load race details', 'error')
+      }
     },
     editDefaultsFor(race) {
       return {

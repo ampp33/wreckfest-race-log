@@ -10,6 +10,10 @@ const RACE_COLUMNS =
   'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, parts, lap_count, lap_times_ms, results_roster, created_at, source'
 const PRIVATE_EMBED = 'races_private(notes, api_key_id, api_key:api_keys(name))'
 const SELECT = `${RACE_COLUMNS}, ${PRIVATE_EMBED}`
+// grabs the small race row records instead of ALL that data including the roster
+const LIST_SELECT =
+  'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, parts, lap_count, created_at, source, ' +
+  `first_lap_ms:lap_times_ms->0, first_roster_entry:results_roster->0, ${PRIVATE_EMBED}`
 
 function flattenRace({ races_private: priv, ...race }) {
   return {
@@ -24,16 +28,24 @@ function flattenRace({ races_private: priv, ...race }) {
 // silently drops the rest, so a driver's full history is read a page at a
 // time until one comes back short. buildQuery() makes a fresh query per page,
 // since a query can only run once; it must have a total order so the pages
-// don't overlap or skip rows.
+// don't overlap or skip rows. Pages go out PAGES_AT_ONCE at a time, so up to
+// 2000 rows is one round trip instead of two — at the cost of one empty
+// request for shorter histories.
 const PAGE_SIZE = 1000
+const PAGES_AT_ONCE = 2
 
 async function fetchAllPages(buildQuery) {
   const rows = []
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await buildQuery().range(from, from + PAGE_SIZE - 1)
-    if (error) throw error
-    rows.push(...data)
-    if (data.length < PAGE_SIZE) return rows
+  for (let from = 0; ; from += PAGE_SIZE * PAGES_AT_ONCE) {
+    const pages = await Promise.all(Array.from({ length: PAGES_AT_ONCE }, (_, i) => {
+      const start = from + i * PAGE_SIZE
+      return buildQuery().range(start, start + PAGE_SIZE - 1)
+    }))
+    for (const { data, error } of pages) {
+      if (error) throw error
+      rows.push(...data)
+      if (data.length < PAGE_SIZE) return rows
+    }
   }
 }
 
@@ -63,15 +75,17 @@ export async function getRacesByVariation(variationId, userId, { piClass } = {})
 }
 
 // `piClass` ('A'..'D') keeps just that car class — a race with no PI has
-// none, so it drops out.
-export async function getAllRaces({ userId, source, apiKeyId, vehicleId, piClass } = {}) {
+// none, so it drops out. `light` leaves out lap splits and rosters (see
+// LIST_SELECT).
+export async function getAllRaces({ userId, source, apiKeyId, vehicleId, piClass, light = false } = {}) {
+  const select = light ? LIST_SELECT : SELECT
   // Filtering on a key means filtering on the embedded table, which needs
   // an inner join — otherwise PostgREST keeps every race and just nulls the
   // embed on the ones that don't match.
   const rows = await fetchAllPages(() => {
     let query = supabase
       .from('races')
-      .select(apiKeyId ? SELECT.replace('races_private(', 'races_private!inner(') : SELECT)
+      .select(apiKeyId ? select.replace('races_private(', 'races_private!inner(') : select)
       .eq('user_id', userId)
       .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
     if (source) query = query.eq('source', source)
@@ -93,10 +107,10 @@ export const COMMUNITY_PAGE_SIZE = 500
 // can be edited here without losing their notes — RLS keeps it null on everyone
 // else's. RLS also leaves out drivers who've opted out (other than you). The
 // driver's display name comes along via the races → profiles foreign key.
-export async function getCommunityRaces({ variationId, piClass, offset = 0, limit = COMMUNITY_PAGE_SIZE } = {}) {
+export async function getCommunityRaces({ variationId, piClass, offset = 0, limit = COMMUNITY_PAGE_SIZE, light = false } = {}) {
   let query = supabase
     .from('races')
-    .select(`${SELECT}, driver:profiles(display_name)`)
+    .select(`${light ? LIST_SELECT : SELECT}, driver:profiles(display_name)`)
     .eq('source', 'api')
     .order('datetime', { ascending: false }).order('created_at', { ascending: false })
     .range(offset, offset + limit - 1)
@@ -115,6 +129,17 @@ export async function getFastestLapsPerVehicleOnVariation(variationId) {
   const { data, error } = await supabase.rpc('get_fastest_laps_per_vehicle_on_variation', { p_variation_id: variationId })
   if (error) throw error
   return data || []
+}
+
+// The lap splits and results roster a `light` list fetch left out.
+export async function getRaceDetails(id) {
+  const { data, error } = await supabase
+    .from('races')
+    .select('lap_times_ms, results_roster')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data
 }
 
 export async function createRace(race, userId) {
