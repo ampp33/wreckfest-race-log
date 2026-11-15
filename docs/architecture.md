@@ -77,7 +77,7 @@ resolving the session.
 | `publicStatsService.js` | `get_total_race_count()`, the one anon-callable stats RPC. Currently unused — the landing page renders from `src/data/homePageDemoData.js` instead. |
 | `apiKeyService.js` | The user's own API keys. |
 | `feedbackService.js` | In-app feedback submission. |
-| `alertService.js` | Alerts with read state (`get_alerts()`), marking read, and admin create/edit/delete. |
+| `alertService.js` | The caller's alerts with read state (`get_alerts()`), marking read, and admin create (to everyone or chosen users)/edit/delete plus per-alert seen-by. |
 | `adminService.js` | Admin-only RPCs: users, roles, bans, all API keys, all feedback, growth. |
 
 ### State
@@ -236,9 +236,11 @@ you can always read your own; only the owner can write):
   persisted. Revocation is soft (`revoked_at`) so past races keep their
   attribution.
 - `feedback` — in-app feedback (insert-own, select-admin)
-- `alerts` — site-wide announcements (select-all, write-admin)
-- `alert_reads` — one row per (user, alert) the user has read. Alerts posted
-  before an account was created count as read without a row.
+- `alerts` — announcements (select if you're a recipient, write-admin)
+- `alert_recipients` — inbox rows: one per (user, alert), written by
+  `create_alert()` for every current user or a chosen few. `read_at` (null =
+  unread) is the only column a user can update. Users who sign up later don't
+  get earlier alerts.
 - `user_details` — account status, used for the ban check
 - `roles` / `user_roles` — the admin role assignment
 
@@ -260,7 +262,7 @@ Three mechanisms, in order of how much they matter:
    directly — `is_admin()`, `set_user_role()`, `set_user_banned()`,
    `get_all_users_with_roles()`, `get_all_api_keys()`, `get_all_feedback()`,
    `admin_delete_api_key()`, `get_total_race_count()`, `get_user_growth()`,
-   `get_alerts()`.
+   `create_alert()`, `get_admin_alerts()`, `get_alert_recipients()`.
 3. **The router guard**, which only keeps honest users out of screens that
    would render empty anyway.
 

@@ -4,7 +4,7 @@
       <em class="signal">Alerts</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10 max-w-xl">
-      Post an announcement to every user's alerts bell. New alerts show as unread for everyone who signed up before they were posted.
+      Post an announcement to everyone's alerts bell, or to a chosen few. Users who sign up later don't get alerts posted before they joined.
     </p>
 
     <form
@@ -54,6 +54,45 @@
         <span v-if="linkError" class="block font-body text-[12px] text-brand-accent dark:text-brand-accent-dark mt-1">{{ linkError }}</span>
       </label>
 
+      <!-- Recipients are fixed once posted; editing only changes the content. -->
+      <fieldset v-if="!editingId" class="mb-5" :disabled="saving">
+        <legend class="block font-body text-[13px] text-brand-secondary dark:text-brand-secondary-dark mb-1.5">Send to</legend>
+        <div class="flex gap-5 mb-2">
+          <label class="inline-flex items-center gap-2 min-h-[44px] font-body text-[15px] text-brand-text dark:text-brand-text-dark">
+            <input v-model="audience" type="radio" value="everyone" class="accent-brand-accent" />
+            Everyone
+          </label>
+          <label class="inline-flex items-center gap-2 min-h-[44px] font-body text-[15px] text-brand-text dark:text-brand-text-dark">
+            <input v-model="audience" type="radio" value="specific" class="accent-brand-accent" />
+            Specific users<template v-if="selectedUserIds.length"> ({{ selectedUserIds.length }})</template>
+          </label>
+        </div>
+        <div v-if="audience === 'specific'">
+          <input
+            v-model="userFilter"
+            type="search"
+            placeholder="Filter by name or email"
+            aria-label="Filter users"
+            :class="[inputClass, 'mb-2']"
+          />
+          <p v-if="usersError" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ usersError }}</p>
+          <div v-else class="max-h-64 overflow-y-auto border border-brand-border dark:border-brand-border-dark">
+            <label
+              v-for="user in filteredUsers"
+              :key="user.id"
+              class="flex items-center gap-2.5 px-3 min-h-[44px] font-body text-[14px] text-brand-text dark:text-brand-text-dark hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            >
+              <input v-model="selectedUserIds" type="checkbox" :value="user.id" class="accent-brand-accent" />
+              <span>{{ user.display_name || user.email }}</span>
+              <span v-if="user.display_name" class="text-brand-muted dark:text-brand-muted-dark truncate">{{ user.email }}</span>
+            </label>
+            <p v-if="!filteredUsers.length" class="px-3 py-2.5 font-body text-[14px] text-brand-muted dark:text-brand-muted-dark">
+              {{ users.length ? 'No matching users.' : 'Loading…' }}
+            </p>
+          </div>
+        </div>
+      </fieldset>
+
       <div class="flex justify-end gap-3">
         <button
           v-if="editingId"
@@ -95,7 +134,13 @@
         <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark whitespace-pre-wrap max-w-2xl mb-2">{{ entry.body }}</p>
         <p v-if="entry.link" class="ov text-brand-accent dark:text-brand-accent-dark break-all mb-2">{{ entry.link }}</p>
 
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            class="ov min-h-[44px] inline-flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+            :aria-expanded="openRecipientsId === entry.id"
+            @click="toggleRecipients(entry.id)"
+          >Seen by {{ entry.read_count }} / {{ entry.recipient_count }}</button>
           <button
             type="button"
             class="ov min-h-[44px] inline-flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
@@ -113,15 +158,31 @@
             <button type="button" class="ov min-h-[44px] inline-flex items-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-text dark:hover:text-brand-text-dark" @click="confirmDeleteId = null">Cancel</button>
           </span>
         </div>
+
+        <div v-if="openRecipientsId === entry.id" class="mt-2 max-w-2xl">
+          <p v-if="!recipients[entry.id]" class="font-body text-[14px] text-brand-muted dark:text-brand-muted-dark">Loading…</p>
+          <ul v-else class="max-h-64 overflow-y-auto divide-y divide-brand-border dark:divide-brand-border-dark border-y border-brand-border dark:border-brand-border-dark">
+            <li
+              v-for="r in recipients[entry.id]"
+              :key="r.user_id"
+              class="flex justify-between gap-3 py-2 font-body text-[14px]"
+            >
+              <span class="text-brand-text dark:text-brand-text-dark">{{ r.display_name }}</span>
+              <span class="tabular whitespace-nowrap" :class="r.read_at ? 'text-brand-muted dark:text-brand-muted-dark' : 'text-brand-accent dark:text-brand-accent-dark'">
+                {{ r.read_at ? formatDate(r.read_at) : 'Not seen' }}
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { getAlerts, createAlert, updateAlert, deleteAlert } from '../services/alertService.js'
+import { getAdminAlerts, getAlertRecipients, createAlert, updateAlert, deleteAlert } from '../services/alertService.js'
+import { getAllUsers } from '../services/adminService.js'
 import { refreshAlerts } from '../stores/alertStore.js'
-import { authStore } from '../stores/authStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDateTime } from '../utils/dateFormat.js'
 
@@ -138,6 +199,14 @@ export default {
       editingId: null,
       saving: false,
       confirmDeleteId: null,
+      audience: 'everyone',
+      selectedUserIds: [],
+      userFilter: '',
+      users: [],
+      usersError: null,
+      // alert id -> recipient list, fetched when its "Seen by" is first opened
+      recipients: {},
+      openRecipientsId: null,
       PREVIEW_CHARS: 120,
       inputClass: 'w-full rounded border border-brand-border dark:border-brand-border-dark bg-brand-surface dark:bg-brand-surface-dark text-brand-text dark:text-brand-text-dark font-body text-[15px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent'
     }
@@ -151,7 +220,29 @@ export default {
       return 'Use an in-app path starting with / or a full http(s):// URL.'
     },
     canSubmit() {
-      return !this.saving && !this.linkError && this.form.title.trim() && this.form.body.trim()
+      const hasAudience = this.editingId || this.audience === 'everyone' || this.selectedUserIds.length
+      return !this.saving && !this.linkError && this.form.title.trim() && this.form.body.trim() && hasAudience
+    },
+    filteredUsers() {
+      const q = this.userFilter.trim().toLowerCase()
+      return this.users.filter(u =>
+        !q || (u.display_name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+      )
+    }
+  },
+  watch: {
+    // The user list is only needed for targeting, so fetch it on first use.
+    async audience(value) {
+      if (value !== 'specific' || this.users.length) return
+      this.usersError = null
+      try {
+        const users = await getAllUsers()
+        this.users = users.sort((a, b) =>
+          (a.display_name || a.email || '').localeCompare(b.display_name || b.email || '')
+        )
+      } catch (err) {
+        this.usersError = err.message || 'Failed to load users'
+      }
     }
   },
   created() {
@@ -159,9 +250,23 @@ export default {
   },
   methods: {
     formatDate: formatDateTime,
+    async toggleRecipients(id) {
+      if (this.openRecipientsId === id) {
+        this.openRecipientsId = null
+        return
+      }
+      this.openRecipientsId = id
+      try {
+        // Refetched on every open — read state changes while the page sits open.
+        this.recipients[id] = await getAlertRecipients(id)
+      } catch (err) {
+        this.openRecipientsId = null
+        pushToast(err.message || 'Failed to load recipients', 'error')
+      }
+    },
     async load() {
       try {
-        this.entries = await getAlerts()
+        this.entries = await getAdminAlerts()
       } catch (err) {
         this.error = err.message || 'Failed to load alerts'
       } finally {
@@ -171,6 +276,9 @@ export default {
     resetForm() {
       this.form = emptyForm()
       this.editingId = null
+      this.audience = 'everyone'
+      this.selectedUserIds = []
+      this.userFilter = ''
     },
     startEdit(entry) {
       this.editingId = entry.id
@@ -190,7 +298,10 @@ export default {
           await updateAlert(this.editingId, payload)
           pushToast('Alert updated', 'success', 3000)
         } else {
-          await createAlert({ ...payload, createdBy: authStore.user.id })
+          await createAlert({
+            ...payload,
+            userIds: this.audience === 'specific' ? this.selectedUserIds : null
+          })
           pushToast('Alert posted', 'success', 3000)
         }
         this.resetForm()

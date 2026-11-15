@@ -1643,10 +1643,14 @@ end;
 $$;
 
 -- =====================================================================
--- Alerts: site-wide announcements written by admins, surfaced through the
--- bullhorn in the nav bar. Read state is tracked per alert (not as a
--- single "last seen" timestamp) so previewing the newest few in the
--- popover doesn't silently mark older unseen ones as read too.
+-- Alerts: announcements written by admins, surfaced through the bullhorn
+-- in the nav bar. Inbox model: create_alert() writes one alert_recipients
+-- row per recipient (every current user, or a chosen few), and that row
+-- carries the read state — so who an alert went to, who has seen it, and
+-- who hasn't are all one table. Users who sign up later never get earlier
+-- alerts. Read state is per alert (not a single "last seen" timestamp) so
+-- previewing the newest few in the popover doesn't silently mark older
+-- unseen ones as read too.
 -- =====================================================================
 
 create table if not exists wf1.alerts (
@@ -1671,21 +1675,34 @@ alter table wf1.alerts drop constraint if exists alerts_title_length_check;
 alter table wf1.alerts add constraint alerts_title_length_check
     check (char_length(title) between 1 and 120);
 
-create table if not exists wf1.alert_reads (
-    user_id  uuid not null references auth.users(id) on delete cascade,
+-- Replaced by alert_recipients.read_at before alerts went live.
+drop table if exists wf1.alert_reads;
+
+create table if not exists wf1.alert_recipients (
     alert_id uuid not null references wf1.alerts(id) on delete cascade,
-    read_at  timestamptz not null default now(),
+    user_id  uuid not null references auth.users(id) on delete cascade,
+    read_at  timestamptz, -- null = unread
     primary key (user_id, alert_id)
 );
 
+-- For the admin page's per-alert counts and recipient list.
+create index if not exists alert_recipients_alert_id_idx on wf1.alert_recipients (alert_id);
+
 alter table wf1.alerts enable row level security;
-alter table wf1.alert_reads enable row level security;
+alter table wf1.alert_recipients enable row level security;
 
 drop policy if exists "alerts readable by authenticated" on wf1.alerts;
-create policy "alerts readable by authenticated"
+drop policy if exists "alerts select recipient or admin" on wf1.alerts;
+create policy "alerts select recipient or admin"
     on wf1.alerts for select
     to authenticated
-    using (true);
+    using (
+        wf1.is_admin(auth.uid())
+        or exists (
+            select 1 from wf1.alert_recipients r
+            where r.alert_id = alerts.id and r.user_id = auth.uid()
+        )
+    );
 
 drop policy if exists "alerts insert admin" on wf1.alerts;
 create policy "alerts insert admin"
@@ -1706,25 +1723,60 @@ create policy "alerts delete admin"
     to authenticated
     using (wf1.is_admin(auth.uid()));
 
-drop policy if exists "alert_reads select own" on wf1.alert_reads;
-create policy "alert_reads select own"
-    on wf1.alert_reads for select
+drop policy if exists "alert_recipients select own or admin" on wf1.alert_recipients;
+create policy "alert_recipients select own or admin"
+    on wf1.alert_recipients for select
     to authenticated
-    using (auth.uid() = user_id);
+    using (auth.uid() = user_id or wf1.is_admin(auth.uid()));
 
-drop policy if exists "alert_reads insert own" on wf1.alert_reads;
-create policy "alert_reads insert own"
-    on wf1.alert_reads for insert
+-- Marking read is the only write a user makes here, and the column grant
+-- after the schema-level grants below limits it to read_at. Rows are
+-- created only by create_alert() and removed by the alert's cascade.
+drop policy if exists "alert_recipients update own" on wf1.alert_recipients;
+create policy "alert_recipients update own"
+    on wf1.alert_recipients for update
     to authenticated
+    using (auth.uid() = user_id)
     with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
--- Alerts with the caller's read state, newest first; pass
+-- Posts an alert to p_user_ids, or to every current user when that's null,
+-- in one transaction so an alert never exists without its recipients.
+create or replace function wf1.create_alert(
+    p_title    text,
+    p_body     text,
+    p_link     text default null,
+    p_user_ids uuid[] default null
+)
+returns uuid
+language plpgsql
+security definer set search_path = wf1
+as $$
+declare
+    v_id uuid;
+begin
+    if not wf1.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+    if p_user_ids is not null and cardinality(p_user_ids) = 0 then
+        raise exception 'Pick at least one recipient';
+    end if;
+
+    insert into wf1.alerts (title, body, link, created_by)
+    values (p_title, p_body, nullif(p_link, ''), auth.uid())
+    returning id into v_id;
+
+    insert into wf1.alert_recipients (alert_id, user_id)
+    select v_id, u.id
+    from auth.users u
+    where p_user_ids is null or u.id = any(p_user_ids);
+
+    return v_id;
+end;
+$$;
+
+-- The caller's alerts with their read state, newest first; pass
 -- p_unread_only => true for just the unread ones (the nav bar bell).
--- Alerts posted before the account existed count as read, so a new user
--- doesn't sign up to a pile of stale announcements — they're still listed
--- on the alerts page, just not flagged. Security definer only so it can
--- read the caller's signup time from auth.users; every row is scoped to
--- auth.uid().
+-- Plain invoker function: RLS already scopes alert_recipients to the caller.
 drop function if exists wf1.get_alerts(boolean);
 
 create or replace function wf1.get_alerts(p_unread_only boolean default false)
@@ -1737,28 +1789,73 @@ returns table(
     is_read    boolean
 )
 language sql
+stable set search_path = wf1
+as $$
+    select a.id, a.title, a.body, a.link, a.created_at, r.read_at is not null
+    from wf1.alerts a
+    join wf1.alert_recipients r on r.alert_id = a.id and r.user_id = auth.uid()
+    where not (p_unread_only and r.read_at is not null)
+    order by a.created_at desc
+$$;
+
+-- Admin page list: every alert with how many it went to and how many have
+-- seen it.
+drop function if exists wf1.get_admin_alerts();
+
+create or replace function wf1.get_admin_alerts()
+returns table(
+    id              uuid,
+    title           text,
+    body            text,
+    link            text,
+    created_at      timestamptz,
+    recipient_count bigint,
+    read_count      bigint
+)
+language plpgsql
 security definer stable set search_path = wf1
 as $$
-    with me as (
-        select u.id, u.created_at from auth.users u where u.id = auth.uid()
-    ),
-    marked as (
-        select
-            a.*,
-            (
-                a.created_at < me.created_at
-                or exists (
-                    select 1 from wf1.alert_reads r
-                    where r.alert_id = a.id and r.user_id = me.id
-                )
-            ) as is_read
-        from wf1.alerts a
-        cross join me
-    )
-    select m.id, m.title, m.body, m.link, m.created_at, m.is_read
-    from marked m
-    where not (p_unread_only and m.is_read)
-    order by m.created_at desc
+begin
+    if not wf1.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select a.id, a.title, a.body, a.link, a.created_at,
+           count(r.user_id), count(r.read_at)
+    from wf1.alerts a
+    left join wf1.alert_recipients r on r.alert_id = a.id
+    group by a.id
+    order by a.created_at desc;
+end;
+$$;
+
+-- Who an alert went to and when each of them saw it (null = not yet),
+-- unseen first. Security definer so private profiles' names still show.
+drop function if exists wf1.get_alert_recipients(uuid);
+
+create or replace function wf1.get_alert_recipients(p_alert_id uuid)
+returns table(
+    user_id      uuid,
+    display_name text,
+    read_at      timestamptz
+)
+language plpgsql
+security definer stable set search_path = wf1
+as $$
+begin
+    if not wf1.is_admin(auth.uid()) then
+        raise exception 'Unauthorized: admin access required';
+    end if;
+
+    return query
+    select r.user_id, coalesce(p.display_name, u.email::text), r.read_at
+    from wf1.alert_recipients r
+    join auth.users u on u.id = r.user_id
+    left join wf1.profiles p on p.user_id = r.user_id
+    where r.alert_id = p_alert_id
+    order by r.read_at nulls first, 2;
+end;
 $$;
 
 -- =====================================================================
@@ -1778,3 +1875,7 @@ alter default privileges in schema wf1
 -- profile's name and visibility, never its user_id or created_at.
 revoke update on wf1.profiles from anon, authenticated;
 grant update (display_name, is_public) on wf1.profiles to authenticated;
+
+-- Likewise a recipient may only stamp read_at on their own alert rows.
+revoke update on wf1.alert_recipients from anon, authenticated;
+grant update (read_at) on wf1.alert_recipients to authenticated;
