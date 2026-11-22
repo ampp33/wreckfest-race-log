@@ -50,7 +50,7 @@
             <tr v-for="row in stats.vehicleCounts" :key="row.id">
               <td class="pr-6 py-2 w-1 whitespace-nowrap">
                 <router-link
-                  :to="{ path: `/${userId}/races`, query: { vehicle_id: row.id } }"
+                  :to="{ path: `/${userId}/races`, query: { vehicle: row.name } }"
                   class="font-semibold text-brand-text dark:text-brand-text-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
                 >{{ row.name }}</router-link>
               </td>

@@ -177,8 +177,8 @@
       <FilterDrawer>
         <SortMenu :columns="sortableColumns" :sort="sort" />
         <ColumnFilterMenu v-if="isCommunity" inline label="Driver" v-model="columnFilters.driver" :options="driverOptions" />
-        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
-        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicle" :options="vehicleOptions" />
+        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.pi" :options="piOptions">
           <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
         </ColumnFilterMenu>
         <ColumnFilterMenu inline label="Tune" v-model="columnFilters.tuning" :options="tuningOptions" />
@@ -190,6 +190,7 @@
           heading="Columns to Display"
           :searchable="false"
           v-model="columnVisibility.state.hidden"
+          exclude
           :options="columnOptions"
         />
       </FilterDrawer>
@@ -210,6 +211,7 @@
               :searchable="false"
               :highlight-when-active="false"
               v-model="columnVisibility.state.hidden"
+              exclude
               :options="columnOptions"
             />
           </div>
@@ -276,7 +278,7 @@
                       Vehicle
                       <SortCaret :direction="sort.directionFor('vehicle')" />
                     </button>
-                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicle" :options="vehicleOptions" />
                   </span>
                 </th>
                 <th v-if="isShown('pi')" class="py-2 pr-3">
@@ -285,7 +287,7 @@
                       Class (PI)
                       <SortCaret :direction="sort.directionFor('pi')" />
                     </button>
-                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="piOptions">
+                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.pi" :options="piOptions">
                       <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
                     </ColumnFilterMenu>
                   </span>
@@ -448,6 +450,7 @@ import { useEventListener } from '../composables/useEventListener.js'
 import { buildOptions, sortOptions, FAVORITE_OPTION_LABELS } from '../utils/filterOptions.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import { createSortState, sortRows } from '../utils/sortState.js'
+import { useUrlFilters, useUrlSort } from '../utils/urlFilters.js'
 import { placementRate } from '../utils/raceStats.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import columnsIcon from '../assets/icons/columns.svg?raw'
@@ -520,6 +523,7 @@ function isShown(key) {
 // Every visible column, plus Actions, plus the favorite star's when signed in.
 const tableColspan = computed(() => visibleColumnKeys.value.length + 1 + (isSignedIn.value ? 1 : 0))
 const sort = createSortState()
+useUrlSort(sort.state)
 // Feeds the mobile filter drawer's SortMenu — only currently-visible,
 // sortable columns (Notes and Parts aren't sortable, and a hidden column
 // shouldn't be pickable either).
@@ -539,8 +543,8 @@ const notesEditMode = ref(false)
 const notesInput = ref('')
 const notesTextarea = ref(null)
 
-const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
-const columnFilters = ref({ driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] })
+const columnFilters = ref({ driver: [], vehicle: [], pi: [], tuning: [], place: [], favorite: [] })
+useUrlFilters(columnFilters)
 // Community mode pages through races COMMUNITY_PAGE_SIZE at a time, like /community/races.
 const hasMore = ref(false)
 const loadingMore = ref(false)
@@ -583,16 +587,13 @@ const variationMapImage = computed(() => (
 // `||` for place, and vehicle lookup falling back to '—' for both a null
 // vehicle_id and one that no longer resolves against `vehicles`), so a race
 // bucketed under "—" here is always one that visually shows "—" in the table.
-function vehicleKey(race) {
-  const v = vehicles.value.find(x => x.id === race.vehicle_id)
-  return v ? v.id : UNRESOLVED_VEHICLE
-}
+// Filter keys are readable strings, since they end up in the URL (useUrlFilters).
 function vehicleLabel(race) {
   const v = vehicles.value.find(x => x.id === race.vehicle_id)
   return v ? v.name : '—'
 }
 function piKey(race) {
-  return race.performance_index != null ? race.performance_index : null
+  return race.performance_index != null ? String(race.performance_index) : '—'
 }
 function tuneKey(race) {
   // `tuning` is a numeric slider-config code (see RaceForm.vue), not text —
@@ -600,10 +601,10 @@ function tuneKey(race) {
   return race.tuning != null ? String(race.tuning) : '—'
 }
 function placeKey(race) {
-  return race.place || '—'
+  return race.place ? String(race.place) : '—'
 }
 function driverKey(race) {
-  return race.user_id
+  return race.driverName
 }
 function favoriteKey(race) {
   return isFavorite(race.id) ? 'favorite' : 'other'
@@ -640,12 +641,12 @@ const SORT_VALUE_GETTERS = {
 // values don't vanish from its own list.
 function matchesFilters(race, exceptKey) {
   const f = columnFilters.value
-  if (exceptKey !== 'driver' && f.driver.includes(driverKey(race))) return false
-  if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
-  if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
-  if (exceptKey !== 'tuning' && f.tuning.includes(tuneKey(race))) return false
-  if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
-  if (exceptKey !== 'favorite' && f.favorite.includes(favoriteKey(race))) return false
+  if (exceptKey !== 'driver' && (f.driver.length && !f.driver.includes(driverKey(race)))) return false
+  if (exceptKey !== 'vehicle' && (f.vehicle.length && !f.vehicle.includes(vehicleLabel(race)))) return false
+  if (exceptKey !== 'pi' && (f.pi.length && !f.pi.includes(piKey(race)))) return false
+  if (exceptKey !== 'tuning' && (f.tuning.length && !f.tuning.includes(tuneKey(race)))) return false
+  if (exceptKey !== 'place' && (f.place.length && !f.place.includes(placeKey(race)))) return false
+  if (exceptKey !== 'favorite' && (f.favorite.length && !f.favorite.includes(favoriteKey(race)))) return false
   return true
 }
 
@@ -653,11 +654,11 @@ const driverOptions = computed(() => sortOptions(
   buildOptions(races.value.filter(r => matchesFilters(r, 'driver')), driverKey, race => race.driverName)
 ))
 const vehicleOptions = computed(() => sortOptions(
-  buildOptions(races.value.filter(r => matchesFilters(r, 'vehicleId')), vehicleKey, vehicleLabel)
+  buildOptions(races.value.filter(r => matchesFilters(r, 'vehicle')), vehicleLabel, vehicleLabel)
 ))
 const piOptions = computed(() => sortOptions(
   buildOptions(
-    races.value.filter(r => matchesFilters(r, 'performanceIndex')),
+    races.value.filter(r => matchesFilters(r, 'pi')),
     piKey,
     race => race.performance_index != null ? String(race.performance_index) : '—'
   ),
@@ -687,7 +688,7 @@ const top5Rate = computed(() => placementRate(statRaces.value, 5))
 const top10Rate = computed(() => placementRate(statRaces.value, 10))
 
 function resetColumnFilters() {
-  columnFilters.value = { driver: [], vehicleId: [], performanceIndex: [], tuning: [], place: [], favorite: [] }
+  columnFilters.value = { driver: [], vehicle: [], pi: [], tuning: [], place: [], favorite: [] }
 }
 
 // Switching variation or class mid-load starts another load; only the newest
@@ -738,7 +739,6 @@ async function loadAnnotations() {
 }
 async function loadAll() {
   loading.value = true
-  resetColumnFilters()
   const slug = route.params.trackSlug
   const variationSlug = route.params.variationSlug
   try {
@@ -868,7 +868,13 @@ async function onSaveGoal() {
   }
 }
 
-watch(() => route.params, loadAll)
+// By value: route.params is a new object on every navigation, including the
+// query-only replaces useUrlFilters makes, which mustn't reset or reload.
+watch(() => JSON.stringify(route.params), () => {
+  if (!route.params.trackSlug) return // navigating away to another page
+  resetColumnFilters()
+  loadAll()
+})
 watch(() => prefsStore.piClass, () => {
   if (!currentVariation.value) return
   resetColumnFilters()

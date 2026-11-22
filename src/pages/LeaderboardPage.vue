@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+  <div class="wide-table-page max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <ScopeKicker />
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       Leader<em class="signal">boards</em>
@@ -175,8 +175,9 @@
             </div>
           </div>
 
-          <!-- Table layout (desktop) -->
-          <div class="hidden sm:block overflow-x-auto">
+          <!-- Table layout (desktop) — no scroll box of its own; a table too
+               wide for the page widens the page instead (see .wide-table-page). -->
+          <div class="hidden sm:block">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark whitespace-nowrap">
