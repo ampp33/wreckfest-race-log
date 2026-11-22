@@ -10,10 +10,12 @@ const RACE_COLUMNS =
   'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, parts, lap_count, lap_times_ms, results_roster, created_at, source'
 const PRIVATE_EMBED = 'races_private(notes, api_key_id, api_key:api_keys(name))'
 const SELECT = `${RACE_COLUMNS}, ${PRIVATE_EMBED}`
-// grabs the small race row records instead of ALL that data including the roster
+// grabs the small race row records instead of ALL that data including the roster.
+// The first_* probes only say whether splits/a roster exist; first_roster_entry
+// is just the first entry's position (every entry has one), not the ~700-byte entry.
 const LIST_SELECT =
   'id, user_id, datetime, track_variation_id, vehicle_id, tuning, assists, place, lap_time_ms, total_time_ms, performance_index, vehicle_weight_kg, server_name, parts, lap_count, created_at, source, ' +
-  `first_lap_ms:lap_times_ms->0, first_roster_entry:results_roster->0, ${PRIVATE_EMBED}`
+  `first_lap_ms:lap_times_ms->0, first_roster_entry:results_roster->0->position, ${PRIVATE_EMBED}`
 
 function flattenRace({ races_private: priv, ...race }) {
   return {
@@ -59,12 +61,13 @@ async function saveRaceNotes(raceId, userId, notes) {
   if (error) throw error
 }
 
-// `piClass` ('A'..'D') keeps just that car class, as in getAllRaces().
+// `piClass` ('A'..'D') keeps just that car class, as in getAllRaces(). Always
+// light (see LIST_SELECT): RaceRow fetches splits/roster on expand.
 export async function getRacesByVariation(variationId, userId, { piClass } = {}) {
   const rows = await fetchAllPages(() => {
     let query = supabase
       .from('races')
-      .select(SELECT)
+      .select(LIST_SELECT)
       .eq('user_id', userId)
       .eq('track_variation_id', variationId)
       .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
@@ -185,20 +188,12 @@ export async function deleteRace(id) {
   if (error) throw error
 }
 
+// { vehicle_id: latest performance_index } over the driver's whole history —
+// see get_vehicle_pi_map in supabase/schema.sql.
 export async function getVehiclePiMap(userId) {
-  const { data, error } = await supabase
-    .from('races')
-    .select('vehicle_id, performance_index')
-    .eq('user_id', userId)
-    .not('vehicle_id', 'is', null)
-    .not('performance_index', 'is', null)
-    .order('datetime', { ascending: false })
+  const { data, error } = await supabase.rpc('get_vehicle_pi_map', { p_user_id: userId })
   if (error) throw error
-  const map = {}
-  for (const { vehicle_id, performance_index } of data || []) {
-    if (!(vehicle_id in map)) map[vehicle_id] = performance_index
-  }
-  return map
+  return Object.fromEntries((data || []).map(r => [r.vehicle_id, r.performance_index]))
 }
 
 export async function bulkInsertRaces(races, userId) {

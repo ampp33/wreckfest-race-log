@@ -697,7 +697,7 @@ async function loadRaces() {
   const token = ++loadToken
   const piClass = prefsStore.piClass
   if (isCommunity.value) {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass })
+    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass, light: true })
     if (token !== loadToken) return
     races.value = page
     fetchedCount = page.length
@@ -714,7 +714,7 @@ async function loadMoreRaces() {
   loadingMore.value = true
   const token = loadToken
   try {
-    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass: prefsStore.piClass, offset: fetchedCount })
+    const page = await getCommunityRaces({ variationId: currentVariation.value.id, piClass: prefsStore.piClass, offset: fetchedCount, light: true })
     if (token !== loadToken) return
     const seen = new Set(races.value.map(r => r.id))
     races.value = races.value.concat(page.filter(r => !seen.has(r.id)))

@@ -91,7 +91,10 @@ export async function initAuthStore() {
     authStore.ready = true
   }
 
-  onAuthChange(async session => {
+  onAuthChange(async (session, event) => {
+    // Fired right on subscribing with the session resolved just above —
+    // refetching roles for it would only repeat the 3 queries.
+    if (event === 'INITIAL_SESSION') return
     authStore.session = session
     await fetchUserRoles()
   })

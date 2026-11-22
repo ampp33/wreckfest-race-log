@@ -53,7 +53,7 @@ owner-only `races` table. Splitting the table instead means:
 
 ### Tables
 
-- **`races`** — RLS select: `auth.uid() = user_id or wf1.is_public_user(user_id)`,
+- **`races`** — RLS select: `(select auth.uid()) = user_id or user_id in (select user_id from wf1.profiles where is_public)`,
   to `anon, authenticated`. Writes remain owner-only and blocked when banned.
   Gains `pi_class` (stored generated column, thresholds mirror
   `src/utils/piInfo.js`) and a second FK `user_id → profiles(user_id)` so
@@ -76,7 +76,6 @@ owner-only `races` table. Splitting the table instead means:
 
 ### Functions
 
-- `is_public_user(uid)` — security definer, used by the races policy.
 - `default_display_name(uid)` — `Driver-` + md5 prefix, lengthened on
   collision; deterministic so the backfill is idempotent.
 - `insert_race_with_api_key_wf1` — unchanged signature; writes `races` and
