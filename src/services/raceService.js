@@ -77,7 +77,7 @@ export async function getRacesByVariation(variationId, userId, { piClass } = {})
 // `piClass` ('A'..'D') keeps just that car class — a race with no PI has
 // none, so it drops out. `light` leaves out lap splits and rosters (see
 // LIST_SELECT).
-export async function getAllRaces({ userId, source, apiKeyId, vehicleId, piClass, light = false } = {}) {
+export async function getAllRaces({ userId, source, apiKeyId, piClass, light = false } = {}) {
   const select = light ? LIST_SELECT : SELECT
   // Filtering on a key means filtering on the embedded table, which needs
   // an inner join — otherwise PostgREST keeps every race and just nulls the
@@ -90,7 +90,6 @@ export async function getAllRaces({ userId, source, apiKeyId, vehicleId, piClass
       .order('datetime', { ascending: false }).order('created_at', { ascending: false }).order('id')
     if (source) query = query.eq('source', source)
     if (apiKeyId) query = query.eq('races_private.api_key_id', apiKeyId)
-    if (vehicleId) query = query.eq('vehicle_id', vehicleId)
     if (piClass) query = query.eq('pi_class', piClass)
     return query
   })

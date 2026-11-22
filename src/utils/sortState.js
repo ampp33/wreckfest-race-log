@@ -1,9 +1,8 @@
 import { reactive } from 'vue'
 
 // Per-table 3-state column sort (unsorted -> asc -> desc -> unsorted), shared
-// by RacesPage.vue and TrackDetailPage.vue. Unlike createColumnVisibility.js,
-// this isn't persisted — sort resets on reload/navigation like the column
-// filters do.
+// by RacesPage.vue and TrackDetailPage.vue. Not saved to localStorage like
+// createColumnVisibility.js — pages mirror it into the URL (useUrlSort).
 export function createSortState() {
   const state = reactive({ key: null, direction: null })
 

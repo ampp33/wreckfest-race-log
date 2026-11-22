@@ -27,6 +27,7 @@
           class="h-full"
           :heading="panelHeading"
           :model-value="modelValue"
+          :exclude="exclude"
           :options="options"
           :searchable="searchable"
           @update:model-value="$emit('update:modelValue', $event)"
@@ -44,6 +45,7 @@
     v-else
     :heading="panelHeading"
     :model-value="modelValue"
+    :exclude="exclude"
     :options="options"
     :searchable="searchable"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -60,13 +62,10 @@ import filterIcon from '../assets/icons/filter.svg?raw'
 
 const props = defineProps({
   label: { type: String, required: true },
-  // Excluded values (not selected ones) — [] means nothing is excluded, i.e.
-  // no filter, everything shown/checked. Storing exclusions rather than a
-  // "selected" set means unchecking every box is just "everything excluded",
-  // a perfectly ordinary state (the table correctly shows zero rows) with no
-  // special-casing, and a value that appears later is automatically shown
-  // since it starts out not excluded.
+  // The checked values — [] means no filter, everything shown/checked. With
+  // `exclude`, the unchecked values instead (the column picker's hidden list).
   modelValue: { type: Array, default: () => [] },
+  exclude: { type: Boolean, default: false },
   options: { type: Array, required: true }, // [{ value, label, count? }]
   // Lets non-value-filter reuses (e.g. a column-visibility picker) swap in a
   // different glyph than the default funnel.

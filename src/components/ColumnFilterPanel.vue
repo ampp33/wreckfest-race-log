@@ -23,6 +23,7 @@
           type="checkbox"
           class="accent-brand-accent dark:accent-brand-accent-dark w-4 h-4 shrink-0 cursor-pointer"
           :checked="isChecked(option.value)"
+          :disabled="isLastChecked(option.value)"
           @change="toggleOption(option.value)"
         />
         <button
@@ -57,8 +58,9 @@ import { ref, computed } from 'vue'
 // drawer) presentations, which differ only in what wraps this content.
 const props = defineProps({
   heading: { type: String, required: true },
-  // Excluded values (not selected ones) — see ColumnFilterMenu.vue for why.
+  // See ColumnFilterMenu.vue.
   modelValue: { type: Array, default: () => [] },
+  exclude: { type: Boolean, default: false },
   options: { type: Array, required: true }, // [{ value, label, count? }]
   searchable: { type: Boolean, default: true }
 })
@@ -76,14 +78,29 @@ const visibleOptions = computed(() => {
 })
 
 function isChecked(value) {
-  return !props.modelValue.includes(value)
+  if (props.exclude) return !props.modelValue.includes(value)
+  return !props.modelValue.length || props.modelValue.includes(value)
+}
+
+// Unchecking the only checked value would leave [], which means "no filter"
+// and would check everything again — so that box can't be unchecked.
+function isLastChecked(value) {
+  return !props.exclude && props.modelValue.length === 1 && props.modelValue[0] === value
 }
 
 function toggleOption(value) {
-  const next = props.modelValue.includes(value)
-    ? props.modelValue.filter(v => v !== value)
-    : [...props.modelValue, value]
-  emit('update:modelValue', next)
+  if (props.exclude) {
+    const next = props.modelValue.includes(value)
+      ? props.modelValue.filter(v => v !== value)
+      : [...props.modelValue, value]
+    emit('update:modelValue', next)
+    return
+  }
+  const all = props.options.map(o => o.value)
+  const selected = props.modelValue.length ? props.modelValue : all
+  const next = selected.includes(value) ? selected.filter(v => v !== value) : [...selected, value]
+  // Every listed value checked looks the same as no filter, so store it as none.
+  emit('update:modelValue', all.every(v => next.includes(v)) ? [] : next)
 }
 
 function clearFilter() {
@@ -93,6 +110,10 @@ function clearFilter() {
 // Clicking a value's name isolates the filter to just that value; clicking
 // the name again when it's already the only one shown reverts to no filter.
 function isolateOption(value) {
+  if (!props.exclude) {
+    emit('update:modelValue', isLastChecked(value) ? [] : [value])
+    return
+  }
   const others = props.options.map(o => o.value).filter(v => v !== value)
   const alreadyIsolated = isChecked(value) && others.every(v => props.modelValue.includes(v))
   emit('update:modelValue', alreadyIsolated ? [] : others)

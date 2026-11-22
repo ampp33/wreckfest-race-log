@@ -41,9 +41,9 @@
       <FilterDrawer>
         <SortMenu :columns="sortableColumns" :sort="sort" />
         <ColumnFilterMenu v-if="isCommunity" inline label="Driver" v-model="columnFilters.driver" :options="driverOptions" />
-        <ColumnFilterMenu inline label="Track / Variation" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
-        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
-        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.performanceIndex" :options="piOptions">
+        <ColumnFilterMenu inline label="Track / Variation" v-model="columnFilters.track" :options="trackVariationOptions" />
+        <ColumnFilterMenu inline label="Vehicle" v-model="columnFilters.vehicle" :options="vehicleOptions" />
+        <ColumnFilterMenu inline label="Class (PI)" v-model="columnFilters.pi" :options="piOptions">
           <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
         </ColumnFilterMenu>
         <ColumnFilterMenu inline label="Place" v-model="columnFilters.place" :options="placeOptions" />
@@ -54,6 +54,7 @@
           heading="Columns to Display"
           :searchable="false"
           v-model="columnVisibility.state.hidden"
+          exclude
           :options="columnOptions"
         />
       </FilterDrawer>
@@ -101,6 +102,7 @@
               :searchable="false"
               :highlight-when-active="false"
               v-model="columnVisibility.state.hidden"
+              exclude
               :options="columnOptions"
             />
           </span>
@@ -266,7 +268,7 @@
                       Track / Variation
                       <SortCaret :direction="sort.directionFor('trackVariation')" />
                     </button>
-                    <ColumnFilterMenu label="Track / Variation" icon-size="w-4 h-4" v-model="columnFilters.trackVariationId" :options="trackVariationOptions" />
+                    <ColumnFilterMenu label="Track / Variation" icon-size="w-4 h-4" v-model="columnFilters.track" :options="trackVariationOptions" />
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('vehicle')" class="px-3.5 pb-2.5 font-medium">
@@ -275,7 +277,7 @@
                       Vehicle
                       <SortCaret :direction="sort.directionFor('vehicle')" />
                     </button>
-                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicleId" :options="vehicleOptions" />
+                    <ColumnFilterMenu label="Vehicle" icon-size="w-4 h-4" v-model="columnFilters.vehicle" :options="vehicleOptions" />
                   </span>
                 </th>
                 <th v-if="columnVisibility.isVisible('pi')" class="px-3.5 pb-2.5 font-medium">
@@ -284,7 +286,7 @@
                       Class (PI)
                       <SortCaret :direction="sort.directionFor('pi')" />
                     </button>
-                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.performanceIndex" :options="piOptions">
+                    <ColumnFilterMenu label="Class (PI)" icon-size="w-4 h-4" v-model="columnFilters.pi" :options="piOptions">
                       <template #option="{ option }"><PerformanceIndexBadge :value="option.value" /></template>
                     </ColumnFilterMenu>
                   </span>
@@ -523,6 +525,8 @@ import { buildOptions, sortOptions, FAVORITE_OPTION_LABELS } from '../utils/filt
 import { isFavorite } from '../stores/favoritesStore.js'
 import { createColumnVisibility } from '../utils/columnVisibility.js'
 import { createSortState, sortRows } from '../utils/sortState.js'
+import { useUrlFilters, useUrlSort } from '../utils/urlFilters.js'
+import { ref } from 'vue'
 import SortCaret from '../components/SortCaret.vue'
 import SortMenu from '../components/SortMenu.vue'
 import apiIcon from '../assets/icons/api.svg?raw'
@@ -531,8 +535,6 @@ import columnsIcon from '../assets/icons/columns.svg?raw'
 import starIcon from '../assets/icons/star.svg?raw'
 import starFillIcon from '../assets/icons/star-fill.svg?raw'
 
-const UNRESOLVED_VEHICLE = '__unresolved_vehicle__'
-const UNRESOLVED_VARIATION = '__unresolved_variation__'
 
 const TABLE_COLUMNS = [
   { key: 'date', label: 'Date' },
@@ -556,15 +558,16 @@ const COMMUNITY_TABLE_COLUMNS = [TABLE_COLUMNS[0], { key: 'driver', label: 'Driv
 // anything to localStorage — after that, whatever the user has chosen wins.
 const DEFAULT_HIDDEN_COLUMNS = ['weight', 'tune', 'assists', 'parts']
 
-function trackVariationKey(race) { return race.trackSlug && race.variationSlug ? race.track_variation_id : UNRESOLVED_VARIATION }
+// Filter keys are readable strings, since they end up in the URL (useUrlFilters).
+function trackVariationKey(race) { return race.trackSlug && race.variationSlug ? `${race.trackSlug}/${race.variationSlug}` : '—' }
 function trackVariationLabel(race) { return race.trackSlug && race.variationSlug ? `${race.trackName} — ${race.variationName}` : '—' }
 // Bucket by whether vehicleName resolved, not just a null vehicle_id — a
 // vehicle_id pointing at a deleted vehicle also displays as '—' (RacesPage
 // load()'s `vehicleMap[r.vehicle_id] ?? '—'`) and must land in the same bucket.
-function vehicleKey(race) { return race.vehicleName === '—' ? UNRESOLVED_VEHICLE : race.vehicle_id }
-function piKey(race) { return race.performance_index != null ? race.performance_index : null }
-function placeKey(race) { return race.place != null ? race.place : '—' }
-function driverKey(race) { return race.user_id }
+function vehicleKey(race) { return race.vehicleName }
+function piKey(race) { return race.performance_index != null ? String(race.performance_index) : '—' }
+function placeKey(race) { return race.place != null ? String(race.place) : '—' }
+function driverKey(race) { return race.driverName }
 function favoriteKey(race) { return isFavorite(race.id) ? 'favorite' : 'other' }
 
 // One value-getter per sortable column (everything but Parts/Actions), fed to
@@ -610,7 +613,11 @@ export default {
     // 'driver' simply never renders outside community mode.
     const columnVisibility = createColumnVisibility('wreckfest:columns:races', COMMUNITY_TABLE_COLUMNS.map(c => c.key), DEFAULT_HIDDEN_COLUMNS)
     const sort = createSortState()
-    return { columnVisibility, sort }
+    // In setup() (not data()) so useUrlFilters can mirror it into ?filters=.
+    const columnFilters = ref({ driver: [], track: [], vehicle: [], pi: [], place: [], favorite: [] })
+    useUrlFilters(columnFilters)
+    useUrlSort(sort.state)
+    return { columnVisibility, sort, columnFilters }
   },
   data() {
     return {
@@ -626,7 +633,6 @@ export default {
       editing: {},
       saving: {},
       confirmDeleteRace: null,
-      columnFilters: { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [], favorite: [] },
       // Community mode only: whether the server has older races than the ones
       // loaded so far, and how many rows have been fetched (the next page's
       // offset — not rows.length, which drops duplicates).
@@ -684,29 +690,17 @@ export default {
       const apiKeyId = this.$route.query.api_key_id
       return typeof apiKeyId === 'string' && apiKeyId ? apiKeyId : null
     },
-    // A single vehicle filter (will be expanded on later for all filters)
-    vehicleIdFilter() {
-      if (this.isCommunity) return null
-      const vehicleId = this.$route.query.vehicle_id
-      return typeof vehicleId === 'string' && vehicleId ? vehicleId : null
-    },
-    // "in the Nexus RX logged via the Telemetry API", for the filtered intro.
+    // "logged via the Telemetry API", for the filtered intro.
     filterDescription() {
-      const parts = []
-      if (this.vehicleIdFilter) {
-        const name = this.vehicles.find(v => v.id === this.vehicleIdFilter)?.name
-        parts.push(name ? `in the ${name}` : 'in this vehicle')
-      }
-      if (this.apiKeyIdFilter) parts.push('logged with this API key')
-      else if (this.sourceFilter) parts.push(`logged via the ${this.sourceFilter === 'api' ? 'Telemetry API' : 'web app'}`)
-      return parts.join(' ')
+      if (this.apiKeyIdFilter) return 'logged with this API key'
+      return `logged via the ${this.sourceFilter === 'api' ? 'Telemetry API' : 'web app'}`
     },
     // "class C " while the nav's car-class filter is on, for the community intro.
     classPhrase() {
       return this.prefs.piClass ? `class ${this.prefs.piClass} ` : ''
     },
     isFiltered() {
-      return !!(this.sourceFilter || this.apiKeyIdFilter || this.vehicleIdFilter)
+      return !!(this.sourceFilter || this.apiKeyIdFilter)
     },
     visibleColumnKeys() {
       return this.tableColumns.map(c => c.key).filter(this.columnVisibility.isVisible)
@@ -721,15 +715,15 @@ export default {
       return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'driver')), driverKey, r => r.driverName))
     },
     trackVariationOptions() {
-      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'trackVariationId')), trackVariationKey, trackVariationLabel))
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'track')), trackVariationKey, trackVariationLabel))
     },
     vehicleOptions() {
-      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'vehicleId')), vehicleKey, r => r.vehicleName))
+      return sortOptions(buildOptions(this.rows.filter(r => this.matchesFilters(r, 'vehicle')), vehicleKey, r => r.vehicleName))
     },
     piOptions() {
       return sortOptions(
         buildOptions(
-          this.rows.filter(r => this.matchesFilters(r, 'performanceIndex')),
+          this.rows.filter(r => this.matchesFilters(r, 'pi')),
           piKey,
           r => r.performance_index != null ? String(r.performance_index) : '—'
         ),
@@ -785,8 +779,11 @@ export default {
   watch: {
     // $route watchers also fire on the way out to another page, hence the
     // name check — otherwise leaving would kick off a pointless reload.
-    '$route.query'() {
+    '$route.query'(query, oldQuery) {
       if (!this.isRacesRoute()) return
+      // Column-filter and sort params just mirror page state (useUrlFilters/useUrlSort) — not server-side filters, so no reset/reload.
+      const serverQuery = q => JSON.stringify({ ...q, sort: undefined, dir: undefined, ...Object.fromEntries(Object.keys(this.columnFilters).map(k => [k, undefined])) })
+      if (serverQuery(query) === serverQuery(oldQuery)) return
       this.resetColumnFilters()
       this.currentPage = 1
       this.load()
@@ -825,7 +822,7 @@ export default {
       return this.$route.name === 'driver-races' || this.$route.name === 'community-races'
     },
     resetColumnFilters() {
-      this.columnFilters = { driver: [], trackVariationId: [], vehicleId: [], performanceIndex: [], place: [], favorite: [] }
+      this.columnFilters = { driver: [], track: [], vehicle: [], pi: [], place: [], favorite: [] }
     },
     // Matches a race against every column filter except `exceptKey` — used
     // to build each column's own option list off what's visible once every
@@ -834,12 +831,12 @@ export default {
     // its own checked/unchecked values don't vanish from its own list.
     matchesFilters(race, exceptKey) {
       const f = this.columnFilters
-      if (exceptKey !== 'driver' && f.driver.includes(driverKey(race))) return false
-      if (exceptKey !== 'trackVariationId' && f.trackVariationId.includes(trackVariationKey(race))) return false
-      if (exceptKey !== 'vehicleId' && f.vehicleId.includes(vehicleKey(race))) return false
-      if (exceptKey !== 'performanceIndex' && f.performanceIndex.includes(piKey(race))) return false
-      if (exceptKey !== 'place' && f.place.includes(placeKey(race))) return false
-      if (exceptKey !== 'favorite' && f.favorite.includes(favoriteKey(race))) return false
+      if (exceptKey !== 'driver' && (f.driver.length && !f.driver.includes(driverKey(race)))) return false
+      if (exceptKey !== 'track' && (f.track.length && !f.track.includes(trackVariationKey(race)))) return false
+      if (exceptKey !== 'vehicle' && (f.vehicle.length && !f.vehicle.includes(vehicleKey(race)))) return false
+      if (exceptKey !== 'pi' && (f.pi.length && !f.pi.includes(piKey(race)))) return false
+      if (exceptKey !== 'place' && (f.place.length && !f.place.includes(placeKey(race)))) return false
+      if (exceptKey !== 'favorite' && (f.favorite.length && !f.favorite.includes(favoriteKey(race)))) return false
       return true
     },
     // Shared by the initial mount and the header's refresh button. A refresh
@@ -858,7 +855,7 @@ export default {
         const [races, tracks, vehicles] = await Promise.all([
           this.isCommunity
             ? getCommunityRaces({ piClass, light: true })
-            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, vehicleId: this.vehicleIdFilter, piClass, light: true }),
+            : getAllRaces({ userId: this.userId, source: this.sourceFilter, apiKeyId: this.apiKeyIdFilter, piClass, light: true }),
           getTracks(),
           getVehicles()
         ])
