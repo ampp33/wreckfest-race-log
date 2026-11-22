@@ -199,6 +199,7 @@
 
               <RaceRowActions
                 vertical
+                :to="`/race/${race.id}`"
                 :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                 :expanded="!!expanded[race.id]"
                 @toggle-expand="toggleExpanded(race.id)"
@@ -407,6 +408,7 @@
                   </td>
                   <td class="px-3.5 py-2 text-right whitespace-nowrap">
                     <RaceRowActions
+                      :to="`/race/${race.id}`"
                       :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                       :expanded="!!expanded[race.id]"
                       @toggle-expand="toggleExpanded(race.id)"

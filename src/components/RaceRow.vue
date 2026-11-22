@@ -72,6 +72,7 @@
 
       <RaceRowActions
         vertical
+        :to="`/race/${race.id}`"
         :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
         :expanded="expanded"
         @toggle-expand="toggleExpanded"
@@ -155,6 +156,7 @@
     <td v-if="isColVisible('total')" class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
     <td class="py-2 pr-3 text-right whitespace-nowrap">
       <RaceRowActions
+        :to="`/race/${race.id}`"
         :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
         :expanded="expanded"
         @toggle-expand="toggleExpanded"

@@ -133,6 +133,18 @@ export async function getFastestLapsPerVehicleOnVariation(variationId) {
   return data || []
 }
 
+// One race in full, with its track, car and driver names, for the race page.
+// null when it doesn't exist or RLS hides it (a driver who's gone private).
+export async function getRace(id) {
+  const { data, error } = await supabase
+    .from('races')
+    .select(`${SELECT}, driver:profiles(display_name), vehicle:vehicles(name), variation:track_variations(name, slug, track:tracks(name, slug))`)
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw error
+  return data && flattenRace(data)
+}
+
 // The lap splits and results roster a `light` list fetch left out.
 export async function getRaceDetails(id) {
   const { data, error } = await supabase

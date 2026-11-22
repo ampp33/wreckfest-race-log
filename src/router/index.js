@@ -9,6 +9,7 @@ const PluginPage = () => import('../pages/PluginPage.vue')
 const TrackListPage = () => import('../pages/TrackListPage.vue')
 const TrackDetailPage = () => import('../pages/TrackDetailPage.vue')
 const StatsPage = () => import('../pages/StatsPage.vue')
+const RacePage = () => import('../pages/RacePage.vue')
 const LoginPage = () => import('../pages/LoginPage.vue')
 const UsersPage = () => import('../pages/Users.vue')
 const RacesPage = () => import('../pages/RacesPage.vue')
@@ -50,6 +51,8 @@ const routes = [
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/help', name: 'help', component: HelpPage },
   { path: '/news', name: 'news', component: NewsPage },
+  // A race id is unique, so its page needs no driver prefix; the race says whose it is.
+  { path: '/race/:raceId', name: 'race', component: RacePage, meta: { public: true } },
 
   // Community: every public driver's races. Same components as a driver's
   // pages, switched into community mode by meta.scope.
