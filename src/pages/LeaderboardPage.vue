@@ -144,7 +144,7 @@
                   {{ lap.track_name }}
                   <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ lap.variation_name }}</span>
                 </router-link>
-                <span class="tabular font-semibold text-brand-accent dark:text-brand-accent-dark shrink-0">{{ formatMs(lap.lap_time_ms) }}</span>
+                <router-link :to="`/race/${lap.race_id}`" title="Open race page" class="tabular font-semibold text-brand-accent dark:text-brand-accent-dark shrink-0 inline-flex items-center gap-1 hover:underline">{{ formatMs(lap.lap_time_ms) }}<span class="w-3 h-3 inline-block" v-html="openIcon"></span></router-link>
               </div>
               <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2 text-sm">
                 <div>
@@ -202,7 +202,9 @@
                       <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ lap.variation_name }}</span>
                     </router-link>
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular font-semibold text-brand-accent dark:text-brand-accent-dark">{{ formatMs(lap.lap_time_ms) }}</td>
+                  <td class="px-3.5 py-2 text-right tabular font-semibold whitespace-nowrap">
+                    <router-link :to="`/race/${lap.race_id}`" title="Open race page" class="inline-flex items-center gap-1 text-brand-accent dark:text-brand-accent-dark hover:underline">{{ formatMs(lap.lap_time_ms) }}<span class="w-3 h-3 inline-block" v-html="openIcon"></span></router-link>
+                  </td>
                   <td class="px-3.5 py-2 whitespace-nowrap">
                     <router-link :to="driverTrackPath(lap)" class="text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent dark:hover:text-brand-accent-dark">{{ lap.display_name || '—' }}</router-link>
                   </td>
@@ -234,6 +236,7 @@ import { pushToast } from '../stores/toastStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { META_VEHICLES } from '../utils/piInfo.js'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
+import openIcon from '../assets/icons/open.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
@@ -255,7 +258,8 @@ export default {
       vehicles: [],
       lapsByFilter: {},
       lapsFailed: {},
-      chevronDownIcon
+      chevronDownIcon,
+      openIcon
     }
   },
   computed: {
