@@ -3,22 +3,24 @@ import { authStore, initAuthStore, clearAuthSession } from '../stores/authStore.
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
 
-import HomePage from '../pages/HomePage.vue'
-import PluginPage from '../pages/PluginPage.vue'
-import TrackListPage from '../pages/TrackListPage.vue'
-import TrackDetailPage from '../pages/TrackDetailPage.vue'
-import StatsPage from '../pages/StatsPage.vue'
-import LoginPage from '../pages/LoginPage.vue'
-import UsersPage from '../pages/Users.vue'
-import RacesPage from '../pages/RacesPage.vue'
-import ApiKeysPage from '../pages/ApiKeysPage.vue'
-import ProfileSettingsPage from '../pages/ProfileSettingsPage.vue'
-import AdminApiKeysPage from '../pages/AdminApiKeysPage.vue'
-import AdminFeedbackPage from '../pages/AdminFeedbackPage.vue'
-import HelpPage from '../pages/HelpPage.vue'
-import NewsPage from '../pages/NewsPage.vue'
-import LeaderboardPage from '../pages/LeaderboardPage.vue'
-import CommunityStatsPage from '../pages/CommunityStatsPage.vue'
+// Lazy, so each page (and Chart.js, marked, ...) downloads only when visited.
+const HomePage = () => import('../pages/HomePage.vue')
+const PluginPage = () => import('../pages/PluginPage.vue')
+const TrackListPage = () => import('../pages/TrackListPage.vue')
+const TrackDetailPage = () => import('../pages/TrackDetailPage.vue')
+const StatsPage = () => import('../pages/StatsPage.vue')
+const RacePage = () => import('../pages/RacePage.vue')
+const LoginPage = () => import('../pages/LoginPage.vue')
+const UsersPage = () => import('../pages/Users.vue')
+const RacesPage = () => import('../pages/RacesPage.vue')
+const ApiKeysPage = () => import('../pages/ApiKeysPage.vue')
+const ProfileSettingsPage = () => import('../pages/ProfileSettingsPage.vue')
+const AdminApiKeysPage = () => import('../pages/AdminApiKeysPage.vue')
+const AdminFeedbackPage = () => import('../pages/AdminFeedbackPage.vue')
+const HelpPage = () => import('../pages/HelpPage.vue')
+const NewsPage = () => import('../pages/NewsPage.vue')
+const LeaderboardPage = () => import('../pages/LeaderboardPage.vue')
+const CommunityStatsPage = () => import('../pages/CommunityStatsPage.vue')
 
 // A driver's pages live under their user id: /<userId>/races, etc. The
 // param only matches a UUID, so it can never shadow a top-level route like
@@ -49,6 +51,8 @@ const routes = [
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/help', name: 'help', component: HelpPage },
   { path: '/news', name: 'news', component: NewsPage },
+  // A race id is unique, so its page needs no driver prefix; the race says whose it is.
+  { path: '/race/:raceId', name: 'race', component: RacePage, meta: { public: true } },
 
   // Community: every public driver's races. Same components as a driver's
   // pages, switched into community mode by meta.scope.

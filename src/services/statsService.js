@@ -9,7 +9,7 @@ import { placementRate } from '../utils/raceStats.js'
 // `piClass` ('A'..'D') narrows every stat to races in that car class.
 export async function getStats(userId, { piClass = null } = {}) {
   const [races, vehicles, tracks] = await Promise.all([
-    getAllRaces({ userId, piClass }),
+    getAllRaces({ userId, piClass, light: true }),
     getVehicles(),
     getTracks()
   ])

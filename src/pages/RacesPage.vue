@@ -199,6 +199,7 @@
 
               <RaceRowActions
                 vertical
+                :to="`/race/${race.id}`"
                 :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                 :expanded="!!expanded[race.id]"
                 @toggle-expand="toggleExpanded(race.id)"
@@ -407,6 +408,7 @@
                   </td>
                   <td class="px-3.5 py-2 text-right whitespace-nowrap">
                     <RaceRowActions
+                      :to="`/race/${race.id}`"
                       :show-expand="!!(race.notes || race.server_name || hasLapTimes(race) || hasRoster(race))"
                       :expanded="!!expanded[race.id]"
                       @toggle-expand="toggleExpanded(race.id)"
@@ -841,11 +843,15 @@ export default {
     },
     // Shared by the initial mount and the header's refresh button. A refresh
     // only raises `refreshing`, never `loading`/`error` — the table stays on
-    // screen (keeping expanded rows, page and page size), and a refresh that
-    // fails leaves the rows already shown in place and reports by toast
-    // rather than replacing the whole page with an error line.
+    // screen (keeping page and page size), and a refresh that fails leaves
+    // the rows already shown in place and reports by toast rather than
+    // replacing the whole page with an error line. Expanded rows are closed:
+    // the reloaded rows are light, without the splits/roster they showed.
     async load({ refresh = false } = {}) {
-      if (refresh) this.refreshing = true
+      if (refresh) {
+        this.refreshing = true
+        this.expanded = {}
+      }
       // Switching driver, filter or class mid-load starts another load; only
       // the newest one lands (and an older page from loadMore() is dropped).
       const token = (this.loadToken = (this.loadToken || 0) + 1)

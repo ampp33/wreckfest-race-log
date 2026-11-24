@@ -1,9 +1,9 @@
 <template>
-  <div :class="vertical ? 'flex flex-col items-center gap-1 shrink-0 -mr-3.5' : 'inline-flex items-center gap-1 shrink-0'">
+  <div :class="vertical ? 'flex flex-col items-center shrink-0 -mr-3.5' : 'inline-flex items-center shrink-0'">
     <button
       v-if="editable"
       type="button"
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      class="min-h-[44px] min-w-[36px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Edit"
       @click.stop="$emit('edit')"
     >
@@ -12,7 +12,7 @@
     <button
       v-if="editable"
       type="button"
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      class="min-h-[44px] min-w-[36px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       title="Delete"
       @click.stop="$emit('delete')"
     >
@@ -21,10 +21,20 @@
     <!-- Extra controls that sit between delete and expand — the mobile cards'
          favorite star. -->
     <slot />
+    <router-link
+      v-if="to"
+      :to="to"
+      class="min-h-[44px] min-w-[36px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      title="Open race page"
+      aria-label="Open race page"
+      @click.stop
+    >
+      <span class="w-4 h-4 inline-block" v-html="openIcon"></span>
+    </router-link>
     <button
       v-if="showExpand"
       type="button"
-      class="min-h-[44px] min-w-[44px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+      class="min-h-[44px] min-w-[36px] flex items-center justify-center text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
       :title="expanded ? 'Collapse' : 'Expand'"
       @click.stop="$emit('toggle-expand')"
     >
@@ -38,6 +48,7 @@ import editIcon from '../assets/icons/edit.svg?raw'
 import trashIcon from '../assets/icons/trash.svg?raw'
 import expandIcon from '../assets/icons/expand.svg?raw'
 import collapseIcon from '../assets/icons/collapse.svg?raw'
+import openIcon from '../assets/icons/open.svg?raw'
 
 export default {
   name: 'RaceRowActions',
@@ -49,11 +60,13 @@ export default {
     // in its header row.
     vertical: { type: Boolean, default: false },
     // false on someone else's race: only the expand toggle is shown.
-    editable: { type: Boolean, default: true }
+    editable: { type: Boolean, default: true },
+    // The race's own page, e.g. /race/<raceId>; no link when unset.
+    to: { type: String, default: null }
   },
   emits: ['toggle-expand', 'edit', 'delete'],
   data() {
-    return { editIcon, trashIcon, expandIcon, collapseIcon }
+    return { editIcon, trashIcon, expandIcon, collapseIcon, openIcon }
   }
 }
 </script>

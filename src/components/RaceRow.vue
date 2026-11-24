@@ -72,6 +72,7 @@
 
       <RaceRowActions
         vertical
+        :to="`/race/${race.id}`"
         :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
         :expanded="expanded"
         @toggle-expand="toggleExpanded"
@@ -89,8 +90,8 @@
         :notes-fallback="readOnly ? '' : 'No notes'"
         card-labels
         divider
-        :lap-times="race.lap_times_ms"
-        :roster="race.results_roster"
+        :lap-times="lapTimes"
+        :roster="roster"
         :server-name="race.server_name || ''"
       />
     </div>
@@ -155,6 +156,7 @@
     <td v-if="isColVisible('total')" class="py-2 pr-3 tabular text-brand-muted dark:text-brand-muted-dark">{{ formatTotal }}</td>
     <td class="py-2 pr-3 text-right whitespace-nowrap">
       <RaceRowActions
+        :to="`/race/${race.id}`"
         :show-expand="!!(race.notes || race.server_name || hasLapTimes || hasRoster)"
         :expanded="expanded"
         @toggle-expand="toggleExpanded"
@@ -186,8 +188,8 @@
         :notes-fallback="readOnly ? '' : 'No notes'"
         accent
         divider
-        :lap-times="race.lap_times_ms"
-        :roster="race.results_roster"
+        :lap-times="lapTimes"
+        :roster="roster"
         :server-name="race.server_name || ''"
       />
     </td>
@@ -215,6 +217,8 @@ import FavoriteStar from './FavoriteStar.vue'
 import { formatMsToTime, formatDelta } from '../utils/timeFormat.js'
 import { formatAssists } from '../utils/assistsFormat.js'
 import apiIcon from '../assets/icons/api.svg?raw'
+import { getRaceDetails } from '../services/raceService.js'
+import { pushToast } from '../stores/toastStore.js'
 
 function toLocalIsoMinute(isoString) {
   const d = new Date(isoString)
@@ -251,6 +255,8 @@ export default {
       editing: false,
       saving: false,
       expanded: false,
+      // Splits + roster fetched on first expand, for a race loaded `light`.
+      details: null,
       confirmingDelete: false,
       apiIcon
     }
@@ -281,17 +287,29 @@ export default {
         minute: '2-digit'
       })
     },
+    // A race loaded `light` (see LIST_SELECT in raceService.js) has no splits
+    // or roster until expanded; the first-entry probes stand in till then.
+    isLight() {
+      return !('results_roster' in this.race) && !this.details
+    },
+    lapTimes() {
+      return 'lap_times_ms' in this.race ? this.race.lap_times_ms : this.details?.lap_times_ms
+    },
+    roster() {
+      return 'results_roster' in this.race ? this.race.results_roster : this.details?.results_roster
+    },
     hasLapTimes() {
-      return Array.isArray(this.race.lap_times_ms)
-        && this.race.lap_times_ms.some(ms => ms != null)
+      if (this.isLight) return this.race.first_lap_ms != null
+      return Array.isArray(this.lapTimes) && this.lapTimes.some(ms => ms != null)
     },
     hasRoster() {
-      return Array.isArray(this.race.results_roster) && this.race.results_roster.length > 0
+      if (this.isLight) return this.race.first_roster_entry != null
+      return Array.isArray(this.roster) && this.roster.length > 0
     },
     lapCount() {
       if (this.race.lap_count != null) return this.race.lap_count
       // Older races may only carry the splits array.
-      if (Array.isArray(this.race.lap_times_ms)) return this.race.lap_times_ms.length
+      if (Array.isArray(this.lapTimes)) return this.lapTimes.length
       return '—'
     },
     isPersonalBest() {
@@ -355,8 +373,14 @@ export default {
       this.confirmingDelete = false
       this.$emit('delete', this.race.id)
     },
-    toggleExpanded() {
+    async toggleExpanded() {
       this.expanded = !this.expanded
+      if (!this.expanded || !this.isLight) return
+      try {
+        this.details = await getRaceDetails(this.race.id)
+      } catch (err) {
+        pushToast(err.message || 'Failed to load race details', 'error')
+      }
     },
     formatAssists
   }

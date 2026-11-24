@@ -213,7 +213,7 @@ drop policy if exists "user_details select own" on wf1.user_details;
 create policy "user_details select own"
     on wf1.user_details for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 -- One-time migration from the earlier ban-only table, if it was ever
 -- applied — preserves who was banned, and by whom, before dropping it.
@@ -254,8 +254,8 @@ create table if not exists wf1.profiles (
     user_id      uuid primary key references auth.users(id) on delete cascade,
     display_name text not null,
     -- Opt-out switch: false hides every one of this user's races (and this
-    -- profile) from everyone but the user themselves — see is_public_user()
-    -- and the races/profiles select policies.
+    -- profile) from everyone but the user themselves — see the
+    -- races/profiles select policies.
     is_public    boolean not null default true,
     created_at   timestamptz not null default now()
 );
@@ -281,7 +281,7 @@ drop policy if exists "profiles select public or own" on wf1.profiles;
 create policy "profiles select public or own"
     on wf1.profiles for select
     to anon, authenticated
-    using (is_public or auth.uid() = user_id);
+    using (is_public or (select auth.uid()) = user_id);
 
 -- No insert or delete policy: rows are created by handle_new_user() and
 -- removed by the auth.users cascade. Which columns a user may update is
@@ -290,23 +290,8 @@ drop policy if exists "profiles update own" on wf1.profiles;
 create policy "profiles update own"
     on wf1.profiles for update
     to authenticated
-    using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
-
--- True when this user's races are publicly visible. Security definer (like
--- is_banned) so the races select policy can call it per row without
--- running the profiles RLS policy inside the races one. A user with no
--- profile row is treated as private — the safe failure mode.
-create or replace function wf1.is_public_user(uid uuid)
-returns boolean
-language sql
-security definer stable set search_path = wf1
-as $$
-    select coalesce(
-        (select is_public from wf1.profiles where user_id = uid),
-        false
-    )
-$$;
+    using ((select auth.uid()) = user_id)
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Picks the auto-assigned name for a new account: 'Driver-' plus the first
 -- 6 hex chars of md5(user id), lengthened a step at a time on the rare
@@ -382,52 +367,61 @@ drop policy if exists "races select own or public" on wf1.races;
 create policy "races select own or public"
     on wf1.races for select
     to anon, authenticated
-    using (auth.uid() = user_id or wf1.is_public_user(user_id));
+    -- The subquery runs once per query (a hashed set of public user ids),
+    -- where a per-row function call ran once per race. No profile row means
+    -- not in the set, so private — the safe failure mode.
+    using (
+        (select auth.uid()) = user_id
+        or user_id in (select p.user_id from wf1.profiles p where p.is_public)
+    );
+-- Was the races select policy's per-row check; dropped after the policy
+-- above stops depending on it.
+drop function if exists wf1.is_public_user(uuid);
 
 drop policy if exists "races insert own" on wf1.races;
 create policy "races insert own"
     on wf1.races for insert
     to authenticated
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "races update own" on wf1.races;
 create policy "races update own"
     on wf1.races for update
     to authenticated
-    using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id)
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "races delete own" on wf1.races;
 create policy "races delete own"
     on wf1.races for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Goals: same pattern.
 drop policy if exists "goals select own" on wf1.goals;
 create policy "goals select own"
     on wf1.goals for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 drop policy if exists "goals insert own" on wf1.goals;
 create policy "goals insert own"
     on wf1.goals for insert
     to authenticated
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "goals update own" on wf1.goals;
 create policy "goals update own"
     on wf1.goals for update
     to authenticated
-    using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id)
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "goals delete own" on wf1.goals;
 create policy "goals delete own"
     on wf1.goals for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Variation annotations: same pattern as races/goals.
 alter table wf1.variation_annotations enable row level security;
@@ -436,19 +430,19 @@ drop policy if exists "variation_annotations select own" on wf1.variation_annota
 create policy "variation_annotations select own"
     on wf1.variation_annotations for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 drop policy if exists "variation_annotations insert own" on wf1.variation_annotations;
 create policy "variation_annotations insert own"
     on wf1.variation_annotations for insert
     to authenticated
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "variation_annotations delete own" on wf1.variation_annotations;
 create policy "variation_annotations delete own"
     on wf1.variation_annotations for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- =====================================================================
 -- Catalogue seed (tracks, variations, vehicles) lives in supabase/seed.sql.
@@ -511,7 +505,7 @@ drop policy if exists "user_roles select own" on wf1.user_roles;
 create policy "user_roles select own"
     on wf1.user_roles for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 -- Assign the 'user' role and create the public profile (with an
 -- auto-assigned display name) for new sign-ups automatically.
@@ -854,14 +848,14 @@ drop policy if exists "feedback insert own" on wf1.feedback;
 create policy "feedback insert own"
     on wf1.feedback for insert
     to authenticated
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Admins can read all feedback.
 drop policy if exists "feedback select admin" on wf1.feedback;
 create policy "feedback select admin"
     on wf1.feedback for select
     to authenticated
-    using (wf1.is_admin(auth.uid()));
+    using ((select wf1.is_admin(auth.uid())));
 
 -- =====================================================================
 -- API keys: per-user tokens for the external companion tool.
@@ -948,34 +942,34 @@ drop policy if exists "races_private select own" on wf1.races_private;
 create policy "races_private select own"
     on wf1.races_private for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 drop policy if exists "races_private insert own" on wf1.races_private;
 create policy "races_private insert own"
     on wf1.races_private for insert
     to authenticated
     with check (
-        auth.uid() = user_id
-        and not wf1.is_banned(auth.uid())
-        and exists (select 1 from wf1.races r where r.id = race_id and r.user_id = auth.uid())
+        (select auth.uid()) = user_id
+        and not (select wf1.is_banned(auth.uid()))
+        and exists (select 1 from wf1.races r where r.id = race_id and r.user_id = (select auth.uid()))
     );
 
 drop policy if exists "races_private update own" on wf1.races_private;
 create policy "races_private update own"
     on wf1.races_private for update
     to authenticated
-    using (auth.uid() = user_id)
+    using ((select auth.uid()) = user_id)
     with check (
-        auth.uid() = user_id
-        and not wf1.is_banned(auth.uid())
-        and exists (select 1 from wf1.races r where r.id = race_id and r.user_id = auth.uid())
+        (select auth.uid()) = user_id
+        and not (select wf1.is_banned(auth.uid()))
+        and exists (select 1 from wf1.races r where r.id = race_id and r.user_id = (select auth.uid()))
     );
 
 drop policy if exists "races_private delete own" on wf1.races_private;
 create policy "races_private delete own"
     on wf1.races_private for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Race favorites: the races a user has starred. Any race they can see, not
 -- just their own — so unlike races_private there's no ownership check on
@@ -998,15 +992,15 @@ drop policy if exists "race_favorites select own" on wf1.race_favorites;
 create policy "race_favorites select own"
     on wf1.race_favorites for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 drop policy if exists "race_favorites insert own" on wf1.race_favorites;
 create policy "race_favorites insert own"
     on wf1.race_favorites for insert
     to authenticated
     with check (
-        auth.uid() = user_id
-        and not wf1.is_banned(auth.uid())
+        (select auth.uid()) = user_id
+        and not (select wf1.is_banned(auth.uid()))
         and exists (select 1 from wf1.races r where r.id = race_id)
     );
 
@@ -1014,7 +1008,7 @@ drop policy if exists "race_favorites delete own" on wf1.race_favorites;
 create policy "race_favorites delete own"
     on wf1.race_favorites for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 alter table wf1.api_keys enable row level security;
 
@@ -1022,19 +1016,19 @@ drop policy if exists "api_keys select own" on wf1.api_keys;
 create policy "api_keys select own"
     on wf1.api_keys for select
     to authenticated
-    using (auth.uid() = user_id);
+    using ((select auth.uid()) = user_id);
 
 drop policy if exists "api_keys insert own" on wf1.api_keys;
 create policy "api_keys insert own"
     on wf1.api_keys for insert
     to authenticated
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 drop policy if exists "api_keys delete own" on wf1.api_keys;
 create policy "api_keys delete own"
     on wf1.api_keys for delete
     to authenticated
-    using (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- Needed so a user can soft-revoke (set revoked_at) their own key instead
 -- of hard-deleting it.
@@ -1042,8 +1036,8 @@ drop policy if exists "api_keys update own" on wf1.api_keys;
 create policy "api_keys update own"
     on wf1.api_keys for update
     to authenticated
-    using (auth.uid() = user_id)
-    with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
+    using ((select auth.uid()) = user_id)
+    with check ((select auth.uid()) = user_id and not (select wf1.is_banned(auth.uid())));
 
 -- RPC called by the external companion tool: validates the raw API key,
 -- resolves track/variation by exact display-name match and vehicle by
@@ -1603,6 +1597,24 @@ as $$
 $$;
 
 grant execute on function wf1.get_fastest_laps_per_vehicle_on_variation to anon, authenticated;
+
+-- Each vehicle a driver has raced with a known PI, and the PI from their
+-- latest race in it — Quick Add's default PI. Runs as the caller, so the
+-- races select policy still applies.
+create or replace function wf1.get_vehicle_pi_map(p_user_id uuid)
+returns table(vehicle_id uuid, performance_index integer)
+language sql
+stable set search_path = wf1
+as $$
+    select distinct on (r.vehicle_id) r.vehicle_id, r.performance_index
+    from wf1.races r
+    where r.user_id = p_user_id
+      and r.vehicle_id is not null
+      and r.performance_index is not null
+    order by r.vehicle_id, r.datetime desc
+$$;
+
+grant execute on function wf1.get_vehicle_pi_map to authenticated;
 
 -- Returns all feedback entries with the submitting user's email, newest
 -- first — admin only. The "feedback select admin" RLS policy already
