@@ -75,6 +75,7 @@ convention — field names must exactly match the SQL parameter names):
 | `total_time_ms`  | integer | Total race time in milliseconds. `0` if the player completed zero laps. |
 | `dnf`            | boolean | `true` if the engine's own DNF flag is set for this player. |
 | `laps_completed` | integer | Number of laps actually completed (0 for a DNF with no laps). |
+| `ai`             | boolean | Optional. `true` for AI-driven cars; shown as a green `*` before the name in the roster. |
 | `tuning`         | object  | Optional. That racer's tuning dials, 1-5 each: `{"suspension": 5, "gear_ratio": 3, "differential": 4, "brake_balance": 2}`. Omit it when unknown (e.g. AI cars). Shown in the roster's Tuning column as `5342`. |
 
 If all four tuning fields are provided, they're combined server-side into
