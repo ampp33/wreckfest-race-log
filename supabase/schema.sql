@@ -603,6 +603,7 @@ create or replace function wf1.get_all_users_with_roles()
 returns table(
     id                uuid,
     email             text,
+    display_name      text,
     role              text,
     created_at        timestamptz,
     banned            boolean,
@@ -624,6 +625,7 @@ begin
     select
         u.id::uuid,
         u.email::text,
+        p.display_name::text,
         coalesce(
             (select r.name
              from wf1.user_roles ur
@@ -643,7 +645,8 @@ begin
     left join wf1.races                 rc on rc.user_id = u.id
     left join wf1.goals                 g  on g.user_id  = u.id
     left join wf1.variation_annotations a  on a.user_id  = u.id
-    group by u.id, u.email, u.created_at
+    left join wf1.profiles              p  on p.user_id  = u.id
+    group by u.id, u.email, p.display_name, u.created_at
     order by total_activity desc;
 end;
 $$;
@@ -1308,6 +1311,7 @@ returns table(
     revoked_at   timestamptz,
     user_id      uuid,
     user_email   text,
+    user_display_name text,
     race_count   bigint
 )
 language plpgsql
@@ -1327,11 +1331,13 @@ begin
         k.revoked_at,
         k.user_id,
         u.email::text as user_email,
+        p.display_name::text as user_display_name,
         count(r.race_id) as race_count
     from wf1.api_keys k
     join auth.users u on u.id = k.user_id
+    left join wf1.profiles p on p.user_id = k.user_id
     left join wf1.races_private r on r.api_key_id = k.id
-    group by k.id, k.name, k.created_at, k.last_used_at, k.revoked_at, k.user_id, u.email
+    group by k.id, k.name, k.created_at, k.last_used_at, k.revoked_at, k.user_id, u.email, p.display_name
     order by k.created_at desc;
 end;
 $$;
@@ -1620,6 +1626,9 @@ grant execute on function wf1.get_vehicle_pi_map to authenticated;
 -- first — admin only. The "feedback select admin" RLS policy already
 -- lets an admin select these rows directly, but a plain select() from
 -- the client can't join auth.users, so this RPC does the join.
+-- Changing the returned row type needs a drop first.
+drop function if exists wf1.get_all_feedback();
+
 create or replace function wf1.get_all_feedback()
 returns table(
     id            uuid,
@@ -1627,7 +1636,8 @@ returns table(
     feedback_text text,
     created_at    timestamptz,
     user_id       uuid,
-    user_email    text
+    user_email    text,
+    user_display_name text
 )
 language plpgsql
 security definer set search_path = wf1
@@ -1644,9 +1654,11 @@ begin
         f.feedback_text,
         f.created_at,
         f.user_id,
-        u.email::text as user_email
+        u.email::text as user_email,
+        p.display_name::text as user_display_name
     from wf1.feedback f
     join auth.users u on u.id = f.user_id
+    left join wf1.profiles p on p.user_id = f.user_id
     order by f.created_at desc;
 end;
 $$;

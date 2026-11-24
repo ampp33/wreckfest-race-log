@@ -31,7 +31,8 @@
                 <span class="font-bold truncate text-brand-text dark:text-brand-text-dark">{{ key.name }}</span>
                 <span v-if="key.revoked_at" class="ov shrink-0 text-brand-muted dark:text-brand-muted-dark">Revoked</span>
               </div>
-              <div class="text-xs text-brand-muted dark:text-brand-muted-dark truncate mt-0.5">{{ key.user_email }}</div>
+              <div class="text-xs text-brand-text dark:text-brand-text-dark truncate mt-0.5">{{ key.user_display_name || key.user_email }}</div>
+              <div v-if="key.user_display_name" class="text-xs text-brand-muted dark:text-brand-muted-dark truncate">{{ key.user_email }}</div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Issued {{ formatDate(key.created_at) }}</div>
               <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">
                 Last used {{ key.last_used_at ? formatDate(key.last_used_at) : 'never' }}
@@ -83,7 +84,10 @@
                   <span v-if="key.revoked_at" class="ov font-medium text-brand-muted dark:text-brand-muted-dark">Revoked</span>
                 </span>
               </td>
-              <td class="pr-4 py-2.5 text-brand-muted dark:text-brand-muted-dark">{{ key.user_email }}</td>
+              <td class="pr-4 py-2.5">
+                <div class="text-brand-text dark:text-brand-text-dark">{{ key.user_display_name || key.user_email }}</div>
+                <div v-if="key.user_display_name" class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ key.user_email }}</div>
+              </td>
               <td class="pr-4 py-2.5 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(key.created_at) }}</td>
               <td class="pr-4 py-2.5 tabular text-xs text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
                 {{ key.last_used_at ? formatDate(key.last_used_at) : 'Never' }}

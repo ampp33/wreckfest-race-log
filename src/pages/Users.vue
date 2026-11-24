@@ -61,18 +61,19 @@
           <!-- Card layout (mobile) -->
           <div class="sm:hidden divide-y divide-brand-border dark:divide-brand-border-dark">
             <div
-              v-for="user in users"
+              v-for="user in sortedUsers"
               :key="user.id"
               class="p-3"
               :class="{ 'opacity-60': user.banned }"
             >
               <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0">
-                  <div class="truncate">
-                    {{ user.email }}
-                    <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                  <div class="truncate font-medium">
+                    {{ user.display_name || user.email }}
+                    <span v-if="user.id === currentUserId" class="ml-1 text-xs font-normal text-brand-muted dark:text-brand-muted-dark">(you)</span>
                   </div>
-                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDate(user.created_at) }}</div>
+                  <div v-if="user.display_name" class="truncate text-xs text-brand-muted dark:text-brand-muted-dark">{{ user.email }}</div>
+                  <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Joined {{ formatDateTime(user.created_at) }}</div>
                   <div class="text-xs text-brand-muted dark:text-brand-muted-dark mt-0.5">Last race {{ formatDateTime(user.last_race_at) }}</div>
                 </div>
                 <div class="flex flex-col items-end gap-1 shrink-0">
@@ -157,30 +158,44 @@
             <table class="min-w-full text-sm">
               <thead>
                 <tr class="text-left font-body font-medium uppercase tracking-widest text-[11px] text-brand-muted dark:text-brand-muted-dark border-b border-brand-border dark:border-brand-border-dark">
-                  <th class="px-4 py-2 font-medium">Email</th>
-                  <th class="px-4 py-2 font-medium">Joined</th>
-                  <th class="px-4 py-2 font-medium">Last race</th>
-                  <th class="px-4 py-2 font-medium">Role</th>
-                  <th class="px-4 py-2 font-medium text-right">Races</th>
-                  <th class="px-4 py-2 font-medium text-right">Goals</th>
-                  <th class="px-4 py-2 font-medium text-right">Annotations</th>
-                  <th class="px-4 py-2 font-medium text-right">Total</th>
+                  <th
+                    v-for="col in sortColumns"
+                    :key="col.key"
+                    class="px-4 py-2 font-medium"
+                    :class="{ 'text-right': col.numeric }"
+                    :aria-sort="sort.directionFor(col.key) === 'asc' ? 'ascending' : sort.directionFor(col.key) === 'desc' ? 'descending' : 'none'"
+                  >
+                    <button
+                      type="button"
+                      class="group inline-flex items-center gap-1 uppercase tracking-widest hover:text-brand-text dark:hover:text-brand-text-dark"
+                      :class="{ 'justify-end w-full': col.numeric }"
+                      :title="sort.titleFor(col.key, col.label)"
+                      :aria-label="sort.titleFor(col.key, col.label)"
+                      @click="sort.toggle(col.key)"
+                    >
+                      {{ col.label }}
+                      <SortCaret :direction="sort.directionFor(col.key)" />
+                    </button>
+                  </th>
                   <th class="px-4 py-2 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-brand-border dark:divide-brand-border-dark">
                 <tr
-                  v-for="user in users"
+                  v-for="user in sortedUsers"
                   :key="user.id"
                   class="hover:bg-brand-bg dark:hover:bg-brand-bg-dark/30"
                   :class="{ 'opacity-60': user.banned }"
                 >
                   <td class="px-4 py-2">
-                    {{ user.email }}
-                    <span v-if="user.id === currentUserId" class="ml-1 text-xs text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                    <div class="font-medium">
+                      {{ user.display_name || user.email }}
+                      <span v-if="user.id === currentUserId" class="ml-1 text-xs font-normal text-brand-muted dark:text-brand-muted-dark">(you)</span>
+                    </div>
+                    <div v-if="user.display_name" class="text-xs text-brand-muted dark:text-brand-muted-dark">{{ user.email }}</div>
                   </td>
                   <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
-                    {{ formatDate(user.created_at) }}
+                    {{ formatDateTime(user.created_at) }}
                   </td>
                   <td class="px-4 py-2 text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">
                     {{ formatDateTime(user.last_race_at) }}
@@ -273,7 +288,10 @@
           <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-1">
             Change <em class="signal">role</em>
           </h2>
-          <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4 break-all">{{ dialog.user?.email }}</p>
+          <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4 break-all">
+            <span class="block text-brand-text dark:text-brand-text-dark">{{ dialog.user?.display_name }}</span>
+            {{ dialog.user?.email }}
+          </p>
 
           <div class="space-y-2 mb-5">
             <label
@@ -335,7 +353,9 @@ import { getAllUsers, getRaceLogBins, getUserActivityBins, setUserRole, setUserB
 import { bucketUnit, growthBuckets, countPerBucket, runningTotalPerBucket, activeUsersPerBucket } from '../utils/chartBuckets.js'
 import { getTotalRaceCount } from '../services/publicStatsService.js'
 import { pushToast } from '../stores/toastStore.js'
-import { formatDate, formatDateTime } from '../utils/dateFormat.js'
+import { formatDateTime } from '../utils/dateFormat.js'
+import { createSortState, sortRows } from '../utils/sortState.js'
+import SortCaret from '../components/SortCaret.vue'
 import { useChart } from '../composables/useChart.js'
 import { getChartTheme } from '../utils/chartTheme.js'
 import { useEventListener } from '../composables/useEventListener.js'
@@ -363,6 +383,21 @@ const availableRoles = [
   { value: 'user', label: 'User', description: 'Standard access' },
   { value: 'admin', label: 'Admin', description: 'Access to admin pages' }
 ]
+
+// Unsorted keeps the RPC's order (total activity, descending).
+const sort = createSortState()
+const sortColumns = [
+  { key: 'user', label: 'User', get: u => u.display_name || u.email },
+  { key: 'joined', label: 'Joined', get: u => u.created_at && new Date(u.created_at).getTime() },
+  { key: 'lastRace', label: 'Last race', get: u => u.last_race_at && new Date(u.last_race_at).getTime() },
+  { key: 'role', label: 'Role', get: u => u.role + (u.banned ? ' banned' : '') },
+  { key: 'races', label: 'Races', numeric: true, get: u => Number(u.race_count) },
+  { key: 'goals', label: 'Goals', numeric: true, get: u => Number(u.goal_count) },
+  { key: 'annotations', label: 'Annotations', numeric: true, get: u => Number(u.annotation_count) },
+  { key: 'total', label: 'Total', numeric: true, get: u => Number(u.total_activity) }
+]
+const sortGetters = Object.fromEntries(sortColumns.map(c => [c.key, c.get]))
+const sortedUsers = computed(() => sortRows(users.value, sort.state, sortGetters))
 
 const growthCanvas = ref(null)
 const { render: renderGrowth } = useChart(growthCanvas)
@@ -596,7 +631,7 @@ async function confirmChange() {
   try {
     await setUserRole(user.id, selectedRole)
     user.role = selectedRole
-    pushToast(`${user.email} is now ${selectedRole}`, 'success')
+    pushToast(`${user.display_name || user.email} is now ${selectedRole}`, 'success')
     closeDialog()
   } catch (err) {
     pushToast(err.message || 'Failed to update role', 'error')
@@ -611,7 +646,7 @@ async function confirmBan(user) {
   try {
     await setUserBanned(user.id, true)
     user.banned = true
-    pushToast(`${user.email} has been banned`, 'success')
+    pushToast(`${user.display_name || user.email} has been banned`, 'success')
   } catch (err) {
     pushToast(err.message || 'Failed to ban user', 'error')
   } finally {
@@ -623,7 +658,7 @@ async function unban(user) {
   try {
     await setUserBanned(user.id, false)
     user.banned = false
-    pushToast(`${user.email} has been unbanned`, 'success')
+    pushToast(`${user.display_name || user.email} has been unbanned`, 'success')
   } catch (err) {
     pushToast(err.message || 'Failed to unban user', 'error')
   } finally {
