@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-accent dark:text-brand-accent-dark mb-1">
       <em class="signal">Users</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-6">Manage registered users' access and standing, ranked by activity.</p>
@@ -30,7 +30,7 @@
       <!-- User growth chart -->
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
         <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
-          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-accent dark:text-brand-accent-dark">
             User <em class="signal">growth</em>
           </h2>
           <ChartRangePicker v-model="usersRange" />
@@ -43,7 +43,7 @@
       <!-- Races logged chart -->
       <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark p-4">
         <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
-          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-text dark:text-brand-text-dark">
+          <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm text-brand-accent dark:text-brand-accent-dark">
             Races <em class="signal">logged</em>
           </h2>
           <ChartRangePicker v-model="racesRange" />
@@ -285,7 +285,7 @@
         @click.self="closeDialog"
       >
         <div class="bg-brand-surface dark:bg-brand-surface-dark rounded border border-brand-border dark:border-brand-border-dark shadow-xl w-72 p-5">
-          <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-text dark:text-brand-text-dark mb-1">
+          <h2 class="font-display font-black tracking-tighter leading-none text-display-sm text-brand-accent dark:text-brand-accent-dark mb-1">
             Change <em class="signal">role</em>
           </h2>
           <p class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark mb-4 break-all">
