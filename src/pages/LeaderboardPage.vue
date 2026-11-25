@@ -13,7 +13,7 @@
     <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else class="space-y-14">
-      <!-- Online now: anyone with a plugin race in the last 15 minutes -->
+      <!-- Online now: anyone whose plugin pinged in the last 90s, with their last race -->
       <section v-if="onlineDrivers.length" class="rounded-xl bg-brand-accent dark:bg-brand-accent-dark text-white px-4 sm:px-6 py-5 sm:py-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm">
@@ -303,7 +303,14 @@ export default {
       return this.mostRaces[0]?.race_count || 1
     }
   },
+  beforeUnmount() {
+    clearInterval(this.onlineTimer)
+  },
   async mounted() {
+    // Refresh "Online now" every 10s, skipped while the tab is hidden.
+    this.onlineTimer = setInterval(() => {
+      if (!document.hidden) getOnlineDrivers().then(drivers => { this.onlineDrivers = drivers }, () => {})
+    }, 10000)
     // Captured up front: the filters may change while this loads.
     const { classKey, lapsKey, piClass, vehicleId } = this
     try {

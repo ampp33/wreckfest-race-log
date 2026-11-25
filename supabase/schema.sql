@@ -1411,10 +1411,48 @@ $$;
 
 grant execute on function wf1.get_most_races_leaderboard to anon, authenticated;
 
--- Drivers "online" now: everyone with a plugin race in the last 15 minutes,
--- one row each with their latest race, most recent first. Filters on
--- datetime (not created_at) so races_datetime_idx serves it; plugin races
--- are logged as they finish, so the two are close.
+-- Plugin heartbeat: the telemetry plugin pings heartbeat_wf1 every ~30s
+-- while the game runs, so "online now" doesn't have to wait for a race to
+-- finish. Only the time is kept — no server or location — so it says
+-- "playing" and nothing more. Kept on the profile, so the profiles select
+-- policy (is_public) applies to it for free.
+alter table wf1.profiles add column if not exists heartbeat_at timestamptz;
+
+create index if not exists profiles_heartbeat_idx on wf1.profiles (heartbeat_at);
+
+create or replace function wf1.heartbeat_wf1(api_key text)
+returns json
+language plpgsql
+security definer set search_path = wf1
+as $$
+declare
+    v_user_id uuid;
+begin
+    select k.user_id into v_user_id
+    from wf1.api_keys k
+    where k.key_hash = encode(sha256(api_key::bytea), 'hex') and k.revoked_at is null;
+
+    if v_user_id is null then
+        return json_build_object('success', false, 'error', 'Invalid API key');
+    end if;
+    if wf1.is_banned(v_user_id) then
+        return json_build_object('success', false, 'error', 'Account suspended');
+    end if;
+
+    update wf1.profiles
+    set heartbeat_at = now()
+    where user_id = v_user_id;
+
+    return json_build_object('success', true);
+end;
+$$;
+
+grant execute on function wf1.heartbeat_wf1 to anon, authenticated;
+
+-- Drivers "online" now: everyone with a plugin heartbeat in the last 90
+-- seconds (3 missed 30s pings), most recently seen first. Vehicle, track
+-- and server come from their latest plugin race (already public), not from
+-- the heartbeat.
 create or replace function wf1.get_online_drivers()
 returns table(
     user_id        uuid,
@@ -1428,20 +1466,21 @@ returns table(
 language sql
 stable set search_path = wf1
 as $$
-    select last.user_id, p.display_name, v.name, t.name, tv.name, last.server_name, last.datetime
-    from (
-        select distinct on (r.user_id) r.*
+    select p.user_id, p.display_name, v.name, t.name, tv.name, last.server_name, p.heartbeat_at
+    from wf1.profiles p
+    left join lateral (
+        select r.vehicle_id, r.track_variation_id, r.server_name
         from wf1.races r
-        where r.source = 'api'
-          and r.server_name is not null
-          and r.datetime > now() - interval '10 minutes'
-        order by r.user_id, r.datetime desc
-    ) last
-    left join wf1.profiles p on p.user_id = last.user_id
+        where r.user_id = p.user_id
+          and r.source = 'api'
+        order by r.datetime desc
+        limit 1
+    ) last on true
     left join wf1.vehicles v on v.id = last.vehicle_id
     left join wf1.track_variations tv on tv.id = last.track_variation_id
     left join wf1.tracks t on t.id = tv.track_id
-    order by last.datetime desc
+    where p.heartbeat_at > now() - interval '90 seconds'
+    order by p.heartbeat_at desc
 $$;
 
 grant execute on function wf1.get_online_drivers to anon, authenticated;
