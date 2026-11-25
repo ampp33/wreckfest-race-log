@@ -225,15 +225,9 @@ table th {
   background-color: rgba(180, 178, 169, 0.3);
 }
 
-/* The signal word in a heading. Grid Break knocks it out to an outline instead
- * of italicising it — the accent is the counter, not the colour. */
+/* The signal word in a heading: same ink as the rest of the heading. */
 em.signal {
   font-style: normal;
-  color: theme('colors.brand.accent.DEFAULT');
-}
-
-.dark em.signal {
-  color: theme('colors.brand.accent.dark');
 }
 
 /* Display type used as image, in two flavours that are not interchangeable:
