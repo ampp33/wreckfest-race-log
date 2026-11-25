@@ -10,7 +10,7 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
     <header class="mb-12 max-w-3xl">
       <h1 class="font-display font-black tracking-tightest leading-[0.88] text-display-lg text-brand-text dark:text-brand-text-dark">
-        The short version of <em class="font-heading font-normal tracking-normal signal">everything</em>.
+        The short version of <em class="font-heading font-normal tracking-normal signal text-brand-accent dark:text-brand-accent-dark">everything</em>.
       </h1>
       <p class="font-body text-[17px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mt-6">
         Read it once end to end, or jump to the one thing you're stuck on. The index on the left follows you down the page.
