@@ -28,9 +28,9 @@ const CommunityStatsPage = () => import('../pages/CommunityStatsPage.vue')
 const DRIVER = '/:userId([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
 
 // Where a signed-in user lands: after sign-in, from "/", and off pages they
-// aren't allowed on.
+// aren't allowed on. Drivers with no plugin races yet go set up the plugin.
 export function signedInHomeRoute() {
-  return { name: 'community-leaderboard' }
+  return { name: authStore.needsPlugin ? 'telemetry' : 'community-leaderboard' }
 }
 
 // Pre-namespace URLs (/races, /track/a/b, ...) from bookmarks and old links:

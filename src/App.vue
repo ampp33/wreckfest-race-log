@@ -1,7 +1,8 @@
 <template>
   <div class="app-shell min-h-screen flex flex-col bg-brand-bg dark:bg-brand-bg-dark text-brand-text dark:text-brand-text-dark font-body">
     <NavBar v-if="showNavBar" />
-    <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" />
+    <PluginSetupBar v-if="auth.isAuthenticated && auth.needsPlugin && !isLoginRoute" />
+    <!-- <WF2Banner v-if="auth.isAuthenticated && !isLoginRoute" /> -->
 
     <main class="flex-1">
       <p
@@ -29,6 +30,7 @@
 import NavBar from './components/NavBar.vue'
 import AppFooter from './components/AppFooter.vue'
 import WF2Banner from './components/WF2Banner.vue'
+import PluginSetupBar from './components/PluginSetupBar.vue'
 import QuickAddModal from './components/QuickAddModal.vue'
 import TrackSearchModal from './components/TrackSearchModal.vue'
 import PrepRaceModal from './components/PrepRaceModal.vue'
@@ -44,7 +46,7 @@ import { openPrepRace, prepRaceStore } from './stores/prepRaceStore.js'
 
 export default {
   name: 'App',
-  components: { NavBar, AppFooter, WF2Banner, QuickAddModal, TrackSearchModal, PrepRaceModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
+  components: { NavBar, AppFooter, WF2Banner, PluginSetupBar, QuickAddModal, TrackSearchModal, PrepRaceModal, FeedbackModal, FloatingQuickAddButton, ToastContainer, NavIntroOverlay },
   data() {
     return {
       auth: authStore,
