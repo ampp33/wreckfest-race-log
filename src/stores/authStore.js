@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { getSession, onAuthChange } from '../services/authService.js'
 import { supabase } from '../services/supabase.js'
+import { getApiKeys } from '../services/apiKeyService.js'
 
 export const authStore = reactive({
   session: null,
@@ -10,6 +11,8 @@ export const authStore = reactive({
   // { display_name, is_public } from wf1.profiles — the public face of the
   // account. null while signed out or before it loads.
   profile: null,
+  // True when no API key has logged a race yet: nudge them to set up the plugin.
+  needsPlugin: false,
 
   get user() {
     return this.session ? this.session.user : null
@@ -39,6 +42,7 @@ export function clearAuthSession() {
   authStore.userRoles = []
   authStore.banned = false
   authStore.profile = null
+  authStore.needsPlugin = false
 }
 
 // Called after the profile settings page saves, so the rest of the app
@@ -52,6 +56,7 @@ async function fetchUserRoles() {
     authStore.userRoles = []
     authStore.banned = false
     authStore.profile = null
+    authStore.needsPlugin = false
     return
   }
   const [{ data: roleData }, { data: detailsData }, { data: profileData }] = await Promise.all([
@@ -68,11 +73,23 @@ async function fetchUserRoles() {
       .from('profiles')
       .select('display_name, is_public')
       .eq('user_id', authStore.user.id)
-      .maybeSingle()
+      .maybeSingle(),
+    refreshNeedsPlugin()
   ])
   authStore.userRoles = roleData ?? []
   authStore.banned = detailsData?.status === 'banned'
   authStore.profile = profileData ?? null
+}
+
+// Exported so password sign-in can await it before picking where to land.
+export async function refreshNeedsPlugin() {
+  try {
+    const keys = await getApiKeys()
+    authStore.needsPlugin = keys.every(k => k.race_count === 0)
+  } catch (err) {
+    console.error('Failed to load API keys', err)
+    authStore.needsPlugin = false
+  }
 }
 
 let initialized = false
@@ -91,7 +108,10 @@ export async function initAuthStore() {
     authStore.ready = true
   }
 
-  onAuthChange(async session => {
+  onAuthChange(async (session, event) => {
+    // Fired right on subscribing with the session resolved just above —
+    // refetching roles for it would only repeat the 3 queries.
+    if (event === 'INITIAL_SESSION') return
     authStore.session = session
     await fetchUserRoles()
   })

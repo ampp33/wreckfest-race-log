@@ -216,7 +216,7 @@ you can always read your own; only the owner can write):
   not scoped to the current user unless it filters on `user_id` itself.
 - `profiles` — `display_name` (auto-assigned `Driver-<hex>` at signup,
   user-editable, unique ignoring case) and `is_public`, the opt-out switch the
-  `races` select policy checks via `is_public_user()`. Users can update only
+  `races` select policy checks. Users can update only
   those two columns of their own row.
 
 **Private per-user data** (RLS: you can only ever see `user_id = auth.uid()`):

@@ -22,7 +22,7 @@
           class="border-t border-brand-border dark:border-brand-border-dark"
         >
           <td class="py-1.5 pr-3 tabular font-semibold text-brand-text dark:text-brand-text-dark">{{ row.position ?? '—' }}</td>
-          <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark truncate max-w-[16ch]">{{ row.name || '—' }}</td>
+          <td class="py-1.5 pr-3 text-brand-text dark:text-brand-text-dark truncate max-w-[16ch]"><span v-if="row.ai" class="font-bold text-green-600" title="AI driver">*</span>{{ row.name || '—' }}</td>
           <td class="py-1.5 pr-3 text-brand-muted dark:text-brand-muted-dark truncate max-w-[16ch]">{{ row.car || '—' }}</td>
           <td class="py-1.5 pr-3 whitespace-nowrap">
             <template v-if="row.class">

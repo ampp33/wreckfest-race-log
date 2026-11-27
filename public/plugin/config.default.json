@@ -1,4 +1,5 @@
 {
   "supabase_url": "https://xribggiaayvvjrznbchg.supabase.co/rest/v1/rpc/insert_race_with_api_key_wf1",
-  "supabase_anon_key": "sb_publishable_jgnZSyXXDe4-oWBNehlqTg_4caHTjnj"
+  "supabase_anon_key": "sb_publishable_jgnZSyXXDe4-oWBNehlqTg_4caHTjnj",
+  "heartbeat_url": "https://xribggiaayvvjrznbchg.supabase.co/rest/v1/rpc/heartbeat_wf1"
 }

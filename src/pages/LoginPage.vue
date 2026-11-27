@@ -93,6 +93,8 @@
 
 <script>
 import { signInWithPassword, signUpWithPassword, signInWithGoogle, signInWithDiscord } from '../services/authService.js'
+import { refreshNeedsPlugin } from '../stores/authStore.js'
+import { signedInHomeRoute } from '../router/index.js'
 import googleIcon from '../assets/icons/google.svg?raw'
 import discordIcon from '../assets/icons/discord.svg?raw'
 
@@ -120,7 +122,7 @@ export default {
       if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
         return target
       }
-      return '/community/leaderboard'
+      return signedInHomeRoute()
     }
   },
   methods: {
@@ -160,10 +162,12 @@ export default {
       try {
         if (this.mode === 'signin') {
           await signInWithPassword(this.email.trim(), this.password)
+          await refreshNeedsPlugin()
           this.$router.replace(this.redirectPath)
         } else {
           const { session } = await signUpWithPassword(this.email.trim(), this.password)
           if (session) {
+            await refreshNeedsPlugin()
             this.$router.replace(this.redirectPath)
           } else {
             // Project has "Confirm email" enabled — the user has to click the

@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+  <div class="wide-table-page max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <ScopeKicker />
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark mb-1">
       Leader<em class="signal">boards</em>
@@ -13,7 +13,7 @@
     <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else class="space-y-14">
-      <!-- Online now: anyone with a plugin race in the last 15 minutes -->
+      <!-- Online now: anyone whose plugin pinged in the last 90s, with their last race -->
       <section v-if="onlineDrivers.length" class="rounded-xl bg-brand-accent dark:bg-brand-accent-dark text-white px-4 sm:px-6 py-5 sm:py-6">
         <div class="flex items-center justify-between gap-4 mb-4">
           <h2 class="font-heading font-normal tracking-normal leading-none text-display-sm">
@@ -144,7 +144,7 @@
                   {{ lap.track_name }}
                   <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ lap.variation_name }}</span>
                 </router-link>
-                <span class="tabular font-semibold text-brand-accent dark:text-brand-accent-dark shrink-0">{{ formatMs(lap.lap_time_ms) }}</span>
+                <router-link :to="`/race/${lap.race_id}`" title="Open race page" class="tabular font-semibold text-brand-accent dark:text-brand-accent-dark shrink-0 inline-flex items-center gap-1 hover:underline">{{ formatMs(lap.lap_time_ms) }}<span class="w-3 h-3 inline-block" v-html="openIcon"></span></router-link>
               </div>
               <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2 text-sm">
                 <div>
@@ -175,8 +175,9 @@
             </div>
           </div>
 
-          <!-- Table layout (desktop) -->
-          <div class="hidden sm:block overflow-x-auto">
+          <!-- Table layout (desktop) — no scroll box of its own; a table too
+               wide for the page widens the page instead (see .wide-table-page). -->
+          <div class="hidden sm:block">
             <table class="w-full text-sm">
               <thead>
                 <tr class="text-left ov ov-lg text-brand-accent dark:text-brand-accent-dark border-b-2 border-brand-strong dark:border-brand-strong-dark whitespace-nowrap">
@@ -201,7 +202,9 @@
                       <span class="text-brand-muted dark:text-brand-muted-dark font-normal">— {{ lap.variation_name }}</span>
                     </router-link>
                   </td>
-                  <td class="px-3.5 py-2 text-right tabular font-semibold text-brand-accent dark:text-brand-accent-dark">{{ formatMs(lap.lap_time_ms) }}</td>
+                  <td class="px-3.5 py-2 text-right tabular font-semibold whitespace-nowrap">
+                    <router-link :to="`/race/${lap.race_id}`" title="Open race page" class="inline-flex items-center gap-1 text-brand-accent dark:text-brand-accent-dark hover:underline">{{ formatMs(lap.lap_time_ms) }}<span class="w-3 h-3 inline-block" v-html="openIcon"></span></router-link>
+                  </td>
                   <td class="px-3.5 py-2 whitespace-nowrap">
                     <router-link :to="driverTrackPath(lap)" class="text-brand-secondary dark:text-brand-secondary-dark hover:text-brand-accent dark:hover:text-brand-accent-dark">{{ lap.display_name || '—' }}</router-link>
                   </td>
@@ -233,6 +236,7 @@ import { pushToast } from '../stores/toastStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { META_VEHICLES } from '../utils/piInfo.js'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
+import openIcon from '../assets/icons/open.svg?raw'
 
 export default {
   name: 'LeaderboardPage',
@@ -254,7 +258,8 @@ export default {
       vehicles: [],
       lapsByFilter: {},
       lapsFailed: {},
-      chevronDownIcon
+      chevronDownIcon,
+      openIcon
     }
   },
   computed: {
@@ -298,7 +303,14 @@ export default {
       return this.mostRaces[0]?.race_count || 1
     }
   },
+  beforeUnmount() {
+    clearInterval(this.onlineTimer)
+  },
   async mounted() {
+    // Refresh "Online now" every 10s, skipped while the tab is hidden.
+    this.onlineTimer = setInterval(() => {
+      if (!document.hidden) getOnlineDrivers().then(drivers => { this.onlineDrivers = drivers }, () => {})
+    }, 10000)
     // Captured up front: the filters may change while this loads.
     const { classKey, lapsKey, piClass, vehicleId } = this
     try {

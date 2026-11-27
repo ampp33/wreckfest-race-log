@@ -28,7 +28,7 @@
     <section>
       <div class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-16 pb-8 sm:pt-16 sm:pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.9] text-display-xl text-brand-text dark:text-brand-text-dark">
-          Track every race.<br><em class="font-heading font-normal tracking-normal signal">Sharpen your skills.</em>
+          Track every race.<br><em class="font-heading font-normal tracking-normal signal text-brand-accent dark:text-brand-accent-dark">Sharpen your skills.</em>
         </h1>
         <h2 v-if="totalRaceCount" class="leading-[0.9] text-display-sm text-brand-text dark:text-brand-text-dark mt-8">
           <span class="font-display font-black tracking-tightest text-brand-accent dark:text-brand-accent-dark">{{ totalRaceCount.toLocaleString() }}</span>
@@ -54,7 +54,7 @@
            and copy need the same clearance, not just the hero's. -->
       <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark">
-          Everything, on <em class="font-heading font-normal tracking-normal signal">record</em>.
+          Everything, on <em class="font-heading font-normal tracking-normal signal text-brand-accent dark:text-brand-accent-dark">record</em>.
         </h1>
         <div class="mt-5 max-w-3xl space-y-3">
           <div>
@@ -119,7 +119,7 @@
            every width, full stop. -->
       <section class="mx-auto px-4 sm:pr-[22vw] sm:pl-[22vw] pt-4 pb-10">
         <h1 class="font-display font-black tracking-tightest leading-[0.92] text-display-lg text-brand-text dark:text-brand-text-dark mb-6">
-          <em class="font-heading font-normal tracking-normal signal">How</em> to get started.
+          <em class="font-heading font-normal tracking-normal signal text-brand-accent dark:text-brand-accent-dark">How</em> to get started.
         </h1>
 
         <div class="relative pl-10">

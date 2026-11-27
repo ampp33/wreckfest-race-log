@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-text dark:text-brand-text-dark">
+    <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-accent dark:text-brand-accent-dark">
       <em class="signal">Feedback</em>
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-10 max-w-xl">
@@ -22,7 +22,10 @@
         class="py-5"
       >
         <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 mb-3">
-          <span class="font-body font-bold text-brand-text dark:text-brand-text-dark">{{ entry.user_email }}</span>
+          <span>
+            <span class="block font-body font-bold text-brand-text dark:text-brand-text-dark">{{ entry.user_display_name || entry.user_email }}</span>
+            <span v-if="entry.user_display_name" class="block text-xs text-brand-muted dark:text-brand-muted-dark">{{ entry.user_email }}</span>
+          </span>
           <span class="ov tabular text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatDate(entry.created_at) }}</span>
         </div>
         <p class="font-body text-[15px] leading-relaxed text-brand-text dark:text-brand-text-dark whitespace-pre-wrap mb-3">{{ entry.feedback_text }}</p>
