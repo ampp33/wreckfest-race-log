@@ -1703,17 +1703,55 @@ end;
 $$;
 
 -- =====================================================================
--- Alerts: announcements written by admins, surfaced through the bullhorn
--- in the nav bar. Inbox model: create_alert() writes one alert_recipients
+-- Notifications: announcements written by admins, surfaced through the bullhorn
+-- in the nav bar. Inbox model: create_notification() writes one notification_recipients
 -- row per recipient (every current user, or a chosen few), and that row
--- carries the read state — so who an alert went to, who has seen it, and
+-- carries the read state — so who a notification went to, who has seen it, and
 -- who hasn't are all one table. Users who sign up later never get earlier
--- alerts. Read state is per alert (not a single "last seen" timestamp) so
+-- notifications. Read state is per notification (not a single "last seen" timestamp) so
 -- previewing the newest few in the popover doesn't silently mark older
 -- unseen ones as read too.
 -- =====================================================================
 
-create table if not exists wf1.alerts (
+-- This feature was first called "alerts". Rename those objects in place so
+-- an existing database keeps its notifications and read state; on a fresh
+-- database (or once renamed) this does nothing.
+do $$
+begin
+    if to_regclass('wf1.alerts') is not null and to_regclass('wf1.notifications') is null then
+        alter table wf1.alerts rename to notifications;
+        alter table wf1.notifications rename constraint alerts_pkey to notifications_pkey;
+        alter index if exists wf1.alerts_created_at_idx rename to notifications_created_at_idx;
+        alter table wf1.notifications rename constraint alerts_created_by_fkey to notifications_created_by_fkey;
+        alter table wf1.notifications drop constraint if exists alerts_link_check;
+        alter table wf1.notifications drop constraint if exists alerts_link_text_length_check;
+        alter table wf1.notifications drop constraint if exists alerts_title_length_check;
+        drop policy if exists "alerts readable by authenticated" on wf1.notifications;
+        drop policy if exists "alerts select recipient or admin" on wf1.notifications;
+        drop policy if exists "alerts insert admin" on wf1.notifications;
+        drop policy if exists "alerts update admin" on wf1.notifications;
+        drop policy if exists "alerts delete admin" on wf1.notifications;
+    end if;
+    if to_regclass('wf1.alert_recipients') is not null and to_regclass('wf1.notification_recipients') is null then
+        alter table wf1.alert_recipients rename to notification_recipients;
+        alter table wf1.notification_recipients rename column alert_id to notification_id;
+        alter table wf1.notification_recipients rename constraint alert_recipients_pkey to notification_recipients_pkey;
+        alter table wf1.notification_recipients rename constraint alert_recipients_alert_id_fkey to notification_recipients_notification_id_fkey;
+        alter table wf1.notification_recipients rename constraint alert_recipients_user_id_fkey to notification_recipients_user_id_fkey;
+        alter index if exists wf1.alert_recipients_alert_id_idx rename to notification_recipients_notification_id_idx;
+        drop policy if exists "alert_recipients select own or admin" on wf1.notification_recipients;
+        drop policy if exists "alert_recipients update own" on wf1.notification_recipients;
+    end if;
+end;
+$$;
+
+drop function if exists wf1.create_alert(text, text, text, uuid[]);
+drop function if exists wf1.create_alert(text, text, text, uuid[], text);
+drop function if exists wf1.get_alerts(boolean);
+drop function if exists wf1.get_admin_alerts();
+drop function if exists wf1.get_alert_recipients(uuid);
+
+create table if not exists wf1.notifications (
     id         uuid primary key default gen_random_uuid(),
     title      text not null,
     body       text not null,
@@ -1723,89 +1761,99 @@ create table if not exists wf1.alerts (
     created_by uuid references auth.users(id) on delete set null
 );
 
-create index if not exists alerts_created_at_idx on wf1.alerts (created_at desc);
+create index if not exists notifications_created_at_idx on wf1.notifications (created_at desc);
 
 -- Links are rendered as hrefs, so only allow in-app paths and http(s) URLs
--- (no javascript: etc.). Mirrored client-side in AdminAlertsPage.
-alter table wf1.alerts drop constraint if exists alerts_link_check;
-alter table wf1.alerts add constraint alerts_link_check
+-- (no javascript: etc.). Mirrored client-side in AdminNotificationsPage.
+alter table wf1.notifications drop constraint if exists notifications_link_check;
+alter table wf1.notifications add constraint notifications_link_check
     check (link is null or link ~ '^/($|[^/])' or link ~* '^https?://');
 
-alter table wf1.alerts drop constraint if exists alerts_title_length_check;
-alter table wf1.alerts add constraint alerts_title_length_check
+-- Label for the link; null shows the default "Read more".
+alter table wf1.notifications add column if not exists link_text text;
+
+alter table wf1.notifications drop constraint if exists notifications_link_text_length_check;
+alter table wf1.notifications add constraint notifications_link_text_length_check
+    check (link_text is null or char_length(link_text) between 1 and 40);
+
+alter table wf1.notifications drop constraint if exists notifications_title_length_check;
+alter table wf1.notifications add constraint notifications_title_length_check
     check (char_length(title) between 1 and 120);
 
--- Replaced by alert_recipients.read_at before alerts went live.
+-- Replaced by per-recipient read_at before notifications went live.
 drop table if exists wf1.alert_reads;
 
-create table if not exists wf1.alert_recipients (
-    alert_id uuid not null references wf1.alerts(id) on delete cascade,
+create table if not exists wf1.notification_recipients (
+    notification_id uuid not null references wf1.notifications(id) on delete cascade,
     user_id  uuid not null references auth.users(id) on delete cascade,
     read_at  timestamptz, -- null = unread
-    primary key (user_id, alert_id)
+    primary key (user_id, notification_id)
 );
 
--- For the admin page's per-alert counts and recipient list.
-create index if not exists alert_recipients_alert_id_idx on wf1.alert_recipients (alert_id);
+-- For the admin page's per-notification counts and recipient list.
+create index if not exists notification_recipients_notification_id_idx on wf1.notification_recipients (notification_id);
 
-alter table wf1.alerts enable row level security;
-alter table wf1.alert_recipients enable row level security;
+alter table wf1.notifications enable row level security;
+alter table wf1.notification_recipients enable row level security;
 
-drop policy if exists "alerts readable by authenticated" on wf1.alerts;
-drop policy if exists "alerts select recipient or admin" on wf1.alerts;
-create policy "alerts select recipient or admin"
-    on wf1.alerts for select
+drop policy if exists "notifications readable by authenticated" on wf1.notifications;
+drop policy if exists "notifications select recipient or admin" on wf1.notifications;
+create policy "notifications select recipient or admin"
+    on wf1.notifications for select
     to authenticated
     using (
         wf1.is_admin(auth.uid())
         or exists (
-            select 1 from wf1.alert_recipients r
-            where r.alert_id = alerts.id and r.user_id = auth.uid()
+            select 1 from wf1.notification_recipients r
+            where r.notification_id = notifications.id and r.user_id = auth.uid()
         )
     );
 
-drop policy if exists "alerts insert admin" on wf1.alerts;
-create policy "alerts insert admin"
-    on wf1.alerts for insert
+drop policy if exists "notifications insert admin" on wf1.notifications;
+create policy "notifications insert admin"
+    on wf1.notifications for insert
     to authenticated
     with check (wf1.is_admin(auth.uid()));
 
-drop policy if exists "alerts update admin" on wf1.alerts;
-create policy "alerts update admin"
-    on wf1.alerts for update
+drop policy if exists "notifications update admin" on wf1.notifications;
+create policy "notifications update admin"
+    on wf1.notifications for update
     to authenticated
     using (wf1.is_admin(auth.uid()))
     with check (wf1.is_admin(auth.uid()));
 
-drop policy if exists "alerts delete admin" on wf1.alerts;
-create policy "alerts delete admin"
-    on wf1.alerts for delete
+drop policy if exists "notifications delete admin" on wf1.notifications;
+create policy "notifications delete admin"
+    on wf1.notifications for delete
     to authenticated
     using (wf1.is_admin(auth.uid()));
 
-drop policy if exists "alert_recipients select own or admin" on wf1.alert_recipients;
-create policy "alert_recipients select own or admin"
-    on wf1.alert_recipients for select
+drop policy if exists "notification_recipients select own or admin" on wf1.notification_recipients;
+create policy "notification_recipients select own or admin"
+    on wf1.notification_recipients for select
     to authenticated
     using (auth.uid() = user_id or wf1.is_admin(auth.uid()));
 
 -- Marking read is the only write a user makes here, and the column grant
 -- after the schema-level grants below limits it to read_at. Rows are
--- created only by create_alert() and removed by the alert's cascade.
-drop policy if exists "alert_recipients update own" on wf1.alert_recipients;
-create policy "alert_recipients update own"
-    on wf1.alert_recipients for update
+-- created only by create_notification() and removed by the notification's cascade.
+drop policy if exists "notification_recipients update own" on wf1.notification_recipients;
+create policy "notification_recipients update own"
+    on wf1.notification_recipients for update
     to authenticated
     using (auth.uid() = user_id)
     with check (auth.uid() = user_id and not wf1.is_banned(auth.uid()));
 
--- Posts an alert to p_user_ids, or to every current user when that's null,
--- in one transaction so an alert never exists without its recipients.
-create or replace function wf1.create_alert(
-    p_title    text,
-    p_body     text,
-    p_link     text default null,
-    p_user_ids uuid[] default null
+-- Posts a notification to p_user_ids, or to every current user when that's null,
+-- in one transaction so a notification never exists without its recipients.
+drop function if exists wf1.create_notification(text, text, text, uuid[]);
+
+create or replace function wf1.create_notification(
+    p_title     text,
+    p_body      text,
+    p_link      text default null,
+    p_user_ids  uuid[] default null,
+    p_link_text text default null
 )
 returns uuid
 language plpgsql
@@ -1821,11 +1869,11 @@ begin
         raise exception 'Pick at least one recipient';
     end if;
 
-    insert into wf1.alerts (title, body, link, created_by)
-    values (p_title, p_body, nullif(p_link, ''), auth.uid())
+    insert into wf1.notifications (title, body, link, link_text, created_by)
+    values (p_title, p_body, nullif(p_link, ''), nullif(p_link_text, ''), auth.uid())
     returning id into v_id;
 
-    insert into wf1.alert_recipients (alert_id, user_id)
+    insert into wf1.notification_recipients (notification_id, user_id)
     select v_id, u.id
     from auth.users u
     where p_user_ids is null or u.id = any(p_user_ids);
@@ -1834,40 +1882,42 @@ begin
 end;
 $$;
 
--- The caller's alerts with their read state, newest first; pass
+-- The caller's notifications with their read state, newest first; pass
 -- p_unread_only => true for just the unread ones (the nav bar bell).
--- Plain invoker function: RLS already scopes alert_recipients to the caller.
-drop function if exists wf1.get_alerts(boolean);
+-- Plain invoker function: RLS already scopes notification_recipients to the caller.
+drop function if exists wf1.get_notifications(boolean);
 
-create or replace function wf1.get_alerts(p_unread_only boolean default false)
+create or replace function wf1.get_notifications(p_unread_only boolean default false)
 returns table(
     id         uuid,
     title      text,
     body       text,
     link       text,
+    link_text  text,
     created_at timestamptz,
     is_read    boolean
 )
 language sql
 stable set search_path = wf1
 as $$
-    select a.id, a.title, a.body, a.link, a.created_at, r.read_at is not null
-    from wf1.alerts a
-    join wf1.alert_recipients r on r.alert_id = a.id and r.user_id = auth.uid()
+    select a.id, a.title, a.body, a.link, a.link_text, a.created_at, r.read_at is not null
+    from wf1.notifications a
+    join wf1.notification_recipients r on r.notification_id = a.id and r.user_id = auth.uid()
     where not (p_unread_only and r.read_at is not null)
     order by a.created_at desc
 $$;
 
--- Admin page list: every alert with how many it went to and how many have
+-- Admin page list: every notification with how many it went to and how many have
 -- seen it.
-drop function if exists wf1.get_admin_alerts();
+drop function if exists wf1.get_admin_notifications();
 
-create or replace function wf1.get_admin_alerts()
+create or replace function wf1.get_admin_notifications()
 returns table(
     id              uuid,
     title           text,
     body            text,
     link            text,
+    link_text       text,
     created_at      timestamptz,
     recipient_count bigint,
     read_count      bigint
@@ -1881,20 +1931,20 @@ begin
     end if;
 
     return query
-    select a.id, a.title, a.body, a.link, a.created_at,
+    select a.id, a.title, a.body, a.link, a.link_text, a.created_at,
            count(r.user_id), count(r.read_at)
-    from wf1.alerts a
-    left join wf1.alert_recipients r on r.alert_id = a.id
+    from wf1.notifications a
+    left join wf1.notification_recipients r on r.notification_id = a.id
     group by a.id
     order by a.created_at desc;
 end;
 $$;
 
--- Who an alert went to and when each of them saw it (null = not yet),
+-- Who a notification went to and when each of them saw it (null = not yet),
 -- unseen first. Security definer so private profiles' names still show.
-drop function if exists wf1.get_alert_recipients(uuid);
+drop function if exists wf1.get_notification_recipients(uuid);
 
-create or replace function wf1.get_alert_recipients(p_alert_id uuid)
+create or replace function wf1.get_notification_recipients(p_notification_id uuid)
 returns table(
     user_id      uuid,
     display_name text,
@@ -1910,10 +1960,10 @@ begin
 
     return query
     select r.user_id, coalesce(p.display_name, u.email::text), r.read_at
-    from wf1.alert_recipients r
+    from wf1.notification_recipients r
     join auth.users u on u.id = r.user_id
     left join wf1.profiles p on p.user_id = r.user_id
-    where r.alert_id = p_alert_id
+    where r.notification_id = p_notification_id
     order by r.read_at nulls first, 2;
 end;
 $$;
@@ -1936,6 +1986,6 @@ alter default privileges in schema wf1
 revoke update on wf1.profiles from anon, authenticated;
 grant update (display_name, is_public) on wf1.profiles to authenticated;
 
--- Likewise a recipient may only stamp read_at on their own alert rows.
-revoke update on wf1.alert_recipients from anon, authenticated;
-grant update (read_at) on wf1.alert_recipients to authenticated;
+-- Likewise a recipient may only stamp read_at on their own notification rows.
+revoke update on wf1.notification_recipients from anon, authenticated;
+grant update (read_at) on wf1.notification_recipients to authenticated;

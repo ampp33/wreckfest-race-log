@@ -1,10 +1,10 @@
 <template>
-  <div class="max-w-7xl mx-auto px-6 py-10">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
     <h1 class="font-heading font-normal tracking-normal leading-none text-display-lg text-brand-accent dark:text-brand-accent-dark">
-      Alerts
+      Notifications
     </h1>
     <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark mt-3.5 mb-9 max-w-xl">
-      Post an announcement to everyone's alerts bell, or to a chosen few. Users who sign up later don't get alerts posted before they joined.
+      Post an announcement to everyone's notifications bell, or to a chosen few. Users who sign up later don't get notifications posted before they joined.
     </p>
 
     <form
@@ -49,6 +49,20 @@
           />
           <span v-if="linkError" class="font-body text-[12px] text-brand-accent dark:text-brand-accent-dark">{{ linkError }}</span>
         </label>
+
+        <label v-if="form.link.trim()" class="flex flex-col gap-1.5">
+          <span class="font-body font-medium text-[13px] text-brand-secondary dark:text-brand-secondary-dark">
+            Link text <span class="font-normal text-brand-muted dark:text-brand-muted-dark">optional</span>
+          </span>
+          <input
+            v-model="form.linkText"
+            type="text"
+            maxlength="40"
+            placeholder="Read more"
+            :disabled="saving"
+            :class="inputClass"
+          />
+        </label>
       </div>
 
       <!-- 02: who gets it. Recipients are fixed once posted; editing only changes the content. -->
@@ -63,7 +77,7 @@
         </div>
 
         <p v-if="editingId" class="font-body text-[14px] leading-relaxed text-brand-muted dark:text-brand-muted-dark">
-          Recipients can't be changed once an alert is posted. Only the title, message and link can.
+          Recipients can't be changed once a notification is posted. Only the title, message and link can.
         </p>
 
         <template v-else>
@@ -161,13 +175,13 @@
     <p v-else-if="error" class="text-sm text-brand-accent dark:text-brand-accent-dark">{{ error }}</p>
 
     <div v-else-if="!entries.length" class="font-body text-[15px] text-brand-muted dark:text-brand-muted-dark">
-      No alerts have been posted yet.
+      No notifications have been posted yet.
     </div>
 
     <section v-else>
       <div class="flex items-baseline justify-between pb-3 border-b-2 border-brand-strong dark:border-brand-strong-dark">
         <h2 class="font-body font-bold text-[15px] text-brand-text dark:text-brand-text-dark">Posted</h2>
-        <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ entries.length }} {{ entries.length === 1 ? 'alert' : 'alerts' }}</span>
+        <span class="ov text-brand-muted dark:text-brand-muted-dark">{{ entries.length }} {{ entries.length === 1 ? 'notification' : 'notifications' }}</span>
       </div>
       <div
         v-for="entry in entries"
@@ -226,16 +240,16 @@
 </template>
 
 <script>
-import { getAdminAlerts, getAlertRecipients, createAlert, updateAlert, deleteAlert } from '../services/alertService.js'
+import { getAdminNotifications, getNotificationRecipients, createNotification, updateNotification, deleteNotification } from '../services/notificationService.js'
 import { getAllUsers } from '../services/adminService.js'
-import { refreshAlerts } from '../stores/alertStore.js'
+import { refreshNotifications } from '../stores/notificationStore.js'
 import { pushToast } from '../stores/toastStore.js'
 import { formatDateTime, formatRelativeDate } from '../utils/dateFormat.js'
 
-const emptyForm = () => ({ title: '', body: '', link: '' })
+const emptyForm = () => ({ title: '', body: '', link: '', linkText: '' })
 
 export default {
-  name: 'AdminAlertsPage',
+  name: 'AdminNotificationsPage',
   data() {
     return {
       entries: [],
@@ -250,7 +264,7 @@ export default {
       userFilter: '',
       users: [],
       usersError: null,
-      // alert id -> recipient list, fetched when its "Seen by" is first opened
+      // notification id -> recipient list, fetched when its "Seen by" is first opened
       recipients: {},
       openRecipientsId: null,
       PREVIEW_CHARS: 120,
@@ -262,7 +276,7 @@ export default {
     }
   },
   computed: {
-    // Mirrors the alerts_link_check constraint in schema.sql: an in-app
+    // Mirrors the notifications_link_check constraint in schema.sql: an in-app
     // path or an http(s) URL, nothing else (e.g. no javascript: links).
     linkError() {
       const link = this.form.link.trim()
@@ -283,7 +297,7 @@ export default {
         const n = this.selectedUserIds.length
         return `Post to ${n} ${n === 1 ? 'user' : 'users'}`
       }
-      return 'Post alert'
+      return 'Post notification'
     },
     // Says who it goes to, or the first thing stopping it from posting.
     submitHint() {
@@ -339,7 +353,7 @@ export default {
       this.openRecipientsId = id
       try {
         // Refetched on every open — read state changes while the page sits open.
-        this.recipients[id] = await getAlertRecipients(id)
+        this.recipients[id] = await getNotificationRecipients(id)
       } catch (err) {
         this.openRecipientsId = null
         pushToast(err.message || 'Failed to load recipients', 'error')
@@ -347,9 +361,9 @@ export default {
     },
     async load() {
       try {
-        this.entries = await getAdminAlerts()
+        this.entries = await getAdminNotifications()
       } catch (err) {
-        this.error = err.message || 'Failed to load alerts'
+        this.error = err.message || 'Failed to load notifications'
       } finally {
         this.loading = false
       }
@@ -363,7 +377,7 @@ export default {
     },
     startEdit(entry) {
       this.editingId = entry.id
-      this.form = { title: entry.title, body: entry.body, link: entry.link || '' }
+      this.form = { title: entry.title, body: entry.body, link: entry.link || '', linkText: entry.link_text || '' }
       this.$refs.formEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
     },
     async onSubmit() {
@@ -371,25 +385,27 @@ export default {
       const payload = {
         title: this.form.title.trim(),
         body: this.form.body.trim(),
-        link: this.form.link.trim()
+        link: this.form.link.trim(),
+        // A label without a link would never show, so drop it.
+        linkText: this.form.link.trim() ? this.form.linkText.trim() : ''
       }
       this.saving = true
       try {
         if (this.editingId) {
-          await updateAlert(this.editingId, payload)
-          pushToast('Alert updated', 'success', 3000)
+          await updateNotification(this.editingId, payload)
+          pushToast('Notification updated', 'success', 3000)
         } else {
-          await createAlert({
+          await createNotification({
             ...payload,
             userIds: this.audience === 'specific' ? this.selectedUserIds : null
           })
-          pushToast('Alert posted', 'success', 3000)
+          pushToast('Notification posted', 'success', 3000)
         }
         this.resetForm()
         await this.load()
-        refreshAlerts({ force: true })
+        refreshNotifications({ force: true })
       } catch (err) {
-        pushToast(err.message || 'Failed to save alert', 'error')
+        pushToast(err.message || 'Failed to save notification', 'error')
       } finally {
         this.saving = false
       }
@@ -397,13 +413,13 @@ export default {
     async onDelete(id) {
       this.confirmDeleteId = null
       try {
-        await deleteAlert(id)
+        await deleteNotification(id)
         this.entries = this.entries.filter(e => e.id !== id)
         if (this.editingId === id) this.resetForm()
-        refreshAlerts({ force: true })
-        pushToast('Alert deleted', 'success', 3000)
+        refreshNotifications({ force: true })
+        pushToast('Notification deleted', 'success', 3000)
       } catch (err) {
-        pushToast(err.message || 'Failed to delete alert', 'error')
+        pushToast(err.message || 'Failed to delete notification', 'error')
       }
     }
   }

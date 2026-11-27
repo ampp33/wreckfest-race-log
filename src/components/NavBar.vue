@@ -153,12 +153,12 @@
           </div>
         </div>
 
-        <!-- Icon-only control cluster (alerts, profile), grouped with a
+        <!-- Icon-only control cluster (notifications, profile), grouped with a
              tighter gap than the text links so the tiles read as one set.
              Signed out there's no profile menu, so the sun/moon stands
              alone beside Sign in. -->
         <div class="flex items-center gap-2">
-          <AlertBell v-if="auth.isAuthenticated" />
+          <NotificationBell v-if="auth.isAuthenticated" />
 
           <div v-if="auth.isAuthenticated" class="relative group">
             <button
@@ -217,7 +217,7 @@
       </div>
 
       <!-- Mobile: whose races (scope), car class and the menu, each opening its own red drop-down. Only one is open at a
-           time; the open one turns red. The alerts bell sits on the bar before the menu so its unread badge shows
+           time; the open one turns red. The notifications bell sits on the bar before the menu so its unread badge shows
            without opening anything. -->
       <div data-nav-intro class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
         <button
@@ -241,7 +241,7 @@
         >
           <ClassIcon :cls="prefs.piClass" />
         </button>
-        <AlertBell v-if="auth.isAuthenticated" variant="mobile" @open="mobileMenu = null" />
+        <NotificationBell v-if="auth.isAuthenticated" variant="mobile" @open="mobileMenu = null" />
         <button
           type="button"
           class="min-h-[44px] min-w-[44px] flex items-center justify-center border"
@@ -405,6 +405,9 @@
         </div>
       </div>
     </Transition>
+
+    <!-- The mobile NotificationBell teleports its drawer here, under the bar. -->
+    <div id="notification-drawer-slot" class="min-[1200px]:hidden"></div>
   </nav>
 </template>
 
@@ -418,7 +421,7 @@ import { prefsStore } from '../stores/prefsStore.js'
 import { recentDriversStore, rememberDriver } from '../stores/recentDriversStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
-import AlertBell from './AlertBell.vue'
+import NotificationBell from './NotificationBell.vue'
 import { getProfile } from '../services/profileService.js'
 import { scopeOfRoute, scopeViews, viewOfRoute, pathForScope, sameScope } from '../utils/scope.js'
 import { classLetterColor } from '../utils/piInfo.js'
@@ -441,7 +444,7 @@ const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
-  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu, AlertBell },
+  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu, NotificationBell },
   data() {
     return {
       auth: authStore,
@@ -468,7 +471,7 @@ export default {
         { to: '/admin/users', label: 'Users' },
         { to: '/admin/api-keys', label: 'API keys' },
         { to: '/admin/feedback', label: 'Feedback' },
-        { to: '/admin/alerts', label: 'Alerts' }
+        { to: '/admin/notifications', label: 'Notifications' }
       ]
     }
   },

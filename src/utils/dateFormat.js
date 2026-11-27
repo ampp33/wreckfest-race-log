@@ -31,7 +31,7 @@ export function formatCompactDate(iso) {
 }
 
 // "just now" / "5m ago" / "3h ago" / "2d ago", falling back to the full
-// date past a week — for compact lists like the alerts popover.
+// date past a week — for compact lists like the notifications popover.
 export function formatRelativeDate(iso) {
   if (!iso) return '—'
   const seconds = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
