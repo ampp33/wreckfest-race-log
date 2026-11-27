@@ -18,54 +18,53 @@
 
     <div
       v-if="open"
-      class="absolute right-0 top-full mt-2 z-50 w-[min(20rem,calc(100vw-3rem))] bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark shadow-lg text-brand-text dark:text-brand-text-dark"
+      class="absolute right-0 top-full mt-2 z-50 w-[min(22.5rem,calc(100vw-3rem))] bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark border-t-2 border-t-brand-strong dark:border-t-brand-strong-dark shadow-[0_18px_40px_rgba(10,10,10,0.18)] text-brand-text dark:text-brand-text-dark"
       role="dialog"
       aria-label="Unread alerts"
     >
-      <div class="flex items-baseline justify-between px-4 pt-4 pb-3 border-b border-brand-border dark:border-brand-border-dark">
+      <div class="flex items-center justify-between px-[18px] py-4">
         <span class="ov text-brand-muted dark:text-brand-muted-dark">Alerts</span>
-        <span v-if="alerts.unreadCount" class="flex items-baseline gap-3">
-          <span class="ov text-brand-accent dark:text-brand-accent-dark">{{ alerts.unreadCount }} unread</span>
-          <!-- Only needed when some unread alerts aren't in the preview —
-               the previewed ones get marked read on close anyway. -->
-          <button
-            v-if="alerts.unreadCount > PREVIEW_COUNT"
-            type="button"
-            class="ov text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            @click="onMarkAllRead"
-          >Mark all read</button>
-        </span>
+        <button
+          v-if="alerts.unreadCount"
+          type="button"
+          class="ov text-brand-accent dark:text-brand-accent-dark hover:text-brand-text dark:hover:text-brand-text-dark"
+          @click="onMarkAllRead"
+        >Mark {{ alerts.unreadCount }} read</button>
       </div>
 
       <p
         v-if="!preview.length"
-        class="px-4 py-6 font-body text-[14px] text-brand-muted dark:text-brand-muted-dark text-center"
+        class="px-[18px] pb-6 pt-2 font-body text-[14px] text-brand-muted dark:text-brand-muted-dark text-center"
       >
         You're all caught up.
       </p>
 
-      <ul v-else class="divide-y divide-brand-border dark:divide-brand-border-dark">
-        <li v-for="alert in preview" :key="alert.id">
+      <!-- The rail: one line down the left, a filled red dot per unread alert. -->
+      <ol v-else class="relative px-[18px] pb-2">
+        <span class="absolute left-6 top-1.5 bottom-6 w-px bg-brand-border dark:bg-brand-border-dark" aria-hidden="true"></span>
+        <li v-for="alert in preview" :key="alert.id" class="relative">
           <router-link
             :to="{ name: 'alerts', query: { highlight: alert.id } }"
-            class="block px-4 py-3 hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+            class="group block pl-[26px] pb-[18px]"
           >
-            <div class="flex items-baseline justify-between gap-3 mb-1">
-              <span class="font-body font-bold text-[14px] leading-snug line-clamp-1">{{ alert.title }}</span>
-              <span class="ov tabular text-brand-muted dark:text-brand-muted-dark whitespace-nowrap">{{ formatRelativeDate(alert.created_at) }}</span>
-            </div>
-            <p class="font-body text-[13px] leading-snug text-brand-secondary dark:text-brand-secondary-dark line-clamp-2">
+            <span
+              class="absolute left-[1px] top-[3px] w-[11px] h-[11px] rounded-full bg-brand-accent dark:bg-brand-accent-dark ring-[3px] ring-brand-bg dark:ring-brand-bg-dark"
+              aria-hidden="true"
+            ></span>
+            <span class="ov tabular block mb-1.5 text-brand-accent dark:text-brand-accent-dark">{{ formatRelativeDate(alert.created_at) }}</span>
+            <span class="block font-body font-bold text-[14px] leading-snug line-clamp-1 group-hover:text-brand-accent dark:group-hover:text-brand-accent-dark">{{ alert.title }}</span>
+            <span class="block mt-0.5 font-body text-[13px] leading-snug text-brand-secondary dark:text-brand-secondary-dark line-clamp-2">
               {{ truncate(alert.body, PREVIEW_CHARS) }}
-            </p>
+            </span>
           </router-link>
         </li>
-      </ul>
+      </ol>
 
       <router-link
         :to="{ name: 'alerts' }"
-        class="flex min-h-[44px] items-center justify-center border-t border-brand-border dark:border-brand-border-dark font-body text-[13px] text-brand-accent dark:text-brand-accent-dark hover:underline"
+        class="flex min-h-[44px] items-center justify-between px-[18px] border-t border-brand-border dark:border-brand-border-dark font-body font-medium text-[13px] text-brand-accent dark:text-brand-accent-dark hover:text-brand-text dark:hover:text-brand-text-dark"
       >
-        View all alerts →
+        View all alerts <span aria-hidden="true">→</span>
       </router-link>
     </div>
   </div>
