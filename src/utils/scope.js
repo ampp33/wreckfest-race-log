@@ -27,24 +27,20 @@ function scopePrefix(scope, myId) {
 
 // The pages a scope has, in nav order. Leaderboard is always everyone's, so
 // it shows in every scope and following it resets the scope to everyone.
-// Profile only exists for you.
 export function scopeViews(scope, myId) {
   const prefix = scopePrefix(scope, myId)
-  const views = [
+  return [
     { key: 'leaderboard', label: 'Leaderboard', to: '/community/leaderboard' },
     { key: 'tracks', label: 'Tracks', to: `${prefix}/tracks` },
     { key: 'races', label: 'Races', to: `${prefix}/races` },
     { key: 'stats', label: 'Stats', to: `${prefix}/stats` }
   ]
-  if (scope.kind === 'you') views.push({ key: 'profile', label: 'Profile', to: '/settings/profile' })
-  return views
 }
 
 // Which of those views the route is showing — a track's own page counts as
 // Tracks.
 export function viewOfRoute(route) {
   const name = typeof route.name === 'string' ? route.name : ''
-  if (name === 'profile') return 'profile'
   if (name === 'community-leaderboard') return 'leaderboard'
   if (name.endsWith('-track-detail') || name.endsWith('-tracks')) return 'tracks'
   if (name.endsWith('-races')) return 'races'

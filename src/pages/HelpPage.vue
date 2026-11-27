@@ -254,7 +254,7 @@
         <section id="profile" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Profile</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-4 max-w-2xl">
-            Under Profile on your own log, or straight to <router-link to="/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Profile settings</router-link>. How you show up to everyone else:
+            In the person icon's menu at the top right (the menu, on a phone), or straight to <router-link to="/settings/profile" class="text-brand-accent dark:text-brand-accent-dark hover:underline">Profile settings</router-link>. How you show up to everyone else:
           </p>
           <ul class="font-body text-[15px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark space-y-1.5 max-w-2xl">
             <li><b class="text-brand-text dark:text-brand-text-dark">Display name</b> — what other racers see on leaderboards, track pages and race lists. 3–24 characters, and no two drivers can share one.</li>
@@ -265,7 +265,7 @@
         <section id="feedback" class="scroll-mt-8">
           <h2 class="font-body font-bold text-[22px] tracking-tightest text-brand-text dark:text-brand-text-dark rule-top pt-3 mb-3">Feedback</h2>
           <p class="font-body text-[16px] leading-relaxed text-brand-secondary dark:text-brand-secondary-dark mb-3 max-w-2xl">
-            The speech bubble in the nav bar, or in the mobile menu. Bugs, feature requests, a missing track variation, wording that made no sense. The page you sent it from travels with the message, so you don't have to explain where you were.
+            The "Send feedback" link under Contact Us in the footer, or the button below. Bugs, feature requests, a missing track variation, wording that made no sense. The page you sent it from travels with the message, so you don't have to explain where you were.
           </p>
           <p class="font-body text-[15px] leading-relaxed text-brand-muted dark:text-brand-muted-dark italic mb-6 max-w-2xl">
             The site is actively being built, and most of what ships next comes out of that box.

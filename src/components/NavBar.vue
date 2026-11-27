@@ -4,8 +4,8 @@
          scope picker and its views beside the logo, the site links and
          controls on the right. Below that there isn't room, so it switches
          to the phone layout — scope icon and hamburger, views in the menu. -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-6">
-      <!-- A size smaller on phones, where it shares the row with up to three
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 min-h-[72px] sm:min-h-[88px] py-3 flex items-center gap-4 sm:gap-6">
+      <!-- A size smaller on phones, where it shares the row with up to four
            buttons — too many for "RACE LOG" to fit beside the wordmark, so
            it tucks underneath instead. -->
       <router-link :to="homePath" class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2.5 min-w-0">
@@ -153,37 +153,59 @@
           </div>
         </div>
 
-        <!-- Icon-only control cluster (sun/moon, feedback, door), grouped
-             with a tighter gap than the text links so the tiles read as one
-             set. -->
+        <!-- Icon-only control cluster (notifications, profile), grouped with a
+             tighter gap than the text links so the tiles read as one set.
+             Signed out there's no profile menu, so the sun/moon stands
+             alone beside Sign in. -->
         <div class="flex items-center gap-2">
+          <NotificationBell v-if="auth.isAuthenticated" />
+
+          <div v-if="auth.isAuthenticated" class="relative group">
+            <button
+              type="button"
+              class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
+              :class="isProfileRoute ? 'text-brand-accent dark:text-brand-accent-dark border-brand-accent dark:border-brand-accent-dark' : 'text-brand-text dark:text-brand-text-dark'"
+              aria-haspopup="true"
+              :aria-label="`Account: ${myName}`"
+              :title="myName"
+            >
+              <span class="w-4 h-4 inline-block" v-html="gearIcon"></span>
+            </button>
+            <div class="absolute right-0 top-full pt-1 hidden group-hover:block group-focus-within:block z-50">
+              <div class="w-44 bg-brand-bg dark:bg-brand-bg-dark border border-brand-border dark:border-brand-border-dark py-1">
+                <router-link
+                  to="/settings/profile"
+                  class="flex min-h-[44px] items-center px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  active-class="text-brand-accent dark:text-brand-accent-dark font-semibold"
+                >Profile</router-link>
+                <button
+                  type="button"
+                  class="w-full flex min-h-[44px] items-center gap-2 px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  @click="onToggleDark"
+                >
+                  <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+                  {{ prefs.darkMode ? 'Light mode' : 'Dark mode' }}
+                </button>
+                <button
+                  type="button"
+                  class="w-full flex min-h-[44px] items-center gap-2 px-4 text-[13px] hover:bg-brand-surface dark:hover:bg-brand-surface-dark"
+                  @click="onSignOut"
+                >
+                  <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+
           <button
+            v-else
             type="button"
             class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-text dark:text-brand-text-dark hover:border-brand-accent dark:hover:border-brand-accent-dark"
             @click="onToggleDark"
             :aria-label="prefs.darkMode ? 'Switch to light mode' : 'Switch to dark mode'"
           >
             <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
-          </button>
-
-          <button
-            v-if="auth.isAuthenticated"
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            aria-label="Send feedback"
-            @click="onOpenFeedback"
-          >
-            <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
-          </button>
-
-          <button
-            v-if="auth.isAuthenticated"
-            type="button"
-            class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-brand-border dark:border-brand-border-dark text-brand-muted dark:text-brand-muted-dark hover:text-brand-accent dark:hover:text-brand-accent-dark"
-            aria-label="Sign out"
-            @click="onSignOut"
-          >
-            <span class="w-4 h-4 inline-block" v-html="signOutIcon"></span>
           </button>
 
           <router-link
@@ -195,7 +217,8 @@
       </div>
 
       <!-- Mobile: whose races (scope), car class and the menu, each opening its own red drop-down. Only one is open at a
-           time; the open one turns red. -->
+           time; the open one turns red. The notifications bell sits on the bar before the menu so its unread badge shows
+           without opening anything. -->
       <div data-nav-intro class="min-[1200px]:hidden flex items-center gap-2 shrink-0 ml-auto">
         <button
           type="button"
@@ -218,6 +241,7 @@
         >
           <ClassIcon :cls="prefs.piClass" />
         </button>
+        <NotificationBell v-if="auth.isAuthenticated" variant="mobile" @open="mobileMenu = null" />
         <button
           type="button"
           class="min-h-[44px] min-w-[44px] flex items-center justify-center border"
@@ -283,7 +307,24 @@
               @click="mobileMenu = null"
             >{{ view.label }}</router-link>
 
-            <!-- Same as the desktop row: one plain link while signed out. -->
+            <!-- Same order as the desktop row: Help and News, then the plugin. -->
+            <template v-if="auth.isAuthenticated">
+              <div class="ov text-white/70 pt-4 pb-2">More</div>
+              <router-link
+                to="/help"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >Help</router-link>
+              <router-link
+                to="/news"
+                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
+                active-class="font-bold"
+                @click="mobileMenu = null"
+              >News</router-link>
+            </template>
+
+            <!-- One plain link while signed out, like the desktop row. -->
             <template v-if="auth.isAuthenticated">
               <div class="ov text-white/70 pt-4 pb-2">Install Plugin</div>
               <router-link
@@ -318,22 +359,33 @@
             </template>
 
             <template v-if="auth.isAuthenticated">
-              <div class="ov text-white/70 pt-4 pb-2">More</div>
+              <div class="ov text-white/70 pt-4 pb-2">{{ myName }}</div>
               <router-link
-                to="/help"
+                to="/settings/profile"
                 class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
                 active-class="font-bold"
                 @click="mobileMenu = null"
-              >Help</router-link>
-              <router-link
-                to="/news"
-                class="flex min-h-[44px] items-center border-b border-white/20 text-[15px]"
-                active-class="font-bold"
-                @click="mobileMenu = null"
-              >News</router-link>
+              >Profile</router-link>
+              <button
+                type="button"
+                class="w-full flex min-h-[44px] items-center gap-2 border-b border-white/20 text-[15px]"
+                @click="onToggleDark"
+              >
+                <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
+                {{ prefs.darkMode ? 'Light mode' : 'Dark mode' }}
+              </button>
+              <button
+                type="button"
+                class="w-full flex min-h-[44px] items-center gap-2 mb-2 text-[15px]"
+                @click="onSignOut"
+              >
+                <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
+                Sign out
+              </button>
             </template>
 
-            <div class="flex gap-2 pt-3 pb-2">
+            <!-- Signed in, the sun/moon and sign out live in the account section above. -->
+            <div v-if="!auth.isAuthenticated" class="flex gap-2 pt-3 pb-2">
               <button
                 type="button"
                 class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
@@ -343,28 +395,7 @@
                 <span class="w-4 h-4 inline-block" v-html="prefs.darkMode ? sunIcon : moonIcon"></span>
               </button>
 
-              <button
-                v-if="auth.isAuthenticated"
-                type="button"
-                class="min-h-[44px] min-w-[44px] flex items-center justify-center border border-white/50 hover:bg-white/10"
-                aria-label="Send feedback"
-                @click="onOpenFeedback"
-              >
-                <span class="w-4 h-4 inline-block" v-html="feedbackIcon"></span>
-              </button>
-
-              <button
-                v-if="auth.isAuthenticated"
-                type="button"
-                class="ml-2 flex min-h-[44px] items-center gap-2 text-white/75 hover:text-white text-[13px]"
-                @click="onSignOut"
-              >
-                <span class="w-4 h-4 inline-block" v-html="signOutIconMobile"></span>
-                Sign out
-              </button>
-
               <router-link
-                v-if="!auth.isAuthenticated"
                 :to="signInRoute"
                 class="ml-2 flex min-h-[44px] items-center px-4 border border-white/50 hover:bg-white/10 text-[13px] font-semibold"
                 @click="mobileMenu = null"
@@ -374,6 +405,9 @@
         </div>
       </div>
     </Transition>
+
+    <!-- The mobile NotificationBell teleports its drawer here, under the bar. -->
+    <div id="notification-drawer-slot" class="min-[1200px]:hidden"></div>
   </nav>
 </template>
 
@@ -387,7 +421,7 @@ import { prefsStore } from '../stores/prefsStore.js'
 import { recentDriversStore, rememberDriver } from '../stores/recentDriversStore.js'
 import { signOut } from '../services/authService.js'
 import { pushToast } from '../stores/toastStore.js'
-import { openFeedback } from '../stores/feedbackStore.js'
+import NotificationBell from './NotificationBell.vue'
 import { getProfile } from '../services/profileService.js'
 import { scopeOfRoute, scopeViews, viewOfRoute, pathForScope, sameScope } from '../utils/scope.js'
 import { classLetterColor } from '../utils/piInfo.js'
@@ -395,9 +429,9 @@ import sunIcon from '../assets/icons/sun.svg?raw'
 import moonIcon from '../assets/icons/moon.svg?raw'
 import signOutIcon from '../assets/icons/sign-out.svg?raw'
 import chevronDownIcon from '../assets/icons/chevron-down-outline.svg?raw'
-import feedbackIcon from '../assets/icons/feedback.svg?raw'
 import menuIcon from '../assets/icons/menu.svg?raw'
 import closeIcon from '../assets/icons/close-filled.svg?raw'
+import gearIcon from '../assets/icons/gear.svg?raw'
 
 // The sign-out icon knocks its figure out of the doorway with an SVG <mask>,
 // which is referenced by id — so inlining the same markup twice puts two
@@ -410,7 +444,7 @@ const signOutIconMobile = signOutIcon.replace(/wfDoorOut/g, 'wfDoorOutMobile')
 
 export default {
   name: 'NavBar',
-  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu },
+  components: { ScopeIcon, ScopeMenu, ClassIcon, ClassMenu, NotificationBell },
   data() {
     return {
       auth: authStore,
@@ -428,15 +462,16 @@ export default {
       sunIcon,
       moonIcon,
       chevronDownIcon,
-      feedbackIcon,
       menuIcon,
       closeIcon,
+      gearIcon,
       signOutIcon,
       signOutIconMobile,
       adminItems: [
         { to: '/admin/users', label: 'Users' },
         { to: '/admin/api-keys', label: 'API keys' },
-        { to: '/admin/feedback', label: 'Feedback' }
+        { to: '/admin/feedback', label: 'Feedback' },
+        { to: '/admin/notifications', label: 'Notifications' }
       ]
     }
   },
@@ -503,6 +538,9 @@ export default {
     },
     isAdminRoute() {
       return this.$route.path.startsWith('/admin')
+    },
+    isProfileRoute() {
+      return this.$route.path === '/settings/profile'
     },
     isTelemetryRoute() {
       return this.telemetryItems.some(item => item.to === this.$route.path)
@@ -605,10 +643,6 @@ export default {
     },
     onToggleDark() {
       this.prefs.darkMode = !this.prefs.darkMode
-    },
-    onOpenFeedback() {
-      this.mobileMenu = null
-      openFeedback()
     },
     async onSignOut() {
       this.mobileMenu = null

@@ -42,6 +42,12 @@
                 class="flex min-h-[24px] items-center text-[13px] text-white/70 hover:text-white cursor-pointer"
                 @click="exportJson"
               >{{ link.label }}</button>
+              <button
+                v-else-if="link.action === 'feedback' && auth.isAuthenticated"
+                type="button"
+                class="flex min-h-[24px] items-center gap-1.5 text-[13px] text-white/70 hover:text-white cursor-pointer"
+                @click="openFeedback"
+              ><span class="inline-block w-[13px] h-[13px] shrink-0" v-html="link.icon"></span>{{ link.label }}</button>
               <label
                 v-else-if="link.action === 'import'"
                 class="flex min-h-[24px] items-center text-[13px] text-white/70 hover:text-white cursor-pointer"
@@ -103,10 +109,12 @@ import { getAllRaces, bulkInsertRaces } from '../services/raceService.js'
 import { authStore } from '../stores/authStore.js'
 import { downloadJson, readJsonFile } from '../utils/exportImport.js'
 import { pushToast } from '../stores/toastStore.js'
+import { openFeedback } from '../stores/feedbackStore.js'
 import supabaseIcon from '../assets/icons/supabase.svg?raw'
 import githubIcon from '../assets/icons/github.svg?raw'
 import emailIcon from '../assets/icons/email.svg?raw'
 import discordIcon from '../assets/icons/discord.svg?raw'
+import feedbackIcon from '../assets/icons/feedback.svg?raw'
 
 export default {
   name: 'AppFooter',
@@ -116,6 +124,7 @@ export default {
   },
   data() {
     return {
+      auth: authStore,
       supabaseIcon,
       githubIcon,
       columns: [
@@ -140,12 +149,15 @@ export default {
         ] },
         { title: 'Contact Us', links: [
           { label: 'Email', href: 'mailto:ampp33@gmail.com', icon: emailIcon },
-          { label: 'Discord', href: 'https://discord.gg/j7c4JCtxVs', icon: discordIcon }
+          { label: 'Discord', href: 'https://discord.gg/j7c4JCtxVs', icon: discordIcon },
+          // Only rendered when signed in, since the feedback modal only exists then.
+          { label: 'Send feedback', action: 'feedback', icon: feedbackIcon }
         ] }
       ]
     }
   },
   methods: {
+    openFeedback,
     async exportJson() {
       if (!authStore.user) {
         pushToast('Sign in to export your races', 'error')

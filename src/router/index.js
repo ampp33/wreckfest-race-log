@@ -19,6 +19,8 @@ const AdminApiKeysPage = () => import('../pages/AdminApiKeysPage.vue')
 const AdminFeedbackPage = () => import('../pages/AdminFeedbackPage.vue')
 const HelpPage = () => import('../pages/HelpPage.vue')
 const NewsPage = () => import('../pages/NewsPage.vue')
+const NotificationsPage = () => import('../pages/NotificationsPage.vue')
+const AdminNotificationsPage = () => import('../pages/AdminNotificationsPage.vue')
 const LeaderboardPage = () => import('../pages/LeaderboardPage.vue')
 const CommunityStatsPage = () => import('../pages/CommunityStatsPage.vue')
 
@@ -51,6 +53,7 @@ const routes = [
   { path: '/plugin', name: 'telemetry', component: PluginPage, meta: { public: true } },
   { path: '/help', name: 'help', component: HelpPage },
   { path: '/news', name: 'news', component: NewsPage },
+  { path: '/notifications', name: 'notifications', component: NotificationsPage },
   // A race id is unique, so its page needs no driver prefix; the race says whose it is.
   { path: '/race/:raceId', name: 'race', component: RacePage, meta: { public: true } },
 
@@ -78,6 +81,7 @@ const routes = [
   { path: '/admin/users', name: 'admin-users', component: UsersPage, meta: { requiresAdmin: true } },
   { path: '/admin/api-keys', name: 'admin-api-keys', component: AdminApiKeysPage, meta: { requiresAdmin: true } },
   { path: '/admin/feedback', name: 'admin-feedback', component: AdminFeedbackPage, meta: { requiresAdmin: true } },
+  { path: '/admin/notifications', name: 'admin-notifications', component: AdminNotificationsPage, meta: { requiresAdmin: true } },
 
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]

@@ -77,6 +77,7 @@ resolving the session.
 | `publicStatsService.js` | `get_total_race_count()`, the one anon-callable stats RPC. Currently unused — the landing page renders from `src/data/homePageDemoData.js` instead. |
 | `apiKeyService.js` | The user's own API keys. |
 | `feedbackService.js` | In-app feedback submission. |
+| `notificationService.js` | The caller's notifications with read state (`get_notifications()`), marking read, and admin create (to everyone or chosen users)/edit/delete plus per-notification seen-by. |
 | `adminService.js` | Admin-only RPCs: users, roles, bans, all API keys, all feedback, growth. |
 
 ### State
@@ -93,6 +94,7 @@ that a store library would be more ceremony than help.
 | `trackSearchStore` | Track search modal open state. |
 | `prepRaceStore` | Prep for race modal open state. |
 | `feedbackStore` | Feedback modal open state. |
+| `notificationStore` | Unread notifications for the nav bar bell; refreshes on sign-in, window focus, and (throttled to once a minute) navigation. |
 | `favoritesStore` | The signed-in user's favorited race ids, loaded once per sign-in and shared by every race table. |
 | `toastStore` | Toast queue. |
 
@@ -124,6 +126,7 @@ that without a 404-page hack.
 | `/plugin` | public | Telemetry plugin install instructions |
 | `/getting-started` | auth | In-app guide: shortcuts, plugin, annotations, charts |
 | `/news` | auth | Changelog / release notes |
+| `/notifications` | auth | All notifications; marks unread ones read on load |
 | `/community/leaderboard` | public | Most races (top 25 drivers) and the fastest lap on every variation, filterable by PI class and vehicle; where signed-in users land |
 | `/community/stats` | public | Placeholder for site-wide stats |
 | `/community/tracks` | public | Track grid; cards open each track's all-drivers page |
@@ -139,6 +142,7 @@ that without a 404-page hack.
 | `/admin/users` | admin | Users, roles, bans, growth |
 | `/admin/api-keys` | admin | All keys across all users |
 | `/admin/feedback` | admin | Submitted feedback |
+| `/admin/notifications` | admin | Post, edit, and delete notifications |
 
 **Community pages** reuse the same three components, switched by `meta.scope:
 'community'`: a Driver column, no `:userId`, everything read-only, and races
@@ -232,6 +236,11 @@ you can always read your own; only the owner can write):
   persisted. Revocation is soft (`revoked_at`) so past races keep their
   attribution.
 - `feedback` — in-app feedback (insert-own, select-admin)
+- `notifications` — announcements (select if you're a recipient, write-admin)
+- `notification_recipients` — inbox rows: one per (user, notification), written by
+  `create_notification()` for every current user or a chosen few. `read_at` (null =
+  unread) is the only column a user can update. Users who sign up later don't
+  get earlier notifications.
 - `user_details` — account status, used for the ban check
 - `roles` / `user_roles` — the admin role assignment
 
@@ -252,7 +261,8 @@ Three mechanisms, in order of how much they matter:
 2. **`security definer` RPCs** for anything a user can't be trusted to do
    directly — `is_admin()`, `set_user_role()`, `set_user_banned()`,
    `get_all_users_with_roles()`, `get_all_api_keys()`, `get_all_feedback()`,
-   `admin_delete_api_key()`, `get_total_race_count()`, `get_user_growth()`.
+   `admin_delete_api_key()`, `get_total_race_count()`, `get_user_growth()`,
+   `create_notification()`, `get_admin_notifications()`, `get_notification_recipients()`.
 3. **The router guard**, which only keeps honest users out of screens that
    would render empty anyway.
 
